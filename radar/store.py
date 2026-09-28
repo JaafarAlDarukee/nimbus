@@ -10,7 +10,7 @@ import httpx
 from .models import Opportunity
 
 # Sources whose posted time is exact (Workday and feeds only give the day)
-PRECISE_SOURCES = {"greenhouse", "lever", "ashby", "smartrecruiters", "workable"}
+PRECISE_SOURCES = {"greenhouse", "lever", "ashby", "smartrecruiters", "workable", "adzuna"}
 
 
 def _explain_errors(response: httpx.Response) -> None:

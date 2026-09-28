@@ -5,6 +5,15 @@ on:
   schedule:
     - cron: "13,43 * * * *"
   workflow_dispatch:
+    inputs:
+      only:
+        description: "Only boards whose company name contains this text (blank = all)"
+        required: false
+        default: ""
+      dry_run:
+        description: "Print results only; don't save or alert"
+        type: boolean
+        default: false
 
 concurrency:
   group: radar
@@ -23,9 +32,17 @@ jobs:
           cache-dependency-path: radar/requirements.txt
       - run: pip install -r radar/requirements.txt
       - name: Scan priority boards
-        run: python -m radar.run --tier priority
+        run: |
+          args=(--tier priority)
+          if [ -n "$ONLY" ]; then args+=(--only "$ONLY"); fi
+          if [ "$DRY_RUN" = "true" ]; then args+=(--dry-run); fi
+          python -m radar.run "${args[@]}"
         env:
+          ONLY: ${{ inputs.only }}
+          DRY_RUN: ${{ inputs.dry_run }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          ADZUNA_APP_ID: ${{ secrets.ADZUNA_APP_ID }}
+          ADZUNA_APP_KEY: ${{ secrets.ADZUNA_APP_KEY }}
