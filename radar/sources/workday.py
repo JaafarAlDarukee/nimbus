@@ -50,15 +50,40 @@ def _posted_at(text: str | None) -> datetime | None:
     return None
 
 
-def _find_country_facet(facets: list[dict]) -> dict | None:
-    """The Country filter is sometimes top level, sometimes nested inside a location group."""
+def _find_facet(facets: list[dict], wanted) -> dict | None:
+    """Filters can be top level or nested inside a group (e.g. Country inside a location group)."""
     for facet in facets:
-        if "country" in (facet.get("facetParameter") or "").lower():
+        if wanted(facet):
             return facet
-        nested = _find_country_facet([v for v in facet.get("values", []) if v.get("facetParameter")])
+        nested = _find_facet([v for v in facet.get("values", []) if v.get("facetParameter")], wanted)
         if nested:
             return nested
     return None
+
+
+def _find_country_facet(facets: list[dict]) -> dict | None:
+    return _find_facet(facets, lambda f: "country" in (f.get("facetParameter") or "").lower())
+
+
+# The "Posting Date" filter; its buckets are named like "Today", "Past 3 Days", "Past Week"
+_RECENT_BUCKETS = [re.compile(p, re.I) for p in (r"past (week|7 days)", r"past 3 days", r"today|24 hours")]
+
+
+def _recent_filter(facets: list[dict]) -> dict | None:
+    """Filter for jobs posted in about the last week, used by the frequent priority runs.
+    Returns {} when the site has a Posting Date filter but nothing recent (skip listing)."""
+    facet = _find_facet(
+        facets,
+        lambda f: (f.get("facetParameter") or "").lower() in ("startdate", "postingdate", "posteddate", "timeposted")
+        or "posting date" in (f.get("descriptor") or "").lower(),
+    )
+    if not facet:
+        return None
+    for bucket in _RECENT_BUCKETS:
+        value = next((v for v in facet.get("values", []) if bucket.search(v.get("descriptor") or "")), None)
+        if value:
+            return {facet["facetParameter"]: [value["id"]]}
+    return {}
 
 
 async def _list(http: Fetcher, api: str, facets: dict) -> list[dict]:
@@ -81,7 +106,16 @@ async def fetch(board: Board, http: Fetcher, tier: str) -> list[RawJob]:
 
     first = await http.post(api, json={"appliedFacets": {}, "limit": 1, "offset": 0, "searchText": ""})
     first.raise_for_status()
-    country_facet = _find_country_facet(first.json().get("facets", []))
+    facets = first.json().get("facets", [])
+    country_facet = _find_country_facet(facets)
+
+    # Priority runs only list recently posted jobs; the full run lists everything
+    recent: dict = {}
+    if tier == "priority":
+        recent = _recent_filter(facets)
+        if recent == {}:
+            return []  # the site says nothing was posted recently
+        recent = recent or {}
 
     groups: list[tuple[str | None, dict]] = []
     if country_facet:
@@ -89,9 +123,9 @@ async def fetch(board: Board, http: Fetcher, tier: str) -> list[RawJob]:
             code = country_code(value.get("descriptor")) or value.get("descriptor")
             if tier == "priority" and code not in PRIORITY_COUNTRIES:
                 continue
-            groups.append((code, {country_facet["facetParameter"]: [value["id"]]}))
+            groups.append((code, {country_facet["facetParameter"]: [value["id"]], **recent}))
     else:
-        groups.append((None, {}))
+        groups.append((None, dict(recent)))
 
     # Countries are listed side by side; the shared Fetcher still caps requests per host
     listings = await asyncio.gather(*(_list(http, api, facets) for _, facets in groups))

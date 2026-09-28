@@ -19,20 +19,30 @@ from pathlib import Path
 from .http import Fetcher
 from .models import Board, Opportunity, RawJob
 from .pipeline.classify import classify, is_candidate
+from .pipeline.exclusions import excluded_company
 from .sources import READERS
 
 ROOT = Path(__file__).resolve().parent.parent
 BOARDS_CSV = ROOT / "data" / "seed" / "boards.csv"
+DISCOVERED = ROOT / "data" / "discovered"
 
 
-def load_boards(tier: str, only: str | None) -> list[Board]:
-    with BOARDS_CSV.open(newline="", encoding="utf-8") as handle:
-        boards = [Board(**{k: (v or "").strip() for k, v in row.items()}) for row in csv.DictReader(handle)]
-    if tier == "priority":
-        boards = [b for b in boards if b.tier == "priority"]
+def load_boards(only: str | None) -> list[Board]:
+    """Hand-picked boards first, then everything discovery found (same board listed once).
+    Every board is checked on every run; readers decide how much to fetch for the tier."""
+    boards: list[Board] = []
+    seen: set[tuple[str, str]] = set()
+    for path in [BOARDS_CSV, *sorted(DISCOVERED.glob("*.csv"))]:
+        with path.open(newline="", encoding="utf-8") as handle:
+            for row in csv.DictReader(handle):
+                board = Board(**{k: (v or "").strip() for k, v in row.items()})
+                key = (board.kind, board.ref.lower().rstrip("/"))
+                if board.kind in READERS and key not in seen and not excluded_company(board.company):
+                    seen.add(key)
+                    boards.append(board)
     if only:
         boards = [b for b in boards if only.lower() in b.company.lower()]
-    return [b for b in boards if b.kind in READERS]
+    return boards
 
 
 async def _read(board: Board, http: Fetcher, tier: str) -> tuple[Board, list[RawJob], str | None]:
@@ -57,7 +67,7 @@ async def _enrich(board: Board, job: RawJob, http: Fetcher) -> RawJob:
 
 
 async def scan(tier: str, only: str | None) -> tuple[list[Opportunity], dict]:
-    boards = load_boards(tier, only)
+    boards = load_boards(only)
     http = Fetcher()
     try:
         results = await asyncio.gather(*(_read(b, http, tier) for b in boards))
