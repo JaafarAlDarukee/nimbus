@@ -8,6 +8,7 @@ from datetime import datetime, timezone
 
 from ..geo import first_city, guess_country
 from ..models import Opportunity, RawJob
+from .exclusions import excluded, excluded_company, excluded_title
 
 
 def _rx(*patterns: str) -> re.Pattern:
@@ -133,6 +134,8 @@ def _hint(job: RawJob) -> str | None:
 
 def is_candidate(job: RawJob) -> bool:
     """Cheap title-only check, used before fetching full descriptions."""
+    if excluded_company(job.company) or excluded_title(job.title):
+        return False
     return _kind(job.title, _hint(job)) is not None and not STAFF_ROLE.search(job.title)
 
 
@@ -160,7 +163,7 @@ def fingerprint(company: str, title: str, place: str) -> str:
 
 def classify(job: RawJob) -> Opportunity | None:
     kind = _kind(job.title, _hint(job))
-    if kind is None or STAFF_ROLE.search(job.title):
+    if kind is None or STAFF_ROLE.search(job.title) or excluded(job.company, job.title, job.description):
         return None
 
     # Disciplines come from the title when it names one; otherwise only from words the description
