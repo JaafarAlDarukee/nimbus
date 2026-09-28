@@ -1,0 +1,39 @@
+name,sectors,regions,global_mobility,tier,parent,notes
+Toyota Manufacturing UK,automotive;manufacturing,East Midlands;Wales,japan;europe,priority,Toyota Motor Corporation,Burnaston (vehicles) and Deeside (engines)
+Nissan Motor Manufacturing UK,automotive;manufacturing,North East,japan;europe,priority,Nissan,Sunderland plant
+Hitachi Rail,rail;manufacturing,North East,japan;europe,priority,Hitachi,Newton Aycliffe factory
+Komatsu UK,construction equipment;manufacturing,North East,japan;europe,priority,Komatsu,Birtley plant
+Rolls-Royce,aerospace;defence;energy,East Midlands;South West;North West,europe;north_america;asia,priority,,
+BAE Systems,defence;aerospace;maritime,North West;Yorkshire and the Humber;South West;Scotland,middle_east;north_america;australia,priority,,Includes Brough site
+JLR,automotive;manufacturing,West Midlands;North West,europe;asia,priority,Tata Motors,
+Yamazaki Mazak UK,machine tools;manufacturing,West Midlands,japan;europe,priority,Yamazaki Mazak,Worcester; may not advertise; check speculative route
+Sony UK Technology Centre,electronics;manufacturing,Wales,japan,priority,Sony,Pencoed; short or unannounced windows; check speculative route
+Mitsubishi Electric UK,electrical;hvac;automation,East of England;Scotland,japan;europe,priority,Mitsubishi Electric,Has register-interest style forms; check speculative route
+Airbus UK,aerospace,South West;Wales,europe,priority,Airbus,Filton and Broughton
+Siemens UK,automation;energy;rail;manufacturing,UK-wide,europe;north_america,priority,Siemens,
+Siemens Mobility,rail;manufacturing,Yorkshire and the Humber;UK-wide,europe,priority,Siemens,Goole rail factory
+Siemens Gamesa Renewable Energy,renewables;manufacturing,Yorkshire and the Humber,europe,priority,Siemens Energy,Hull blade factory
+GE Vernova,energy;manufacturing,UK-wide,europe;north_america;middle_east,standard,,
+JCB,construction equipment;manufacturing,West Midlands,europe;asia;north_america,priority,,Staffordshire
+Caterpillar UK,construction equipment;manufacturing,UK-wide,north_america;europe,priority,Caterpillar,
+Cummins UK,engines;manufacturing,North East;UK-wide,north_america;europe,priority,Cummins,
+Dyson,consumer products;robotics;manufacturing,South West,asia,priority,,Malmesbury
+Leonardo UK,aerospace;defence,South West;Scotland;UK-wide,europe,priority,Leonardo,
+MBDA UK,defence,East of England;North West,europe,priority,MBDA,
+Thales UK,defence;aerospace;rail,UK-wide,europe,priority,Thales,
+Babcock International,defence;engineering services,UK-wide,,priority,,
+GKN Aerospace,aerospace;manufacturing,UK-wide,europe;north_america,priority,,
+Renishaw,metrology;manufacturing,South West,,priority,,Gloucestershire
+Ocado Technology,robotics;automation,UK-wide,,priority,Ocado Group,
+McLaren,motorsport;automotive,South East,,priority,,Woking
+Williams Racing,motorsport,South East,,standard,,Grove
+Mercedes-AMG Petronas F1,motorsport,East Midlands;South East,europe,standard,Mercedes-Benz,Brackley and Brixworth
+Red Bull Technology,motorsport,South East,,standard,,Milton Keynes
+Bentley Motors,automotive;manufacturing,North West,europe,priority,Volkswagen Group,Crewe
+Aston Martin,automotive;manufacturing,West Midlands;Wales,,standard,,
+Reckitt,consumer goods;manufacturing,Yorkshire and the Humber;UK-wide,europe;asia,standard,,Hull site
+Smith+Nephew,medtech;manufacturing,Yorkshire and the Humber,europe;north_america,standard,,Hull area site
+UKAEA,fusion energy;research,South East,europe,priority,,Culham; research roles
+TWI,materials;joining;research,East of England,,standard,,Cambridge; research roles
+Manufacturing Technology Centre,manufacturing;research,West Midlands,,standard,,Coventry; research roles
+AMRC,manufacturing;research,Yorkshire and the Humber,,standard,University of Sheffield,Sheffield; research roles
