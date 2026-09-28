@@ -1,8 +1,9 @@
 name: Radar (priority, every 30 min)
 
+# Off-peak minutes: GitHub delays or drops scheduled runs at busy times like :00 and :30
 on:
   schedule:
-    - cron: "*/30 * * * *"
+    - cron: "13,43 * * * *"
   workflow_dispatch:
 
 concurrency:

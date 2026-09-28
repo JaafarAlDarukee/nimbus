@@ -4,7 +4,7 @@ name: Radar (full, every 4 hours)
 # When radar/ moves to its own public repo (unlimited minutes) this can run every 2 hours.
 on:
   schedule:
-    - cron: "15 */4 * * *"
+    - cron: "27 */4 * * *"
   workflow_dispatch:
 
 concurrency:
