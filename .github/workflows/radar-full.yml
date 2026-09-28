@@ -1,10 +1,10 @@
-name: Radar (full, every 4 hours)
+name: Radar (full, every 6 hours)
 
-# Every 4 hours keeps this private repo inside GitHub's free 3,000 minutes a month.
-# When radar/ moves to its own public repo (unlimited minutes) this can run every 2 hours.
+# Normally started every 6 hours by Supabase (pg_cron -> workflow_dispatch); this daily GitHub
+# schedule is a backup. Keeps the private repo inside GitHub's free 3,000 minutes a month.
 on:
   schedule:
-    - cron: "27 */4 * * *"
+    - cron: "27 4 * * *"
   workflow_dispatch:
 
 concurrency:

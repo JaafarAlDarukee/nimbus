@@ -1,9 +1,11 @@
 name: Radar (priority, every 30 min)
 
-# Off-peak minutes: GitHub delays or drops scheduled runs at busy times like :00 and :30
+# Normally started every 30 min by Supabase (pg_cron -> workflow_dispatch; see
+# supabase/migrations/*_radar_trigger.sql). GitHub's own schedule, which can be delayed or
+# skipped when GitHub is busy, is only a backup, on off-peak minutes.
 on:
   schedule:
-    - cron: "13,43 * * * *"
+    - cron: "13 */3 * * *"
   workflow_dispatch:
     inputs:
       only:

@@ -42,6 +42,10 @@ async def _read(board: Board, http: Fetcher, tier: str) -> tuple[Board, list[Raw
         return board, [], f"{type(error).__name__}: {error}"
 
 
+async def _passthrough(job: RawJob) -> RawJob:
+    return job
+
+
 async def _enrich(board: Board, job: RawJob, http: Fetcher) -> RawJob:
     reader = READERS[board.kind]
     if not hasattr(reader, "enrich"):
@@ -57,8 +61,18 @@ async def scan(tier: str, only: str | None) -> tuple[list[Opportunity], dict]:
     http = Fetcher()
     try:
         results = await asyncio.gather(*(_read(b, http, tier) for b in boards))
-        shortlist = [(board, job) for board, jobs, _ in results for job in jobs if is_candidate(job)]
-        enriched = await asyncio.gather(*(_enrich(b, j, http) for b, j in shortlist))
+        # Jobs listed in several countries show up once per country; keep one copy
+        unique: dict[str, tuple[Board, RawJob]] = {}
+        for board, jobs, _ in results:
+            for job in jobs:
+                if is_candidate(job):
+                    unique.setdefault(job.url, (board, job))
+        shortlist = list(unique.values())
+        # Full descriptions (skills, closing dates) only matter for UK/Ireland roles, or when the
+        # country is still unknown; roles abroad are classified from their title alone
+        enriched = await asyncio.gather(*(
+            _enrich(b, j, http) if j.country in (None, "GB", "IE") else _passthrough(j) for b, j in shortlist
+        ))
     finally:
         await http.aclose()
 

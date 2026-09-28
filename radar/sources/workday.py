@@ -7,6 +7,7 @@ global-mobility tag)."""
 
 from __future__ import annotations
 
+import asyncio
 import re
 from datetime import datetime, timedelta, timezone
 from urllib.parse import urlsplit
@@ -92,9 +93,11 @@ async def fetch(board: Board, http: Fetcher, tier: str) -> list[RawJob]:
     else:
         groups.append((None, {}))
 
+    # Countries are listed side by side; the shared Fetcher still caps requests per host
+    listings = await asyncio.gather(*(_list(http, api, facets) for _, facets in groups))
     jobs: list[RawJob] = []
-    for code, facets in groups:
-        for posting in await _list(http, api, facets):
+    for (code, _), postings in zip(groups, listings):
+        for posting in postings:
             path = posting.get("externalPath", "")
             jobs.append(
                 RawJob(
