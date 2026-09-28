@@ -13,13 +13,26 @@ from .models import Opportunity
 PRECISE_SOURCES = {"greenhouse", "lever", "ashby", "smartrecruiters", "workable"}
 
 
+def _explain_errors(response: httpx.Response) -> None:
+    """Print Supabase's own error message (never contains the key) so failures are easy to fix."""
+    if response.is_error:
+        print(f"Supabase said {response.status_code} for {response.request.url.path}: {response.text[:500]}")
+
+
 def client() -> httpx.Client:
     url = os.environ["SUPABASE_URL"].rstrip("/")
-    key = os.environ["SUPABASE_SECRET_KEY"]
+    key = os.environ["SUPABASE_SECRET_KEY"].strip()
+    if key.startswith("sb_publishable_"):
+        print("SUPABASE_SECRET_KEY holds the *publishable* key; it needs the sb_secret_... key instead")
+    elif "•" in key or "*" in key:
+        print("SUPABASE_SECRET_KEY holds the masked (dotted) text; click the copy icon to copy the real key")
+    elif not key.startswith(("sb_secret_", "eyJ")):
+        print("SUPABASE_SECRET_KEY isn't in a recognised key format; copy the sb_secret_... key again")
     return httpx.Client(
         base_url=f"{url}/rest/v1",
         headers={"apikey": key, "Content-Type": "application/json"},
         timeout=60,
+        event_hooks={"response": [lambda r: (r.read(), _explain_errors(r))]},
     )
 
 
