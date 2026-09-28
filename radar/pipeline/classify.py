@@ -96,7 +96,8 @@ SKILLS: dict[str, re.Pattern] = {
     "Python": _rx(r"\bpython\b"),
     "C++": _rx(r"\bc\+\+"),
     "LabVIEW": _rx(r"\blabview\b"),
-    "PLC": _rx(r"\bplcs?\b"),
+    # Not bare "PLC": that's also a company suffix ("Man Group plc")
+    "PLC": _rx(r"\bplcs\b", r"\bplc (programming|control|systems?|software|logic)\b", r"\bprogrammable logic"),
     "CNC / Machining": _rx(r"\bcnc\b", r"\bmachining\b"),
     "Lean": _rx(r"\blean\b"),
     "Six Sigma": _rx(r"\bsix sigma\b"),
