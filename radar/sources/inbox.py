@@ -199,7 +199,18 @@ def jobs_from_email(sender: str, date: datetime | None, html: str) -> list[RawJo
 
 async def fetch(board: Board, http: Fetcher, tier: str) -> list[RawJob]:
     emails = await asyncio.to_thread(read_emails)
-    return [job for sender, _, date, html in emails for job in jobs_from_email(sender, date, html)]
+    jobs: list[RawJob] = []
+    per_sender: dict[str, list[int]] = {}
+    for sender, _, date, html in emails:
+        found = jobs_from_email(sender, date, html)
+        jobs.extend(found)
+        counts = per_sender.setdefault(sender.rsplit("@", 1)[-1].lower(), [0, 0])
+        counts[0] += 1
+        counts[1] += len(found)
+    # Safe for public logs: sender domains and counts only, never email content
+    for domain, (email_count, job_count) in sorted(per_sender.items()):
+        print(f"  inbox: {domain}: {email_count} emails -> {job_count} jobs")
+    return jobs
 
 
 def inspect() -> None:
