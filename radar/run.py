@@ -161,6 +161,10 @@ def main() -> None:
         new, first_run = save(opportunities, stats, args.tier)
         send_new(new, first_run, total_tracked=len(opportunities))
 
+        from .notify.admin import notify_access_requests
+
+        notify_access_requests()
+
 
 if __name__ == "__main__":
     main()
