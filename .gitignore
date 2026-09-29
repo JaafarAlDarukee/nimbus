@@ -19,3 +19,7 @@ Thumbs.db
 
 # Design exports (large, private working files)
 design/
+
+# Obsidian's per-device state
+vault/.obsidian/workspace*.json
+vault/.obsidian/cache

@@ -1,0 +1,31 @@
+# Gotchas (learned the hard way)
+
+Back to [[00 Start Here]]
+
+## Windows / PowerShell
+- `npx` in the owner's terminal: scripts are blocked (execution policy). Use **`npx.cmd`** instead of `npx` in instructions for the owner. (Claude's own PowerShell tool can run `npx`.)
+- `Set-Content -Encoding utf8` in PowerShell 5.1 writes a **BOM**; write files with the Write tool or `[IO.File]::WriteAllText(..., New-Object System.Text.UTF8Encoding $false)`.
+- Double quotes inside PowerShell here-strings break `git commit -m`: use `git commit -F <file>`.
+- `jq` strings with spaces inside `gh ... --jq '...'` break in PowerShell; use the Bash tool for jq, or simpler output.
+- `Set-Location` persists between PowerShell calls; return to the project root afterwards.
+
+## GitHub
+- Scheduled workflows get delayed/skipped, especially at :00/:30 → Supabase pg_cron triggers them.
+- Public repo = public logs: print counts only, never emails, names, chat ids or job lists from inboxes.
+
+## Common Crawl (discovery)
+- The index is overloaded: 503, 504, cut-off responses and dropped connections. `radar/discover/commoncrawl.py` retries, second-passes failed pages, and combines 3 crawls. A bad run can only add boards (merge), never shrink.
+
+## Supabase email
+- The built-in email sender only delivers to **project members** (the owner) and is rate-limited; the free plan **won't allow custom email templates** without your own SMTP.
+- Before inviting friends: set SMTP to the Nimbus Gmail (Auth → SMTP settings, app password typed by the owner), then uncomment the templates in `supabase/config.toml` and `config push`.
+- Login links requested from the landing page use PKCE → must be opened in the **same browser**. Approval emails use the implicit flow → work anywhere (`/auth/confirm`).
+
+## Supabase config push
+- It pushes every declared auth setting. Before pushing, preview and set unrelated local values to match the live project (we matched: `max_frequency = "1m0s"`, `otp_length = 8`, MFA TOTP enroll/verify = true, storage analytics enabled/max_namespaces = 10).
+
+## Workday
+- Country filter can be nested inside a location group; some tenants return duplicate postings across pages (dedupe by URL). Names come with codes ("GBA0 Revvity"): clean with `pipeline/names.py`.
+
+## Telegram
+- A bot can't message anyone until they message it first (Start). Channel posts need the bot as channel admin. `telegram-setup.yml` lists chat ids that messaged the bot.
