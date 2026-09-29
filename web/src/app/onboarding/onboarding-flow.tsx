@@ -51,11 +51,42 @@ const HALO: Record<string, string> = {
 };
 
 const eyebrow = "text-xs font-semibold uppercase tracking-[0.08em] text-tx3";
+/** Cards appear one after another (capped so long lists don't drag). */
+const stagger = (i: number): React.CSSProperties => ({ animationDelay: `${Math.min(i, 12) * 35}ms` });
 const textInput =
   "h-[52px] rounded-xl border border-line2 bg-s1 px-4 text-base text-tx outline-none focus:border-sky";
 const addInput =
   "h-11 flex-1 rounded-[10px] border border-dashed border-line2 bg-transparent px-3.5 text-sm text-tx outline-none focus:border-l-sky";
 const addButton = "h-11 rounded-[10px] border border-line2 bg-s2 px-4 text-sm font-medium text-tx";
+
+/** Counts smoothly from the last number to the new one (instant if the device asks for less motion). */
+function CountUp({ value }: { value: number | null }) {
+  const [shown, setShown] = useState<number | null>(value);
+  const current = useRef(0);
+
+  useEffect(() => {
+    if (value === null) return;
+    const from = current.current;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches || from === value) {
+      current.current = value;
+      setShown(value);
+      return;
+    }
+    const start = performance.now();
+    let frame = 0;
+    const tick = (now: number) => {
+      const progress = Math.min(1, (now - start) / 700);
+      const next = Math.round(from + (value - from) * (1 - Math.pow(1 - progress, 3)));
+      current.current = next;
+      setShown(next);
+      if (progress < 1) frame = requestAnimationFrame(tick);
+    };
+    frame = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(frame);
+  }, [value]);
+
+  return <>{shown === null ? "…" : shown.toLocaleString("en-GB")}</>;
+}
 
 function Tick({ on, size = 20 }: { on: boolean; size?: number }) {
   return (
@@ -82,7 +113,7 @@ function Chip({ label, on, onClick, size = "md" }: { label: string; on: boolean;
       aria-pressed={on}
       onClick={onClick}
       className={cn(
-        "whitespace-nowrap rounded-full border px-3.5 font-medium transition-colors",
+        "whitespace-nowrap rounded-full border px-3.5 font-medium transition-[transform,border-color,background-color,color] duration-200 active:scale-95",
         size === "lg" ? "h-[42px] text-sm" : "h-10 text-[13px]",
       )}
       style={{
@@ -294,22 +325,18 @@ export function OnboardingFlow({
                 className="relative grid grid-cols-[22px_minmax(0,1fr)] items-start gap-3 bg-transparent pb-2.5 text-left disabled:cursor-default"
               >
                 <span
-                  className="absolute left-2.5 top-4 w-px"
+                  className="absolute left-2.5 top-4 w-px transition-colors duration-700"
                   style={{ bottom: -2, background: i === STEPS.length - 1 ? "transparent" : done ? "rgba(143,199,255,.45)" : "rgba(135,147,166,.22)" }}
                 />
                 <span className="relative grid size-[22px] place-items-center">
                   <span
-                    className="rounded-full border"
+                    className={cn("rounded-full border transition-all duration-500", current && "animate-star-pulse")}
                     style={{
                       width: current ? 10 : done ? 8 : 6,
                       height: current ? 10 : done ? 8 : 6,
                       background: current ? "#fff" : done ? "#8FC7FF" : "transparent",
                       borderColor: current ? "#fff" : done ? "#8FC7FF" : "#4A5568",
-                      boxShadow: current
-                        ? "0 0 0 4px rgba(143,199,255,.18),0 0 14px rgba(143,199,255,.8)"
-                        : done
-                          ? "0 0 8px rgba(143,199,255,.6)"
-                          : "none",
+                      boxShadow: current ? undefined : done ? "0 0 8px rgba(143,199,255,.6)" : "none",
                     }}
                   />
                 </span>
@@ -324,7 +351,9 @@ export function OnboardingFlow({
           })}
         </div>
         <div className="relative mt-5 flex flex-none flex-col gap-1 rounded-[14px] border border-[rgba(143,199,255,.22)] bg-[rgba(7,10,18,.6)] px-[18px] py-4">
-          <span className="font-serif text-4xl leading-none tracking-[-0.03em]">{count === null ? "…" : count.toLocaleString("en-GB")}</span>
+          <span className="font-serif text-4xl leading-none tracking-[-0.03em]">
+            <CountUp value={count} />
+          </span>
           <span className="text-[13px] text-tx2">open roles on your radar right now</span>
         </div>
       </aside>
@@ -339,6 +368,7 @@ export function OnboardingFlow({
               Finish later
             </button>
           </div>
+          <div key={step} className="animate-fade-up flex flex-col gap-7">
           <div className="flex flex-col gap-3">
             <h1 className="m-0 font-serif text-[40px] font-normal leading-[1.02] tracking-[-0.03em] md:text-[50px]" style={{ textWrap: "balance" }}>
               {S.title}
@@ -394,7 +424,7 @@ export function OnboardingFlow({
           {S.key === "deg" && (
             <>
               <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-3">
-                {degreeOptions.map((d) => {
+                {degreeOptions.map((d, i) => {
                   const on = prefs.degrees.includes(d);
                   return (
                     <button
@@ -402,8 +432,8 @@ export function OnboardingFlow({
                       type="button"
                       aria-pressed={on}
                       onClick={() => toggle("degrees", d)}
-                      className="flex flex-col gap-2 rounded-[14px] border px-5 py-[18px] text-left"
-                      style={{ borderColor: on ? "var(--l-sky)" : "var(--line2)", background: on ? "var(--b-sky)" : "var(--s1)" }}
+                      className="animate-fade-up flex flex-col gap-2 rounded-[14px] border px-5 py-[18px] text-left transition-[transform,border-color,background-color] duration-200 active:scale-[.98]"
+                      style={{ borderColor: on ? "var(--l-sky)" : "var(--line2)", background: on ? "var(--b-sky)" : "var(--s1)", ...stagger(i) }}
                     >
                       <span className="flex items-center justify-between gap-2">
                         <span className="font-serif text-2xl tracking-[-0.02em]">{d}</span>
@@ -422,7 +452,7 @@ export function OnboardingFlow({
 
           {S.key === "year" && (
             <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
-              {YEARS.map((y) => {
+              {YEARS.map((y, i) => {
                 const on = prefs.year === y;
                 return (
                   <button
@@ -430,8 +460,8 @@ export function OnboardingFlow({
                     type="button"
                     aria-pressed={on}
                     onClick={() => update({ year: y })}
-                    className="h-16 rounded-xl border px-[18px] text-left text-[15px] font-medium"
-                    style={{ borderColor: on ? "var(--l-sky)" : "var(--line2)", background: on ? "var(--b-sky)" : "transparent", color: on ? "var(--t-sky)" : "var(--tx2)" }}
+                    className="animate-fade-up h-16 rounded-xl border px-[18px] text-left text-[15px] font-medium transition-[transform,border-color,background-color,color] duration-200 active:scale-[.98]"
+                    style={{ borderColor: on ? "var(--l-sky)" : "var(--line2)", background: on ? "var(--b-sky)" : "transparent", color: on ? "var(--t-sky)" : "var(--tx2)", ...stagger(i) }}
                   >
                     {y}
                   </button>
@@ -476,8 +506,8 @@ export function OnboardingFlow({
                   </div>
                 </div>
               )}
-              {sectorGroups.map((g) => (
-                <div key={g.g} className="flex flex-col gap-2.5">
+              {sectorGroups.map((g, i) => (
+                <div key={g.g} className="animate-fade-up flex flex-col gap-2.5" style={stagger(i + 2)}>
                   <span className={eyebrow}>{g.g}</span>
                   <div className="flex flex-wrap gap-2">
                     {g.items.map((s) => (
@@ -493,7 +523,7 @@ export function OnboardingFlow({
           {S.key === "types" && (
             <>
               <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                {[...TYPES, ...prefs.extra.types.map((t) => ({ t, d: "Added by you" }))].map((o) => {
+                {[...TYPES, ...prefs.extra.types.map((t) => ({ t, d: "Added by you" }))].map((o, i) => {
                   const on = prefs.types.includes(o.t);
                   return (
                     <button
@@ -501,8 +531,8 @@ export function OnboardingFlow({
                       type="button"
                       aria-pressed={on}
                       onClick={() => toggle("types", o.t)}
-                      className="grid grid-cols-[minmax(0,1fr)_20px] items-center gap-2.5 rounded-xl border px-4 py-3.5 text-left"
-                      style={{ borderColor: on ? "var(--l-sky)" : "var(--line2)", background: on ? "var(--b-sky)" : "transparent" }}
+                      className="animate-fade-up grid grid-cols-[minmax(0,1fr)_20px] items-center gap-2.5 rounded-xl border px-4 py-3.5 text-left transition-[transform,border-color,background-color] duration-200 active:scale-[.98]"
+                      style={{ borderColor: on ? "var(--l-sky)" : "var(--line2)", background: on ? "var(--b-sky)" : "transparent", ...stagger(i) }}
                     >
                       <span className="flex min-w-0 flex-col gap-[3px]">
                         <span className="text-[15px] font-medium">{o.t}</span>
@@ -655,7 +685,11 @@ export function OnboardingFlow({
               }}
             >
               {OFFERS.map((o, i) => (
-                <div key={o.t} className="grid grid-cols-[44px_minmax(0,1fr)_auto] items-center gap-4 px-[22px] py-4" style={{ borderTop: i ? "1px solid var(--line)" : "none" }}>
+                <div
+                  key={o.t}
+                  className="animate-fade-up grid grid-cols-[44px_minmax(0,1fr)_auto] items-center gap-4 px-[22px] py-4"
+                  style={{ borderTop: i ? "1px solid var(--line)" : "none", animationDelay: `${120 + i * 70}ms` }}
+                >
                   <span className="grid size-9 place-items-center rounded-full" style={{ background: HALO[o.c].replace(".35", ".12"), boxShadow: `0 0 18px ${HALO[o.c]}` }}>
                     <Sparkle className="size-3.5" style={{ fill: o.c }} />
                   </span>
@@ -673,6 +707,7 @@ export function OnboardingFlow({
               ))}
             </div>
           )}
+          </div>
         </div>
 
         <div className="sticky bottom-0 border-t border-line bg-[rgba(11,14,19,.92)] backdrop-blur-[8px]">

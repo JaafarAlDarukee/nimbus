@@ -14,7 +14,7 @@ Read in this order, then carry on from **Next up** below:
 6. [[11 Gotchas]] before running commands on this Windows machine
 
 ## Next up (as of 2026-09-30)
-- [ ] Owner is logged in and on onboarding (admin ✓, not onboarded yet). Add **gentle animation** to landing + onboarding (owner said it feels blank). See [[07 Design]].
+- [x] Gentle animation on landing + onboarding: twinkling stars, shooting stars, pulsing current star, fade-up steps, staggered cards, count-up (2026-09-30). See [[07 Design#Motion]].
 - [ ] Owner finishes onboarding; verify preferences saved ([[05 Database]] `profiles.preferences`).
 - [ ] **Opportunities page** from the design (For you feed using [[06 Website#Matching]], match rings, white detail drawer, "Open and apply" → tracker). Replace the old sidebar layout with the design's top bar.
 - [ ] **Personal Telegram alerts**: bot links `telegram_links` codes to accounts, then each user gets only their matches. See [[04 Radar#Alerts]].

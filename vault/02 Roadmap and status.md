@@ -13,10 +13,10 @@ Back to [[00 Start Here]] · updated 2026-09-30
 - **Website phase 1**: design tokens + fonts + brand; Landing (pixel-matched); 10-step Onboarding with live matching count; invite-by-approval (request access → admin approves → email); `/admin` page. See [[06 Website]].
 
 ## In progress 🔄
-- Owner is going through onboarding. Add animation (owner: "no animation, it's so blank").
+- Owner is going through onboarding (animation added 2026-09-30).
 
 ## Next ⏭️ (in order)
-1. Animation pass on landing + onboarding ([[07 Design#Motion]]).
+1. ~~Animation pass on landing + onboarding~~ ✅ done 2026-09-30.
 2. **Opportunities** page from design + For you feed + detail drawer + "Open and apply" modal → Tracker.
 3. **Personal Telegram alerts** (bot links accounts via `telegram_links`; per-user matching; the shared channel becomes news only).
 4. **Tracker** (Notion-style table + board, stages, ghosted after 21 days).

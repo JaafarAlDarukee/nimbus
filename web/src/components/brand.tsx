@@ -71,14 +71,29 @@ export function StarField({ count = 70, seed = 3, className }: { count?: number;
     y: (rnd() * 100).toFixed(1),
     r: rnd() > 0.85 ? 2 : 1,
     o: (0.25 + rnd() * 0.6).toFixed(2),
+    // About two in three stars twinkle, each at its own pace
+    twinkle: rnd() > 0.35,
+    duration: (2.5 + rnd() * 4).toFixed(1),
+    delay: (rnd() * 5).toFixed(1),
   }));
   return (
     <div aria-hidden className={cn("pointer-events-none absolute inset-0 overflow-hidden", className)}>
       {stars.map((star, i) => (
         <span
           key={i}
-          className="absolute rounded-full bg-white"
-          style={{ left: `${star.x}%`, top: `${star.y}%`, width: star.r, height: star.r, opacity: Number(star.o) }}
+          className={cn("absolute rounded-full bg-white", star.twinkle && "animate-twinkle")}
+          style={
+            {
+              left: `${star.x}%`,
+              top: `${star.y}%`,
+              width: star.r,
+              height: star.r,
+              opacity: Number(star.o),
+              "--o": star.o,
+              "--d": `${star.duration}s`,
+              "--delay": `${star.delay}s`,
+            } as React.CSSProperties
+          }
         />
       ))}
     </div>

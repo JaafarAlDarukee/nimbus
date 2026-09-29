@@ -155,6 +155,50 @@
   }
 }
 
+/* Motion: gentle, calm, and off for anyone who asks their device to reduce motion */
+@keyframes nimbus-twinkle {
+  0%, 100% { opacity: var(--o, 0.6); }
+  50% { opacity: calc(var(--o, 0.6) * 0.2); }
+}
+@keyframes nimbus-star-pulse {
+  0%, 100% { box-shadow: 0 0 0 4px rgba(143, 199, 255, 0.18), 0 0 14px rgba(143, 199, 255, 0.8); }
+  50% { box-shadow: 0 0 0 7px rgba(143, 199, 255, 0.08), 0 0 24px rgba(143, 199, 255, 1); }
+}
+@keyframes nimbus-fade-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes nimbus-shooting-star {
+  0% { transform: translate(0, 0) rotate(-18deg); opacity: 0; }
+  2% { opacity: 1; }
+  12% { transform: translate(-520px, 170px) rotate(-18deg); opacity: 0; }
+  100% { transform: translate(-520px, 170px) rotate(-18deg); opacity: 0; }
+}
+@keyframes nimbus-sparkle {
+  0%, 100% { transform: scale(1) rotate(0deg); opacity: 1; }
+  50% { transform: scale(0.7) rotate(45deg); opacity: 0.6; }
+}
+
+.animate-twinkle { animation: nimbus-twinkle var(--d, 4s) ease-in-out var(--delay, 0s) infinite; }
+.animate-star-pulse { animation: nimbus-star-pulse 2.4s ease-in-out infinite; }
+.animate-fade-up { animation: nimbus-fade-up 0.5s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.animate-sparkle { animation: nimbus-sparkle 3.2s ease-in-out infinite; }
+.shooting-star {
+  position: absolute;
+  width: 120px;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.9), rgba(143, 199, 255, 0));
+  animation: nimbus-shooting-star 9s ease-out 2s infinite;
+  opacity: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-twinkle, .animate-star-pulse, .animate-fade-up, .animate-sparkle, .shooting-star {
+    animation: none !important;
+  }
+  .shooting-star { display: none; }
+}
+
 @utility font-serif-tight {
   font-family: var(--font-newsreader), Georgia, serif;
   font-weight: 400;
