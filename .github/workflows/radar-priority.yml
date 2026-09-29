@@ -1,4 +1,4 @@
-name: Radar (priority, every 30 min)
+﻿name: Radar (priority, every 30 min)
 
 # Normally started every 30 min by Supabase (pg_cron -> workflow_dispatch; see
 # supabase/migrations/*_radar_trigger.sql). GitHub's own schedule, which can be delayed or
@@ -24,7 +24,7 @@ concurrency:
 jobs:
   scan:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v6
