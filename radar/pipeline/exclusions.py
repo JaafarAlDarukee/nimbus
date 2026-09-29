@@ -13,7 +13,8 @@ EXCLUDED_COMPANIES = re.compile(
     r"general dynamics|elbit|l3harris|rafael|saab|rheinmetall|kongsberg|hensoldt|chemring|cobham|"
     r"ultra electronics|dstl|atomic weapons|awe|naval group|navantia|"
     r"nuclear|ukaea|sellafield|westinghouse|urenco|cavendish nuclear|tokamak energy|first light fusion|"
-    r"rolls-royce submarines|rolls-royce smr"
+    r"rolls-royce submarines|rolls-royce smr|"
+    r"palantir|anduril|helsing|shield ai|general atomics|rebellion defen[cs]e"
     r")\b",
     re.I,
 )

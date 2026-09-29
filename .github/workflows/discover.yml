@@ -36,3 +36,29 @@ jobs:
             git pull --rebase
             git push
           fi
+
+  other-hiring-systems:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: radar/requirements.txt
+      - run: pip install -r radar/requirements.txt
+      - name: Find Greenhouse, Lever, Ashby, SmartRecruiters and Workable boards with UK jobs
+        run: python -m radar.discover.ats
+      - name: Save discovered boards to the repo
+        run: |
+          git config user.name "nimbus-discovery"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/discovered
+          if git diff --cached --quiet; then
+            echo "No changes"
+          else
+            git commit -m "Update discovered Greenhouse/Lever/Ashby/SmartRecruiters/Workable boards"
+            git pull --rebase
+            git push
+          fi

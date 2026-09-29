@@ -13,10 +13,12 @@ MAX_PAGES = 20
 
 async def fetch(board: Board, http: Fetcher, tier: str) -> list[RawJob]:
     jobs = []
+    # Priority runs ask only for UK jobs (the API filters by lowercase country code)
+    country = {"country": "gb"} if tier == "priority" else {}
     for page in range(MAX_PAGES):
         response = await http.get(
             f"https://api.smartrecruiters.com/v1/companies/{board.ref}/postings",
-            params={"limit": PAGE, "offset": page * PAGE},
+            params={"limit": PAGE, "offset": page * PAGE, **country},
         )
         response.raise_for_status()
         content = response.json().get("content", [])
