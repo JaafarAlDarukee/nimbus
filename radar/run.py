@@ -16,6 +16,8 @@ import time
 from datetime import datetime, timezone
 from pathlib import Path
 
+from dotenv import load_dotenv
+
 from .http import Fetcher
 from .models import Board, Opportunity, RawJob
 from .pipeline.classify import classify, is_candidate
@@ -113,7 +115,10 @@ def print_report(opportunities: list[Opportunity], stats: dict, seconds: float) 
     order = ["placement", "internship", "spring_week", "insight", "grad_scheme", "graduate_job",
              "research", "apprenticeship", "scholarship"]
     opportunities.sort(key=lambda o: (o.country != "GB", order.index(o.kind) if o.kind in order else 99, o.company))
-    for o in opportunities:
+    # GitHub Actions logs are public (the repo is public): only print the summary there, never
+    # individual jobs, which may come from someone's own alert emails
+    listed = [] if os.environ.get("GITHUB_ACTIONS") else opportunities
+    for o in listed:
         posted = o.posted_at.strftime("%d %b") if o.posted_at else "?"
         print(f"[{o.kind}] {o.company} | {o.title} | {o.location or '-'} ({o.country or '?'}) | posted {posted}")
         print(f"    {o.apply_url}")
@@ -134,6 +139,7 @@ def print_report(opportunities: list[Opportunity], stats: dict, seconds: float) 
 
 def main() -> None:
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    load_dotenv()  # local runs can keep keys in a .env file (never committed)
     parser = argparse.ArgumentParser(description="Nimbus radar")
     parser.add_argument("--tier", choices=["priority", "full"], default="full")
     parser.add_argument("--only", help="only boards whose company name contains this text")
