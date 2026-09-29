@@ -18,6 +18,7 @@ from pathlib import Path
 
 from ..http import Fetcher
 from ..pipeline.exclusions import excluded_company
+from ..pipeline.names import clean_company_name
 from ..sources.workday import _find_country_facet
 from .commoncrawl import urls
 
@@ -67,6 +68,7 @@ async def probe(http: Fetcher, host: str, site: str, limit: asyncio.Semaphore) -
         except Exception:
             return None
 
+    name = clean_company_name(name)
     if excluded_company(name):
         return None
     return {

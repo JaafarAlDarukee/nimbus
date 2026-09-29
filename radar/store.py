@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import os
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 import httpx
 
@@ -56,9 +56,47 @@ def _company_ids(db: httpx.Client) -> dict[str, str]:
     return ids
 
 
-def _row(o: Opportunity, company_ids: dict[str, str]) -> dict:
+def _fetch_all(db: httpx.Client, path: str, params: dict) -> list[dict]:
+    """Read every row, 1,000 at a time (the API's page size)."""
+    rows: list[dict] = []
+    while True:
+        response = db.get(path, params={**params, "limit": 1000, "offset": len(rows)})
+        response.raise_for_status()
+        batch = response.json()
+        rows.extend(batch)
+        if len(batch) < 1000:
+            return rows
+
+
+def _record_boards(db: httpx.Client, board_results: list, now: str) -> tuple[dict[str, str], set[str]]:
+    """Save each board's health to `sources`. Returns (board key -> source id, keys of boards
+    seen for the very first time). A new board's existing jobs aren't news, so they don't alert."""
+    known = {f"{r['kind']}|{r['url']}" for r in _fetch_all(db, "/sources", {"select": "kind,url"})}
+    ok = [{"kind": b.kind, "url": b.ref, "check_every_minutes": 30, "last_checked_at": now,
+           "last_success_at": now, "last_error": None, "consecutive_failures": 0}
+          for b, error in board_results if not error]
+    failed = [{"kind": b.kind, "url": b.ref, "check_every_minutes": 30, "last_checked_at": now,
+               "last_error": error[:500]}
+              for b, error in board_results if error]
+    ids: dict[str, str] = {}
+    for rows in (ok, failed):
+        for chunk in _batches(rows, 500):
+            response = db.post(
+                "/sources",
+                params={"on_conflict": "kind,url"},
+                headers={"Prefer": "resolution=merge-duplicates,return=representation"},
+                json=chunk,
+            )
+            response.raise_for_status()
+            ids.update({f"{r['kind']}|{r['url']}": r["id"] for r in response.json()})
+    new_boards = {key for key in ids if key not in known}
+    return ids, new_boards
+
+
+def _row(o: Opportunity, company_ids: dict[str, str], source_ids: dict[str, str]) -> dict:
     return {
         "fingerprint": o.fingerprint,
+        "source_id": source_ids.get(o.raw.get("board", "")),
         "company_id": company_ids.get(o.company.lower()),
         "company_name": o.company,
         "title": o.title,
@@ -79,18 +117,20 @@ def _row(o: Opportunity, company_ids: dict[str, str]) -> dict:
 
 
 def save(opportunities: list[Opportunity], stats: dict, tier: str) -> tuple[list[dict], bool]:
-    """Insert new opportunities, refresh ones seen before, log the run.
+    """Insert new opportunities, refresh ones seen before, record board health, log the run.
 
-    Returns (new rows, first_run). On the very first run everything is "new", so callers
-    should not alert on it."""
+    Returns (rows worth alerting, first_run). Nothing alerts on the very first run, and jobs
+    from a board checked for the first time are saved quietly (they aren't newly posted)."""
     now = datetime.now(timezone.utc)
     with client() as db:
         previous_runs = db.get("/checker_runs", params={"select": "id", "limit": 1})
         previous_runs.raise_for_status()
         first_run = not previous_runs.json()
 
+        source_ids, new_boards = _record_boards(db, stats["board_results"], now.isoformat())
         company_ids = _company_ids(db)
-        rows = [_row(o, company_ids) for o in opportunities]
+        rows = [_row(o, company_ids, source_ids) for o in opportunities]
+        board_of = {o.fingerprint: o.raw.get("board", "") for o in opportunities}
 
         new: list[dict] = []
         for chunk in _batches(rows, 200):
@@ -133,5 +173,15 @@ def save(opportunities: list[Opportunity], stats: dict, tier: str) -> tuple[list
         )
         run.raise_for_status()
 
-    print(f"Saved: {len(new)} new, {len(seen_again)} seen again{' (first run: alerts skipped)' if first_run else ''}")
-    return new, first_run
+    # Worth an alert: from a board we already knew, and posted in the last week (or date unknown)
+    week_ago = now - timedelta(days=7)
+    alertable = [
+        row for row in new
+        if board_of.get(row["fingerprint"]) not in new_boards
+        and (not row.get("posted_at") or datetime.fromisoformat(row["posted_at"]) >= week_ago)
+    ]
+    quiet = len(new) - len(alertable)
+    print(f"Saved: {len(new)} new ({quiet} saved quietly: from {len(new_boards)} newly added boards "
+          f"or posted over a week ago), "
+          f"{len(seen_again)} seen again{' (first run: alerts skipped)' if first_run else ''}")
+    return alertable, first_run

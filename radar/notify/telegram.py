@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import html
 import os
+import re
 import time
 from datetime import datetime
 
@@ -11,6 +12,23 @@ import httpx
 
 MAX_MESSAGES_PER_RUN = 25
 ALERT_COUNTRIES = {"GB", "IE"}
+
+# The shared channel is for engineering-type roles. Everything else is still saved (for the
+# website and friends' own filters later), it just doesn't ping the channel.
+ENGINEERING = {"mechanical", "manufacturing", "robotics", "electrical", "aerospace", "automotive",
+               "materials", "civil", "chemical"}
+TECHNICAL_TITLE = re.compile(
+    r"\b(engineer\w*|technical|technician|design|manufactur\w*|production|quality|maintenance|"
+    r"r&d|research|scien\w+|lab\w*|mechanic\w*|robot\w*|automation|energy|sustainab\w+|environment\w*)\b",
+    re.I,
+)
+
+
+def is_engineering(row: dict) -> bool:
+    disciplines = set(row.get("disciplines") or [])
+    if disciplines & ENGINEERING:
+        return True
+    return not disciplines and bool(TECHNICAL_TITLE.search(row.get("title") or ""))
 
 KIND_LABELS = {
     "placement": "Placement", "internship": "Internship", "spring_week": "Spring week",
@@ -70,7 +88,7 @@ def send_new(rows: list[dict], first_run: bool, total_tracked: int) -> None:
                   "From now on you'll get a message here the moment a new one appears.")
             return
 
-        alerts = [r for r in rows if r.get("country") in ALERT_COUNTRIES]
+        alerts = [r for r in rows if r.get("country") in ALERT_COUNTRIES and is_engineering(r)]
         for row in alerts[:MAX_MESSAGES_PER_RUN]:
             _send(client, token, chat_id, format_alert(row), row.get("apply_url"))
             time.sleep(1.1)  # Telegram allows about one message per second per chat

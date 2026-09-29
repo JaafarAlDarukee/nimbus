@@ -20,6 +20,7 @@ from .http import Fetcher
 from .models import Board, Opportunity, RawJob
 from .pipeline.classify import classify, is_candidate
 from .pipeline.exclusions import excluded_company
+from .pipeline.names import clean_company_name
 from .sources import READERS
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -36,6 +37,7 @@ def load_boards(only: str | None) -> list[Board]:
         with path.open(newline="", encoding="utf-8") as handle:
             for row in csv.DictReader(handle):
                 board = Board(**{k: (v or "").strip() for k, v in row.items()})
+                board.company = clean_company_name(board.company)
                 key = (board.kind, board.ref.lower().rstrip("/"))
                 if board.kind in READERS and key not in seen and not excluded_company(board.company):
                     seen.add(key)
@@ -43,6 +45,10 @@ def load_boards(only: str | None) -> list[Board]:
     if only:
         boards = [b for b in boards if only.lower() in b.company.lower()]
     return boards
+
+
+def board_key(board: Board) -> str:
+    return f"{board.kind}|{board.ref}"
 
 
 async def _read(board: Board, http: Fetcher, tier: str) -> tuple[Board, list[RawJob], str | None]:
@@ -75,6 +81,7 @@ async def scan(tier: str, only: str | None) -> tuple[list[Opportunity], dict]:
         unique: dict[str, tuple[Board, RawJob]] = {}
         for board, jobs, _ in results:
             for job in jobs:
+                job.raw["board"] = board_key(board)
                 if is_candidate(job):
                     unique.setdefault(job.url, (board, job))
         shortlist = list(unique.values())
@@ -94,6 +101,7 @@ async def scan(tier: str, only: str | None) -> tuple[list[Opportunity], dict]:
 
     stats = {
         "boards": len(boards),
+        "board_results": [(b, err) for b, _, err in results],
         "failed": [(b.company, b.ref, err) for b, _, err in results if err],
         "jobs_seen": sum(len(jobs) for _, jobs, _ in results),
         "shortlisted": len(shortlist),

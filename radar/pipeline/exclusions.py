@@ -9,7 +9,7 @@ import re
 
 EXCLUDED_COMPANIES = re.compile(
     r"\b("
-    r"airbus|bae systems|mbda|thales|leonardo|babcock|qinetiq|lockheed|raytheon|rtx|northrop|"
+    r"airbus|boeing|bae systems|mbda|thales|leonardo|leidos|babcock|qinetiq|lockheed|raytheon|rtx|northrop|"
     r"general dynamics|elbit|l3harris|rafael|saab|rheinmetall|kongsberg|hensoldt|chemring|cobham|"
     r"ultra electronics|dstl|atomic weapons|awe|naval group|navantia|"
     r"nuclear|ukaea|sellafield|westinghouse|urenco|cavendish nuclear|tokamak energy|first light fusion|"
