@@ -10,6 +10,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
+  const { data: profile } = await supabase.from("profiles").select("onboarded_at").eq("id", user.id).maybeSingle();
+  if (!profile?.onboarded_at) redirect("/onboarding");
+
   return (
     <div className="flex min-h-screen">
       <AppSidebar email={user.email ?? ""} />

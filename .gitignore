@@ -16,3 +16,6 @@ node_modules/
 Thumbs.db
 .vscode/
 .idea/
+
+# Design exports (large, private working files)
+design/
