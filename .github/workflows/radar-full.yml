@@ -1,4 +1,4 @@
-﻿name: Radar (full, every 6 hours)
+name: Radar (full, every 6 hours)
 
 # Normally started every 6 hours by Supabase (pg_cron -> workflow_dispatch); this daily GitHub
 # schedule is a backup. Keeps the private repo inside GitHub's free 3,000 minutes a month.
