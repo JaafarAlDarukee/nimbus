@@ -25,6 +25,7 @@ jobs:
       - name: Find Workday sites with UK jobs
         run: python -m radar.discover.workday
       - name: Save discovered boards to the repo
+        if: always()
         run: |
           git config user.name "nimbus-discovery"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -51,6 +52,7 @@ jobs:
       - name: Find Greenhouse, Lever, Ashby, SmartRecruiters and Workable boards with UK jobs
         run: python -m radar.discover.ats
       - name: Save discovered boards to the repo
+        if: always()
         run: |
           git config user.name "nimbus-discovery"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"

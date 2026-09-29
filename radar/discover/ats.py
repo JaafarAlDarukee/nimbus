@@ -10,10 +10,8 @@ GitHub Actions (weekly); it makes tens of thousands of requests."""
 from __future__ import annotations
 
 import asyncio
-import csv
 import re
 import sys
-from pathlib import Path
 from urllib.parse import parse_qs, urlsplit
 
 from ..geo import country_code, guess_country
@@ -21,10 +19,8 @@ from ..http import Fetcher
 from ..pipeline.exclusions import excluded_company
 from ..pipeline.names import clean_company_name
 from ..sources.greenhouse import list_jobs as greenhouse_jobs
+from . import save_boards
 from .commoncrawl import urls
-
-ROOT = Path(__file__).resolve().parents[2]
-OUTPUT_DIR = ROOT / "data" / "discovered"
 
 PATTERNS = {
     "greenhouse": ["boards.greenhouse.io/*", "job-boards.greenhouse.io/*", "job-boards.eu.greenhouse.io/*"],
@@ -167,14 +163,14 @@ async def discover(kind: str) -> list[dict]:
 
 def main() -> None:
     kinds = sys.argv[1:] or list(PATTERNS)
-    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     for kind in kinds:
-        boards = asyncio.run(discover(kind))
-        with (OUTPUT_DIR / f"{kind}.csv").open("w", newline="", encoding="utf-8") as handle:
-            writer = csv.DictWriter(handle, fieldnames=["company", "kind", "ref", "tier", "notes"])
-            writer.writeheader()
-            writer.writerows(boards)
-        print(f"{kind}: saved {len(boards)} boards with UK jobs")
+        try:
+            boards = asyncio.run(discover(kind))
+        except Exception as error:  # one hiring system failing mustn't lose the others' results
+            print(f"{kind}: discovery failed ({type(error).__name__}: {error}); keeping earlier results")
+            continue
+        total = save_boards(kind, boards)
+        print(f"{kind}: found {len(boards)} boards with UK jobs this run; {total} saved in total")
 
 
 if __name__ == "__main__":

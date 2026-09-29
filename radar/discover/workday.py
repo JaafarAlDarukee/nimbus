@@ -12,18 +12,15 @@ Meant to run on GitHub Actions (weekly), not a home PC: it makes a few thousand 
 from __future__ import annotations
 
 import asyncio
-import csv
 import re
-from pathlib import Path
 
 from ..http import Fetcher
 from ..pipeline.exclusions import excluded_company
 from ..pipeline.names import clean_company_name
 from ..sources.workday import _find_country_facet
+from . import save_boards
 from .commoncrawl import urls
 
-ROOT = Path(__file__).resolve().parents[2]
-OUTPUT = ROOT / "data" / "discovered" / "workday.csv"
 SITE_URL = re.compile(
     r"https?://([a-z0-9-]+\.wd\d+\.myworkdayjobs\.com)(?::\d+)?/(?:[a-z]{2}-[A-Z]{2}/)?([A-Za-z0-9_-]+)", re.I
 )
@@ -94,12 +91,8 @@ async def discover() -> list[dict]:
 
 def main() -> None:
     boards = asyncio.run(discover())
-    OUTPUT.parent.mkdir(parents=True, exist_ok=True)
-    with OUTPUT.open("w", newline="", encoding="utf-8") as handle:
-        writer = csv.DictWriter(handle, fieldnames=["company", "kind", "ref", "tier", "notes"])
-        writer.writeheader()
-        writer.writerows(boards)
-    print(f"Saved {len(boards)} Workday boards with UK jobs to {OUTPUT.relative_to(ROOT)}")
+    total = save_boards("workday", boards)
+    print(f"Workday: found {len(boards)} boards with UK jobs this run; {total} saved in total")
 
 
 if __name__ == "__main__":
