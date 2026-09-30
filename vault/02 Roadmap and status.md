@@ -21,7 +21,7 @@ Back to [[00 Start Here]] · updated 2026-09-30
 ## Next ⏭️ (in order)
 1. ~~Animation pass on landing + onboarding~~ ✅ done 2026-09-30.
 2. ~~**Opportunities** page from design~~ ✅ done 2026-09-30 (owner hasn't seen it signed in yet: ask for feedback).
-3. **Personal Telegram alerts** (bot links accounts via `telegram_links`; per-user matching; the shared channel becomes news only).
+3. **Personal Telegram alerts** 🔄 built 2026-09-30, waiting on the owner: add `TELEGRAM_BOT_TOKEN` as a Supabase *Edge Function secret* (dashboard → Edge Functions → Secrets), then run the `telegram-webhook` workflow, then Profile → Telegram → Connect. Bot = `supabase/functions/telegram` (link, tutorial, buttons); radar `notify/personal.py` (matches, reminders, closing soon, follow-ups); matching mirrored in `radar/match.py`. The shared channel still posts engineering roles; decide later whether to keep it.
 4. ~~Tracker, Profile, Calendar, Companies, CV studio, Mobile~~ ✅ built 2026-09-30. Still to come inside them: Telegram reminders for Calendar "Remind me", "expected to open" predictions (need a year of history), morning digest email, Discord/WhatsApp (shown as Soon), Gemini key for "Give me ideas" (optional, `GEMINI_API_KEY` in `web/.env.local` / Vercel).
 5. Telegram alert message in the design's format ("Strong match for you" + Open and apply / Save / Applied / Not for me buttons) as part of personal alerts.
 6. Go online: Vercel + domain; Supabase SMTP via Nimbus Gmail; invite friends.

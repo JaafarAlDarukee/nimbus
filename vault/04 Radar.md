@@ -32,3 +32,10 @@ Back to [[00 Start Here]] · code in `radar/`
 
 ## Inbox
 `radar/sources/inbox.py`: Gmail via IMAP (app password), read-only, last 3 days, never opens links. Recognises job links per site; strips tracking; logs only per-sender counts. `python -m radar.sources.inbox --inspect` (local only, needs `.env`) shows what it finds, to tune parsers once real alert emails arrive.
+
+## Changes 2026-09-30
+- **Adzuna removed**: its jobs linked to adzuna.co.uk and appeared ~5.2 days after the employer posted (measured on jobs seen on both). Its 409 rows were closed.
+- **Classifier tightened** (`pipeline/classify.py`): hint words match whole words ("Internal" ≠ intern); French "stage" needs French context; `staff`, `lead engineer`, `postdoc` are not student roles; disciplines come from the title, and from the description only for technical titles with specific wording (`DESCRIPTION_DISCIPLINES`); new `creative` discipline.
+- `python -m radar.reclassify` (workflow `reclassify.yml`, manual) re-applies the rules to saved rows: first run relabelled 2,389, closed 1,245 non-student, 409 Adzuna, 70 excluded.
+- **Personal alerts**: `notify/personal.py` after every run (`send_matches` for new rows, `send_reminders` every run). `alerts_sent` channels: `telegram`, `telegram:closing`, `telegram:follow-up`. Max 8 matches per person per run, score ≥ 60.
+
