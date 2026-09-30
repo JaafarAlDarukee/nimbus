@@ -34,3 +34,8 @@ Back to [[00 Start Here]]
 
 ## Telegram
 - A bot can't message anyone until they message it first (Start). Channel posts need the bot as channel admin. `telegram-setup.yml` lists chat ids that messaged the bot.
+- Workday rate-limits per server group (`wd1.myworkdayjobs.com`), not per company subdomain.
+- Supabase Edge Functions: deploy with `npx supabase functions deploy <name> --use-api --no-verify-jwt` (no Docker needed). Their secrets are separate from GitHub's: set in dashboard → Edge Functions → Secrets.
+- Telegram webhooks and `getUpdates` can't both work: with the webhook set, the old `telegram-setup` workflow (getUpdates) returns nothing.
+- `radar.reclassify` must be re-run after changing classify/names rules; the radar only fixes new rows.
+

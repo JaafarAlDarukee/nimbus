@@ -38,4 +38,8 @@ Back to [[00 Start Here]] · code in `radar/`
 - **Classifier tightened** (`pipeline/classify.py`): hint words match whole words ("Internal" ≠ intern); French "stage" needs French context; `staff`, `lead engineer`, `postdoc` are not student roles; disciplines come from the title, and from the description only for technical titles with specific wording (`DESCRIPTION_DISCIPLINES`); new `creative` discipline.
 - `python -m radar.reclassify` (workflow `reclassify.yml`, manual) re-applies the rules to saved rows: first run relabelled 2,389, closed 1,245 non-student, 409 Adzuna, 70 excluded.
 - **Personal alerts**: `notify/personal.py` after every run (`send_matches` for new rows, `send_reminders` every run). `alerts_sent` channels: `telegram`, `telegram:closing`, `telegram:follow-up`. Max 8 matches per person per run, score ≥ 60.
+- **Jobs that vanish are closed** (`close_gone_opportunities()`, called at the end of full runs): not seen for 3 days on a board read OK in the last 12 h, past the closing date, or alert-email jobs after 30 days. Re-seen jobs reopen.
+- **Workday 429s fixed** (`radar/http.py`): one concurrency limit per Workday server group (wd1, wd3…; 5 at a time) instead of per company, `Retry-After` honoured (else 5/15/45 s), timeouts retried once. Before: ~40 boards failed every full run.
+- **Names**: `names.py` strips short number codes ("02 Reed…") and keeps ordinals ("20th Century"). `reclassify` renames old-name rows or closes them if the tidy copy exists (first run: 63 renamed, 148 duplicates closed). The radar's "seen again" update doesn't touch names, so name fixes need `reclassify`.
+- Feed shows one card per company+title ("Leeds +3 more").
 
