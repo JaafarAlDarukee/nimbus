@@ -62,13 +62,13 @@ export function Brand({ size = 23, markSize = 22 }: { size?: number; markSize?: 
   );
 }
 
-/** Deterministic star field (same stars on server and client). */
-export function StarField({ count = 70, seed = 3, className }: { count?: number; seed?: number; className?: string }) {
+/** Seeded stars, so the server and the browser draw the same sky. */
+function makeStars(count: number, seed: number, height: number) {
   let s = seed;
   const rnd = () => (s = (s * 9301 + 49297) % 233280) / 233280;
-  const stars = Array.from({ length: count }, () => ({
+  return Array.from({ length: count }, () => ({
     x: (rnd() * 100).toFixed(1),
-    y: (rnd() * 100).toFixed(1),
+    y: (rnd() * height).toFixed(1),
     r: rnd() > 0.85 ? 2 : 1,
     o: (0.25 + rnd() * 0.6).toFixed(2),
     // About two in three stars twinkle, each at its own pace
@@ -76,6 +76,22 @@ export function StarField({ count = 70, seed = 3, className }: { count?: number;
     duration: (2.5 + rnd() * 4).toFixed(1),
     delay: (rnd() * 5).toFixed(1),
   }));
+}
+
+/** Deterministic star field (same stars on server and client). */
+export function StarField({
+  count = 70,
+  seed = 3,
+  height = 100,
+  className,
+}: {
+  count?: number;
+  seed?: number;
+  /** How far down the stars reach, in % of the container */
+  height?: number;
+  className?: string;
+}) {
+  const stars = makeStars(count, seed, height);
   return (
     <div aria-hidden className={cn("pointer-events-none absolute inset-0 overflow-hidden", className)}>
       {stars.map((star, i) => (
@@ -109,13 +125,13 @@ export function TelegramFab({ href = TELEGRAM_BOT_URL }: { href?: string }) {
       target="_blank"
       rel="noopener noreferrer"
       title="Open Nimbus in Telegram"
-      className="fixed bottom-7 right-7 z-10 flex h-14 items-center gap-2.5 rounded-full bg-telegram pl-4 pr-5 text-sm font-medium !text-white hover:brightness-105"
+      className="fixed bottom-5 right-5 z-10 flex h-14 items-center gap-2.5 rounded-full bg-telegram px-4 text-sm font-medium !text-white hover:brightness-105 sm:bottom-7 sm:right-7 sm:pl-4 sm:pr-5"
       style={{ boxShadow: "0 10px 30px -8px rgba(42,171,238,.6)" }}
     >
       <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden style={{ fill: "#fff" }}>
         <path d="M21.4 3.6 2.9 10.8c-.9.4-.9 1.6.1 1.9l4.6 1.4 1.8 5.6c.2.7 1.1.9 1.6.4l2.6-2.5 4.6 3.4c.6.4 1.4.1 1.6-.6L22.9 5c.2-.9-.6-1.7-1.5-1.4zM9.8 14.2l8.2-7.4-6.6 8.5-.3 3.3z" />
       </svg>
-      Open in Telegram
+      <span className="max-sm:sr-only">Open in Telegram</span>
     </a>
   );
 }

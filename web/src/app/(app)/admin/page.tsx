@@ -27,14 +27,13 @@ export default async function AdminPage(props: PageProps<"/admin">) {
   const requests = (data ?? []) as AccessRequest[];
   const pending = requests.filter((r) => r.status === "pending");
   const decided = requests.filter((r) => r.status !== "pending");
-  const now = Date.now();
   const notice = typeof params.notice === "string" ? params.notice : null;
 
   const row = (r: AccessRequest, actions: boolean) => (
     <div key={r.id} className="flex flex-wrap items-center gap-3 border-t border-line px-5 py-4 first:border-t-0">
       <div className="flex min-w-0 flex-1 flex-col gap-1">
         <span className="truncate text-[15px] font-medium">{r.email}</span>
-        <span className="font-mono text-xs text-tx3">asked {timeAgo(r.created_at, now)}</span>
+        <span className="font-mono text-xs text-tx3">asked {timeAgo(r.created_at)}</span>
       </div>
       {actions ? (
         <form action={decide} className="flex gap-2">

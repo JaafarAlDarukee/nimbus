@@ -1,6 +1,5 @@
 import { redirect } from "next/navigation";
-import { AppSidebar } from "@/components/app-sidebar";
-import { NimbusLogo } from "@/components/nimbus-logo";
+import { AppShell } from "@/components/app-shell";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
@@ -10,18 +9,20 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const { data: profile } = await supabase.from("profiles").select("onboarded_at").eq("id", user.id).maybeSingle();
+  const [{ data: profile }, { data: lastChecked }, { data: telegram }] = await Promise.all([
+    supabase.from("profiles").select("onboarded_at,is_admin").eq("id", user.id).maybeSingle(),
+    supabase.rpc("radar_last_checked"),
+    supabase.from("notification_channels").select("id").eq("channel", "telegram").eq("enabled", true).limit(1),
+  ]);
   if (!profile?.onboarded_at) redirect("/onboarding");
 
   return (
-    <div className="flex min-h-screen">
-      <AppSidebar email={user.email ?? ""} />
-      <div className="min-w-0 flex-1">
-        <header className="flex items-center border-b px-5 py-3 md:hidden">
-          <NimbusLogo />
-        </header>
-        {children}
-      </div>
-    </div>
+    <AppShell
+      lastChecked={(lastChecked as string | null) ?? null}
+      telegramOn={(telegram ?? []).length > 0}
+      isAdmin={!!profile.is_admin}
+    >
+      {children}
+    </AppShell>
   );
 }
