@@ -1,0 +1,45 @@
+name: Telegram bot webhook
+
+# Run by hand once (and again if the bot token changes): tells Telegram to send the bot's messages
+# and button presses to the Supabase function `telegram`, and sets the bot's command menu.
+# The secret header is derived from the token, the same way the function checks it.
+on:
+  workflow_dispatch:
+
+jobs:
+  webhook:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Point Telegram at the Nimbus function
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+        run: |
+          python3 - <<'EOF'
+          import hashlib, hmac, json, os, urllib.request
+
+          token = os.environ["TELEGRAM_BOT_TOKEN"].strip()
+          secret = hmac.new(token.encode(), b"nimbus-telegram-webhook", hashlib.sha256).hexdigest()
+          url = os.environ["SUPABASE_URL"].strip().rstrip("/") + "/functions/v1/telegram"
+
+          def call(method, body=None):
+              request = urllib.request.Request(
+                  f"https://api.telegram.org/bot{token}/{method}",
+                  data=json.dumps(body or {}).encode(),
+                  headers={"content-type": "application/json"},
+              )
+              return json.load(urllib.request.urlopen(request))
+
+          print("setWebhook:", call("setWebhook", {
+              "url": url, "secret_token": secret,
+              "allowed_updates": ["message", "callback_query"], "drop_pending_updates": True,
+          })["ok"])
+          print("setMyCommands:", call("setMyCommands", {"commands": [
+              {"command": "start", "description": "Connect, or check you're connected"},
+              {"command": "help", "description": "How Nimbus alerts work"},
+              {"command": "stop", "description": "Pause your alerts"},
+          ]})["ok"])
+          info = call("getWebhookInfo")["result"]
+          print("pending updates:", info.get("pending_update_count"), "| last error:", info.get("last_error_message") or "none")
+          EOF

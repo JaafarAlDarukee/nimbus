@@ -29,6 +29,40 @@ const STYLE = {
   online_test: { bg: "var(--b-lil)", fg: "var(--t-lil)", label: "Online test" },
 } as const;
 
+/** "What do the colours mean?": the calendar explained in plain words. */
+const GUIDE: { title: string; text: string; swatch: React.CSSProperties }[] = [
+  {
+    title: "Deadline",
+    text: "The last day to apply for a role you saved or applied to, or a date you set in the Tracker. Apply before it.",
+    swatch: { background: "var(--b-dawn)", borderColor: "var(--t-dawn)" },
+  },
+  {
+    title: "Interview",
+    text: "An interview or assessment centre. Move a role to Interview in the Tracker and give it a due date to see it here.",
+    swatch: { background: "var(--b-sky)", borderColor: "var(--t-sky)" },
+  },
+  {
+    title: "Online test",
+    text: "A test or video interview to finish by that day. Move a role to Online test in the Tracker and set the date.",
+    swatch: { background: "var(--b-lil)", borderColor: "var(--t-lil)" },
+  },
+  {
+    title: "Expected to open (dashed)",
+    text: "When a company usually opens applications, predicted from past years. These appear once Nimbus has a year of history.",
+    swatch: { background: "transparent", borderColor: "var(--t-mint)", borderStyle: "dashed" },
+  },
+  {
+    title: "Today and the day you picked",
+    text: "Today's date has a filled blue circle. Click any day to see it on the right; the day you picked has a blue outline.",
+    swatch: { background: "var(--bg)", borderColor: "var(--l-sky)", boxShadow: "inset 0 0 0 2px var(--l-sky)" },
+  },
+  {
+    title: "Reminders",
+    text: "Click an event, then Remind me the day before. The reminder comes to you on Telegram once you connect it in Profile.",
+    swatch: { background: "#8FC7FF", borderColor: "transparent" },
+  },
+];
+
 const keyOf = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 const parseKey = (k: string) => {
   const [y, m, d] = k.split("-").map(Number);
@@ -41,6 +75,8 @@ export function CalendarView({ events, today }: { events: CalendarEvent[]; today
   const [sel, setSel] = useState(today);
   const [openEvent, setOpenEvent] = useState<string | null>(null);
   const [reminders, setReminders] = useState<Record<string, boolean>>({});
+  // The guide starts open while the calendar is still empty (new users)
+  const [guide, setGuide] = useState(events.length === 0);
 
   // Monday-first weeks covering the whole month
   const first = new Date(month.y, month.m, 1);
@@ -104,7 +140,24 @@ export function CalendarView({ events, today }: { events: CalendarEvent[]; today
             <span className="size-2.5 rounded-[3px] border border-dashed border-t-mint" />
             Expected to open
           </span>
+          <button type="button" onClick={() => setGuide((g) => !g)} aria-expanded={guide} className="cursor-pointer whitespace-nowrap text-t-sky hover:text-tx">
+            {guide ? "Hide the guide" : "What do the colours mean?"}
+          </button>
         </div>
+
+        {guide && (
+          <div className="animate-fade-up grid gap-x-6 gap-y-3.5 rounded-2xl border border-line bg-s1 p-5 sm:grid-cols-2">
+            {GUIDE.map((g) => (
+              <div key={g.title} className="flex gap-3">
+                <span className="mt-0.5 h-5 w-9 flex-none rounded-md border" style={g.swatch} />
+                <div className="flex flex-col gap-1">
+                  <span className="text-sm font-medium text-tx">{g.title}</span>
+                  <span className="text-[13px] leading-normal text-tx2">{g.text}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
 
         <div className="animate-fade-up grid grid-cols-7 gap-px overflow-hidden rounded-2xl border border-line bg-line" style={{ animationDelay: "80ms" }}>
           {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((d) => (
@@ -223,7 +276,7 @@ export function CalendarView({ events, today }: { events: CalendarEvent[]; today
                           : { background: "#8FC7FF", color: "#06111D", borderColor: "transparent" }
                       }
                     >
-                      {on ? "Reminder saved · sending starts soon" : "Remind me the day before"}
+                      {on ? "Reminder set for the day before" : "Remind me the day before"}
                     </button>
                   </div>
                 )}

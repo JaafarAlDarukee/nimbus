@@ -1,5 +1,6 @@
 import type { MatchFilters, Preferences } from "@/lib/preferences";
 import { timeAgo } from "@/lib/time";
+import { industryMatch } from "@/lib/industries";
 
 /** A database opportunity row (the columns the Opportunities page selects). */
 export type OpportunityRow = {
@@ -116,31 +117,69 @@ export function kindView(row: { kind: string; title: string }) {
 
 const HOUR = 3_600_000;
 
-export function toView(row: OpportunityRow, prefs: Preferences, filters: MatchFilters, now: number): OpportunityView {
+/** A discipline named in the title itself is a much stronger match than one found in the advert. */
+const TITLE_DISCIPLINE: Record<string, RegExp> = {
+  mechanical: /\b(mechanical|mech|design engineer|stress|thermo|fluids?)\b/i,
+  manufacturing: /\b(manufactur\w*|production|industrial engineer\w*|process engineer\w*|lean|quality engineer\w*|operations engineer\w*)\b/i,
+  robotics: /\b(robot\w*|automation|mechatronic\w*|controls? (systems?|engineer)|autonom\w*)\b/i,
+  electrical: /\b(electrical|electronic\w*|power systems|embedded|firmware|hardware)\b/i,
+  aerospace: /\b(aerospace|aeronautic\w*|aircraft|propulsion|gas turbines?|avionic\w*)\b/i,
+  automotive: /\b(automotive|vehicles?|powertrain|chassis|motorsport)\b/i,
+  materials: /\b(materials?|metallurg\w*|composites?)\b/i,
+  civil: /\b(civil|structural)\b/i,
+  chemical: /\b(chemical|chemistry)\b/i,
+  software: /\b(software|data|computer science|developer|cyber)\b/i,
+};
+
+export type MatchExtras = { cvSkills?: string[] };
+
+/**
+ * How well a role fits, out of 100, and why. Every point is a real overlap with the user's choices
+ * (type, degree, industries, location) or their CV skills. Mirrored in radar/match.py.
+ */
+export function scoreRole(row: OpportunityRow, prefs: Preferences, filters: MatchFilters, extras: MatchExtras = {}) {
   const kind = kindView(row);
   const why: string[] = [];
-  let match = 58;
+  let match = 50;
 
-  // Every point here is a real overlap with what the user picked in onboarding
   if (filters.kinds.includes(row.kind) && kind.plural) {
-    match += 16;
+    match += 14;
     why.push(`${kind.plural} one of the types you picked`);
   }
   const overlap = (row.disciplines ?? []).filter((d) => filters.disciplines.includes(d));
-  if (overlap.length) {
-    match += 12 + Math.min(4, (overlap.length - 1) * 2);
-    why.push(`${DISCIPLINE_WORD[overlap[0]] ?? overlap[0]} fits your ${prefs.degrees[0] ?? "degree"}`);
+  const inTitle = overlap.find((d) => TITLE_DISCIPLINE[d]?.test(row.title));
+  if (inTitle) {
+    match += 20;
+    why.push(`${DISCIPLINE_WORD[inTitle] ?? inTitle} fits your ${prefs.degrees[0] ?? "degree"}`);
+  } else if (overlap.length) {
+    match += 8;
+    why.push(`The advert asks for ${(DISCIPLINE_WORD[overlap[0]] ?? overlap[0]).toLowerCase()}, part of your ${prefs.degrees[0] ?? "degree"}`);
+  }
+  const industry = prefs.sectors.length ? industryMatch(prefs.sectors, row.company_name, `${row.title} ${row.company_name} ${(row.description ?? "").slice(0, 800)}`) : null;
+  if (industry) {
+    match += 12;
+    why.push(`${industry} is one of your industries`);
   }
   if (!filters.countries || (row.country && filters.countries.includes(row.country))) {
-    match += 6;
+    match += 4;
     if (row.country === "GB") why.push("Based in the UK, where you said you'd work");
   }
-  if (row.skills?.length) {
-    match += Math.min(4, row.skills.length);
+  const mine = new Set((extras.cvSkills ?? []).map((s) => s.toLowerCase()));
+  const shared = (row.skills ?? []).filter((s) => mine.has(s.toLowerCase()));
+  if (shared.length) {
+    match += Math.min(9, shared.length * 3);
+    why.push(`Asks for ${shared.slice(0, 3).join(", ")}, ${shared.length > 1 ? "all" : "also"} on your CV`);
+  } else if (row.skills?.length) {
     why.push(`Asks for ${row.skills.slice(0, 3).join(", ")}`);
   }
   if (row.rolling) why.push("Rolling applications, so applying early matters");
   if (!why.length) why.push("Posted on the employer's own site");
+  return { match: Math.max(30, Math.min(97, match)), why: why.slice(0, 3) };
+}
+
+export function toView(row: OpportunityRow, prefs: Preferences, filters: MatchFilters, now: number, extras: MatchExtras = {}): OpportunityView {
+  const kind = kindView(row);
+  const { match, why } = scoreRole(row, prefs, filters, extras);
 
   const source = host(row.apply_url);
   const contact = row.published_contacts?.[0];
@@ -159,8 +198,8 @@ export function toView(row: OpportunityRow, prefs: Preferences, filters: MatchFi
     tone: kind.tone,
     found: timeAgo(row.first_seen_at, now),
     isNew: age < 6 * HOUR,
-    match: Math.min(97, match),
-    why: why.slice(0, 3),
+    match,
+    why,
     deadline: row.closes_at
       ? new Date(row.closes_at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })
       : row.rolling

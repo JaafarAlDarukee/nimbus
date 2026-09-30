@@ -25,6 +25,15 @@ export default async function AdminPage(props: PageProps<"/admin">) {
     .select("id,email,status,created_at,decided_at")
     .order("created_at", { ascending: false });
   const requests = (data ?? []) as AccessRequest[];
+  // "Missing a company?" on the Companies page: add their careers pages to the radar's seed list
+  const { data: suggestionRows } = await supabase.from("company_suggestions").select("name,created_at").order("created_at", { ascending: false }).limit(100);
+  const suggestions = Object.values(
+    (suggestionRows ?? []).reduce<Record<string, { name: string; times: number; last: string }>>((acc, s) => {
+      const key = (s.name as string).trim().toLowerCase();
+      acc[key] = acc[key] ? { ...acc[key], times: acc[key].times + 1 } : { name: (s.name as string).trim(), times: 1, last: s.created_at as string };
+      return acc;
+    }, {}),
+  );
   const pending = requests.filter((r) => r.status === "pending");
   const decided = requests.filter((r) => r.status !== "pending");
   const notice = typeof params.notice === "string" ? params.notice : null;
@@ -69,6 +78,21 @@ export default async function AdminPage(props: PageProps<"/admin">) {
           <div className="rounded-2xl border border-line bg-s1">{decided.map((r) => row(r, false))}</div>
         </>
       )}
+
+      <h2 className="mb-3 mt-10 text-xs font-semibold uppercase tracking-[0.08em] text-tx3">Suggested companies ({suggestions.length})</h2>
+      <div className="rounded-2xl border border-line bg-s1">
+        {suggestions.length === 0 && <p className="m-0 px-5 py-4 text-sm text-tx3">No suggestions yet.</p>}
+        {suggestions.map((s) => (
+          <div key={s.name} className="flex items-center justify-between gap-3 border-t border-line px-5 py-3 first:border-t-0">
+            <span className="text-[15px] font-medium">{s.name}</span>
+            <span className="font-mono text-xs text-tx3">
+              {s.times > 1 ? `${s.times} people · ` : ""}
+              {timeAgo(s.last)}
+            </span>
+          </div>
+        ))}
+      </div>
+      <p className="mt-2 text-xs text-tx3">Ask Claude to find their careers pages and add them to the radar.</p>
     </main>
   );
 }

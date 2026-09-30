@@ -94,8 +94,9 @@ export function CompaniesView(props: Props) {
             Companies
           </h1>
           <p className="m-0 max-w-[560px] text-base leading-[1.55] text-tx2">
-            Employers we watch that hire <span className="text-tx">{degree === ALL ? field.toLowerCase() : degree}</span> students, grouped by
-            industry. Mute any you are not interested in.
+            The best-known employers that hire <span className="text-tx">{degree === ALL ? field.toLowerCase() : degree}</span> students,
+            grouped by industry. Nimbus watches far more than these: {props.others.length.toLocaleString("en-GB")} other employers have open
+            roles right now, under &ldquo;More employers with open roles&rdquo;, and search finds them all. Mute any you are not interested in.
           </p>
         </div>
         <div className="flex gap-7">
@@ -241,7 +242,7 @@ export function CompaniesView(props: Props) {
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-4 rounded-[14px] border border-dashed border-line2 px-[18px] py-4">
-        <span className="text-sm text-tx2">Missing a company? Tell us and we start watching its careers page within a day.</span>
+        <span className="text-sm text-tx2">Missing a company? Tell us and we&apos;ll add its careers page to the radar.</span>
         <div className="flex gap-2">
           <input
             value={sug}

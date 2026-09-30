@@ -37,7 +37,13 @@ async function loadFeed(params: Awaited<PageProps<"/">["searchParams"]>): Promis
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  const { data: profile } = await supabase.from("profiles").select("preferences").eq("id", user!.id).maybeSingle();
+  const [{ data: profile }, { data: hiddenRows }] = await Promise.all([
+    supabase.from("profiles").select("preferences,cv_details").eq("id", user!.id).maybeSingle(),
+    // "Not for me" in Telegram
+    supabase.from("hidden_opportunities").select("opportunity_id").limit(500),
+  ]);
+  const hidden = (hiddenRows ?? []).map((h) => h.opportunity_id as string);
+  const extras = { cvSkills: ((profile?.cv_details as { skills?: string[] } | null)?.skills ?? []) };
   const prefs = withDefaults(profile?.preferences);
   const filters = matchFilters(prefs);
 
@@ -47,6 +53,7 @@ async function loadFeed(params: Awaited<PageProps<"/">["searchParams"]>): Promis
   const matched = (columns: string, head = false) => {
     let query = applyMatch(open(columns, head), filters);
     for (const name of prefs.muted) query = query.not("company_name", "ilike", `${name.replace(/[%_\\]/g, "\\$&")}%`);
+    if (hidden.length) query = query.not("id", "in", `(${hidden.join(",")})`);
     return query;
   };
   const scoped = (columns: string, head = false) => (tab === "you" ? matched(columns, head) : open(columns, head));
@@ -80,7 +87,7 @@ async function loadFeed(params: Awaited<PageProps<"/">["searchParams"]>): Promis
   ]);
 
   const now = Date.now();
-  const view = (list: unknown) => ((list ?? []) as OpportunityRow[]).map((row) => toView(row, prefs, filters, now));
+  const view = (list: unknown) => ((list ?? []) as OpportunityRow[]).map((row) => toView(row, prefs, filters, now, extras));
   const opportunities = view(rows.data);
   const closingSoon = view(closing.data);
   const saved = view(((savedApps.data ?? []) as unknown as { opportunity: OpportunityRow | null }[]).map((a) => a.opportunity).filter(Boolean));
