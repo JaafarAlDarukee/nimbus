@@ -12,6 +12,7 @@ Back to [[00 Start Here]] · updated 2026-09-30
 - **Design**: owner's Claude Design handoff (10 screens) received and saved locally. See [[07 Design]].
 - **Website phase 1**: design tokens + fonts + brand; Landing (pixel-matched); 10-step Onboarding with live matching count; invite-by-approval (request access → admin approves → email); `/admin` page. See [[06 Website]].
 - **Opportunities (2026-09-30)**: design top bar + Opportunities page matched side by side with `Nimbus Opportunities.dc.html` (desktop and phone): For you / All, search, type chips, match rings, light drawer, CV-check popup, toast. Save / Apply write to `applications`. Other nav items show a "Being built next" stand-in.
+- **All design screens (2026-09-30)**: Tracker, Profile, Companies, Calendar, CV studio and the phone layout, each checked side by side with its design file. See [[06 Website]] and [[07 Design]].
 - **Location fix**: `radar/geo.py` now puts US states / Canadian provinces / Australian states before UK town names ("Cambridge, MA" is US); multi-city lists count as UK if any city is. 93 saved rows corrected.
 
 ## In progress 🔄
@@ -21,12 +22,8 @@ Back to [[00 Start Here]] · updated 2026-09-30
 1. ~~Animation pass on landing + onboarding~~ ✅ done 2026-09-30.
 2. ~~**Opportunities** page from design~~ ✅ done 2026-09-30 (owner hasn't seen it signed in yet: ask for feedback).
 3. **Personal Telegram alerts** (bot links accounts via `telegram_links`; per-user matching; the shared channel becomes news only).
-4. **Tracker** from `Nimbus Tracker.dc.html` (table + board, stages, ghosted after 21 days). The Opportunities toast already links to `/tracker`, so this is the most-needed next screen.
-5. **Profile** (edit preferences, alerts, log out).
-6. **Calendar** (deadlines, interviews, "expected to open" predictions).
-7. **Companies** (directory by field → degree → industry; company drawer).
-8. **CV studio** (4-step; ATS scoring; Gemini "Give me ideas"; exports).
-9. **Mobile** layouts + Telegram polish.
+4. ~~Tracker, Profile, Calendar, Companies, CV studio, Mobile~~ ✅ built 2026-09-30. Still to come inside them: Telegram reminders for Calendar "Remind me", "expected to open" predictions (need a year of history), morning digest email, Discord/WhatsApp (shown as Soon), Gemini key for "Give me ideas" (optional, `GEMINI_API_KEY` in `web/.env.local` / Vercel).
+5. Telegram alert message in the design's format ("Strong match for you" + Open and apply / Save / Applied / Not for me buttons) as part of personal alerts.
 10. Go online: Vercel + domain; Supabase SMTP via Nimbus Gmail; invite friends.
 11. Hidden opportunities (speculative routes, opening predictions), hiring posts, company news. See [[13 Ideas backlog]].
 

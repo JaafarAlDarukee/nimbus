@@ -8,6 +8,8 @@ Back to [[00 Start Here]]
 - Double quotes inside PowerShell here-strings break `git commit -m`: use `git commit -F <file>`.
 - `jq` strings with spaces inside `gh ... --jq '...'` break in PowerShell; use the Bash tool for jq, or simpler output.
 - Editing Python regexes through a Bash heredoc into a Python string can turn `\b` into a backspace character. Use the Edit tool for regex lines, then check with `od -c`.
+- Long Bash heredocs with JS template strings can break (`unexpected EOF`) or turn `\n` into real newlines: write the script to the scratchpad with the Write tool and run it.
+- If the in-app browser pane is hidden, screenshots time out: use `get_page_text` / `find` and retry screenshots later.
 - The in-app browser pauses CSS animations in a background tab: a drawer can look half-transparent in a screenshot. Bring the tab to the front before judging.
 - Design files use `content-box` and `line-height: normal`; Tailwind uses `border-box` and 1.5 (see [[07 Design]]).
 - `Set-Location` persists between PowerShell calls; return to the project root afterwards.

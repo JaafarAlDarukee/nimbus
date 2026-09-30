@@ -13,9 +13,16 @@ Back to [[00 Start Here]] · code in `web/` (Next.js 16.3, React 19, Tailwind 4,
 | `/onboarding` | `src/app/onboarding/page.tsx`, `onboarding-flow.tsx` | ✅ 10 steps, saves to `profiles` |
 | `/` Opportunities | `src/app/(app)/page.tsx` (data) + `src/components/opportunity-feed.tsx` (UI) + `src/lib/opportunity-view.ts` (row → card, match score, why) | ✅ design-matched |
 | `/admin` | `src/app/(app)/admin/` | ✅ approve / decline access requests |
-| `/tracker`, `/calendar`, `/companies`, `/cv-studio`, `/profile` | `src/app/(app)/<name>/page.tsx` using `components/coming-soon.tsx` | ⏭️ stand-ins; build each from its design file |
+| `/tracker` | `(app)/tracker/` + `components/tracker-view.tsx`, `lib/tracker.ts` (stage groups, `parseDue`) | ✅ table/board, click stage to move on, New modal |
+| `/profile` | `(app)/profile/` + `components/profile-view.tsx` | ✅ edits preferences (autosave), Telegram connect/disconnect, log out |
+| `/companies` | `(app)/companies/` + `components/companies-view.tsx`, `lib/companies-data.ts` (directory from the design minus exclusions), `lib/company-match.ts` | ✅ open counts via `open_roles_by_company()`, mute (hidden from For you), suggest |
+| `/calendar` | `(app)/calendar/` + `components/calendar-view.tsx` | ✅ closing dates of saved/applied roles + tracker due dates; reminders stored in `calendar_events` |
+| `/cv-studio` | `(app)/cv-studio/` + `components/cv-studio.tsx`, `lib/cv.ts` | ✅ `cv_jobs` table, PDF/Word read on the server (unpdf, mammoth), ATS check, downloads |
+| `/auth/preview/<screen>` | `src/app/auth/preview/[screen]/` | 🛠 development only (404 in production): each screen with the design's sample data, for side-by-side design checks |
 
 - `src/proxy.ts`: refreshes the session; signed-out visitors → `/login` (except `/login`, `/auth/*`).
+- Phones (<768px): `app-shell.tsx` shows a search button + initial and a floating tab bar (Discover, Tracker, Calendar, Profile); Opportunities has its own phone layout (`PhoneFeed` in `opportunity-feed.tsx`).
+- Themes per screen (`LOOKS` in `app-shell.tsx`): bright `/`, ink `/tracker` `/profile`, calm `/calendar` `/cv-studio`, dark `/companies`.
 - `src/app/(app)/layout.tsx`: requires login and `onboarded_at`, else → `/onboarding`; renders `components/app-shell.tsx` (design top bar; sets `data-theme="bright"` on /, /calendar, /cv-studio). "checked Xm ago" comes from the `radar_last_checked()` SQL function.
 - `src/app/(app)/actions.ts`: `track(opportunityId, "saved" | "applied")` writes `applications` (applied → `applied_at`, follow-up in 14 days; saving never downgrades an applied row).
 - Opportunities details: `?tab=all`, `?type=<chip label>`, `?q=`, `?n=` (show more). Match score is a transparent heuristic (58 base + type/discipline/location/skills overlaps, max 97) and every "why" line is a real overlap. Logos: Google favicon of the employer's own domain only (not hiring-system hosts), else the initial.

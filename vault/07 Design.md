@@ -18,14 +18,14 @@ Back to [[00 Start Here]]
 - Telegram button `#2AABEE`.
 
 ## Screens status
-Landing ✅ · Onboarding ✅ (count uses real data; ATS score shows "Soon" instead of a fake 72) · Opportunities ✅ (checked side by side at 1280px and phone width) · Tracker ⏭️ · Calendar ⏭️ · Companies ⏭️ · CV studio ⏭️ · Profile ⏭️ · Mobile ⏭️ · Brand (reference only).
+Landing ✅ · Onboarding ✅ (count uses real data; ATS score shows "Soon" instead of a fake 72) · Opportunities ✅ (checked side by side at 1280px and phone width) · Tracker ✅ · Profile ✅ · Companies ✅ · Calendar ✅ · CV studio ✅ · Mobile ✅ (all 2026-09-30, compared with `/auth/preview/<screen>`) · Tracker ⏭️ · Calendar ⏭️ · Companies ⏭️ · CV studio ⏭️ · Profile ⏭️ · Mobile ⏭️ · Brand (reference only).
 
 ## Deviations agreed with the owner
 - Defence, Nuclear, Fusion industries and defence companies removed (see [[09 Decisions log#Exclusions]]).
 - Features not built yet say **Soon** rather than pretending.
 
 ## How to match a screen (lesson from 2026-09-30)
-The owner was (rightly) angry when a page didn't look like their design. For every screen: read the whole `.dc.html`, copy its exact sizes/colours/copy, then open the design (`preview_start design`) and the build side by side at 1280×860 and at phone width, and fix every difference before showing it. The design files use `content-box` sizing and `line-height: normal`, so `max-width: 880px; padding: 0 24px` becomes Tailwind `max-w-[928px] px-6`, and text blocks need `leading-[normal]`. To preview signed-in pages without logging in, a temporary dev-only page under `/auth/` with the design's sample data works; delete it afterwards.
+The owner was (rightly) angry when a page didn't look like their design. For every screen: read the whole `.dc.html`, copy its exact sizes/colours/copy, then open the design (`preview_start design`) and the build side by side at 1280×860 and at phone width, and fix every difference before showing it. The design files use `content-box` sizing and `line-height: normal`, so `max-width: 880px; padding: 0 24px` becomes Tailwind `max-w-[928px] px-6`, and text blocks need `leading-[normal]`. To preview signed-in pages without logging in, use `/auth/preview/<screen>` (development only; add samples in `samples.tsx`). The top bar is 65px (64 + border) like the design.
 
 ## Motion
 Owner feedback (2026-09-30): "no animation, it's so blank". The handoff says keep motion light (rings/bars .4s, chevrons .15s, scrims). Plan: twinkling stars, current-star pulse in the onboarding stepper, step content fade/slide-in, counting-up numbers, hover lifts. Keep it subtle and respect `prefers-reduced-motion`.
