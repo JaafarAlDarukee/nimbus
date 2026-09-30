@@ -119,7 +119,7 @@ async function loadFeed(params: Awaited<PageProps<"/">["searchParams"]>): Promis
     q: q ?? "",
     limit,
     opportunities,
-    hasMore: (rows.count ?? 0) > opportunities.length,
+    hasMore: (rows.count ?? 0) > (rows.data?.length ?? 0),
     counts: { you: forYou.count ?? 0, all: all.count ?? 0 },
     newCount: fresh.count ?? 0,
     tracked,
