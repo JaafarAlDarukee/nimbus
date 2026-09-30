@@ -24,8 +24,8 @@ Back to [[00 Start Here]] · updated 2026-09-30
 3. **Personal Telegram alerts** (bot links accounts via `telegram_links`; per-user matching; the shared channel becomes news only).
 4. ~~Tracker, Profile, Calendar, Companies, CV studio, Mobile~~ ✅ built 2026-09-30. Still to come inside them: Telegram reminders for Calendar "Remind me", "expected to open" predictions (need a year of history), morning digest email, Discord/WhatsApp (shown as Soon), Gemini key for "Give me ideas" (optional, `GEMINI_API_KEY` in `web/.env.local` / Vercel).
 5. Telegram alert message in the design's format ("Strong match for you" + Open and apply / Save / Applied / Not for me buttons) as part of personal alerts.
-10. Go online: Vercel + domain; Supabase SMTP via Nimbus Gmail; invite friends.
-11. Hidden opportunities (speculative routes, opening predictions), hiring posts, company news. See [[13 Ideas backlog]].
+6. Go online: Vercel + domain; Supabase SMTP via Nimbus Gmail; invite friends.
+7. Hidden opportunities (speculative routes, opening predictions), hiring posts, company news. See [[13 Ideas backlog]].
 
 ## Numbers to remember
 - Radar priority run ≈ 9 min for ~2,900 boards (public repo, unlimited Actions minutes).
