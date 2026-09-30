@@ -35,7 +35,7 @@ export default async function LandingPage(props: PageProps<"/login">) {
 
       <main className="relative flex w-full max-w-[760px] flex-1 flex-col items-center gap-7 px-6 pb-16 pt-[clamp(56px,12vh,120px)] text-center">
         <span className="animate-fade-up font-mono text-xs uppercase tracking-[0.12em] text-tx2">
-          Private job radar · UK engineering
+          Join the Children of Khan
         </span>
         <h1
           className="animate-fade-up m-0 font-serif font-normal leading-none"
@@ -55,7 +55,7 @@ export default async function LandingPage(props: PageProps<"/login">) {
 
         <div id="signin" className="animate-fade-up flex w-full max-w-[460px] flex-col gap-3 pt-2" style={{ animationDelay: "0.28s" }}>
           <LoginForm linkError={searchParams.error === "link"} />
-          <span className="text-[13px] text-tx3">Invite only. No invite yet? Ask your course rep or engineering society.</span>
+          <span className="text-[13px] text-tx3">Invite only, for the Children of Khan. Not in yet? Enter your email and ask for access.</span>
         </div>
 
         <div className="animate-fade-up mt-[72px] grid w-full grid-cols-3 border-t border-line" style={{ animationDelay: "0.4s" }}>
