@@ -51,6 +51,7 @@ async function loadEvents(): Promise<React.ComponentProps<typeof CalendarView>> 
         applicationId: a.id,
         day: dayOf(at),
         kind: "deadline",
+        remindKind: "deadline",
         title,
         company,
         meta: time(at) === "00:00" ? "closing date" : time(at),
@@ -63,17 +64,19 @@ async function loadEvents(): Promise<React.ComponentProps<typeof CalendarView>> 
     // A due date set in the tracker: a test, an interview, or a deadline of the user's own
     if (a.due_on) {
       const kind = group === "Online test" ? "online_test" : group === "Interview" ? "interview" : "deadline";
+      const remindKind = kind === "deadline" ? "other" : kind;
       events.push({
         id: `${a.id}:${kind}:due`,
         applicationId: a.id,
         day: a.due_on,
         kind,
+        remindKind,
         title: kind === "deadline" && group === "Offer" ? "Reply to offer" : title,
         company,
         meta: a.next_step ?? (kind === "interview" ? "interview" : kind === "online_test" ? "online test" : "due"),
         note: stageNote,
         startsAt: new Date(`${a.due_on}T09:00:00Z`).toISOString(),
-        reminded: reminded.has(`${a.id}:${kind}`),
+        reminded: reminded.has(`${a.id}:${remindKind}`),
       });
     }
   }

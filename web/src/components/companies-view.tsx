@@ -3,8 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState, useTransition } from "react";
 import { companyRoles, setMuted, suggestCompany, type CompanyRole } from "@/app/(app)/companies/actions";
-import { FIELD_EXTRAS } from "@/lib/companies-data";
-import { DEGREES_BY_FIELD, FIELDS, SUGGEST } from "@/lib/onboarding-data";
+import { DEGREES_BY_FIELD, FIELD_EXTRAS, FIELDS, SUGGEST } from "@/lib/onboarding-data";
 import { timeAgo } from "@/lib/time";
 
 export type DirectoryCompany = { name: string; place: string; open: number; radarNames: string[] };
@@ -95,8 +94,8 @@ export function CompaniesView(props: Props) {
           </h1>
           <p className="m-0 max-w-[560px] text-base leading-[1.55] text-tx2">
             The best-known employers that hire <span className="text-tx">{degree === ALL ? field.toLowerCase() : degree}</span> students,
-            grouped by industry. Nimbus watches far more than these: {props.others.length.toLocaleString("en-GB")} other employers have open
-            roles right now, under &ldquo;More employers with open roles&rdquo;, and search finds them all. Mute any you are not interested in.
+            grouped by industry. Nimbus watches far more than these: {props.others.length.toLocaleString("en-GB")} other employer
+            {props.others.length === 1 ? " has" : "s have"} open roles right now, under &ldquo;More employers with open roles&rdquo;, and search finds them all. Mute any you are not interested in.
           </p>
         </div>
         <div className="flex gap-7">

@@ -50,3 +50,11 @@ export async function signOut() {
   await supabase.auth.signOut();
   redirect("/login");
 }
+
+/** Has the bot linked this account yet? (Profile and onboarding check after Connect.) */
+export async function telegramStatus(): Promise<{ on: boolean; username: string | null }> {
+  const supabase = await createClient();
+  const { data } = await supabase.from("notification_channels").select("config").eq("channel", "telegram").eq("enabled", true).maybeSingle();
+  const config = (data?.config ?? null) as { username?: string } | null;
+  return { on: !!data, username: config?.username ?? null };
+}

@@ -267,6 +267,18 @@ export function OnboardingFlow({
     update({ cvPath: null, cvName: null });
   }
 
+  // After Connect: check every few seconds until the bot has linked this account (up to 5 minutes)
+  useEffect(() => {
+    if (telegram !== "waiting") return;
+    const started = Date.now();
+    const timer = setInterval(async () => {
+      const { data } = await supabase.from("notification_channels").select("id").eq("channel", "telegram").eq("enabled", true).limit(1);
+      if (data?.length) setTelegram("on");
+      if (data?.length || Date.now() - started > 5 * 60_000) clearInterval(timer);
+    }, 3000);
+    return () => clearInterval(timer);
+  }, [telegram, supabase]);
+
   async function connectTelegram() {
     const { data } = await supabase.from("telegram_links").insert({ user_id: userId }).select("code").single();
     if (data?.code) {
@@ -635,7 +647,7 @@ export function OnboardingFlow({
                 {[
                   {
                     label: "Telegram", i: "T", col: "var(--t-sky)", tint: "rgba(143,199,255,.14)",
-                    sub: telegram === "on" ? "Connected" : telegram === "waiting" ? "Press Start in Telegram. We’ll confirm there within 30 minutes." : "Instant alert with Open, Save and Applied buttons",
+                    sub: telegram === "on" ? "Connected" : telegram === "waiting" ? "Press Start in Telegram. It links straight away and sends you a short guide." : "Instant alert with Open, Save and Applied buttons",
                     btn: telegram === "on" ? "Connected" : telegram === "waiting" ? "Open again" : "Connect",
                     active: telegram !== "on", onClick: connectTelegram, soon: false,
                   },

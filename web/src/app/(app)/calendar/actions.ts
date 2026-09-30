@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 
-const KINDS = ["deadline", "online_test", "interview"] as const;
+const KINDS = ["deadline", "online_test", "interview", "other"] as const;
 
 /** "Remind me the day before": stored as a calendar event with remind on, linked to the application. */
 export async function setReminder(event: {

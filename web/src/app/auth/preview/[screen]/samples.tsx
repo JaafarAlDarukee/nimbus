@@ -76,7 +76,7 @@ export const SAMPLES: Record<string, { path: string; render: () => React.ReactNo
     path: "/calendar",
     render: () => {
       const ev = (day: string, kind: CalendarEvent["kind"], title: string, company: string, meta: string, note = "Saved in your tracker."): CalendarEvent => ({
-        id: `${day}${title}`, applicationId: "x", day, kind, title, company, meta, note, startsAt: `${day}T09:00:00Z`, reminded: false,
+        id: `${day}${title}`, applicationId: "x", day, kind, remindKind: kind, title, company, meta, note, startsAt: `${day}T09:00:00Z`, reminded: false,
       });
       return (
         <CalendarView

@@ -112,6 +112,13 @@ export function AppShell({
         <div className="flex gap-2 md:hidden">
           <Link
             href="/?find=1"
+            onClick={(e) => {
+              // Already on For you: open its search box instead of reloading the page
+              if (pathname === "/") {
+                e.preventDefault();
+                window.dispatchEvent(new Event("nimbus:search"));
+              }
+            }}
             aria-label="Search opportunities"
             className="grid size-11 place-items-center rounded-full border !text-tx"
             style={{ borderColor: "rgba(255,255,255,.12)", background: "rgba(255,255,255,.05)" }}

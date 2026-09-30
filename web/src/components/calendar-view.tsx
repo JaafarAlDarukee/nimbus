@@ -10,6 +10,8 @@ export type CalendarEvent = {
   /** YYYY-MM-DD, UK time */
   day: string;
   kind: "deadline" | "online_test" | "interview";
+  /** How its reminder is stored ("other" for a due date set in the tracker, so it doesn't share the closing date's) */
+  remindKind: "deadline" | "online_test" | "interview" | "other";
   title: string;
   company: string;
   meta: string;
@@ -96,7 +98,7 @@ export function CalendarView({ events, today }: { events: CalendarEvent[]; today
   const toggleReminder = async (e: CalendarEvent) => {
     const on = !(reminders[e.id] ?? e.reminded);
     setReminders((r) => ({ ...r, [e.id]: on }));
-    const result = await setReminder({ applicationId: e.applicationId, kind: e.kind, title: `${e.title} · ${e.company}`, startsAt: e.startsAt, on });
+    const result = await setReminder({ applicationId: e.applicationId, kind: e.remindKind, title: `${e.title} · ${e.company}`, startsAt: e.startsAt, on });
     if (!result.ok) setReminders((r) => ({ ...r, [e.id]: !on }));
   };
 

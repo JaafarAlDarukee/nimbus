@@ -158,6 +158,13 @@ def save(opportunities: list[Opportunity], stats: dict, tier: str) -> tuple[list
             for row in new
             if row.get("posted_at") and row.get("source_kind") in PRECISE_SOURCES
         ]
+        # Full runs read every job on every board, so they can tell which jobs have gone
+        closed = 0
+        if tier == "full":
+            gone = db.post("/rpc/close_gone_opportunities", json={})
+            gone.raise_for_status()
+            closed = gone.json() or 0
+
         run = db.post(
             "/checker_runs",
             json={
@@ -183,5 +190,6 @@ def save(opportunities: list[Opportunity], stats: dict, tier: str) -> tuple[list
     quiet = len(new) - len(alertable)
     print(f"Saved: {len(new)} new ({quiet} saved quietly: from {len(new_boards)} newly added boards "
           f"or posted over a week ago), "
-          f"{len(seen_again)} seen again{' (first run: alerts skipped)' if first_run else ''}")
+          f"{len(seen_again)} seen again, {closed} closed (gone from the employer's site or past the deadline)"
+          f"{' (first run: alerts skipped)' if first_run else ''}")
     return alertable, first_run

@@ -67,10 +67,3 @@ export const COMPANIES: Record<string, string[]> = {
   "Engineering consultancy": ["Cambridge Consultants|Cambridge", "TTP|Melbourn", "PA Consulting|Cambridge", "Ricardo|Shoreham"],
   "R&D labs": ["TWI|Cambridge", "Manufacturing Technology Centre|Coventry", "AMRC|Sheffield", "National Physical Laboratory|Teddington", "High Value Manufacturing Catapult|UK sites"],
 };
-
-/** Industries every degree in a field sees, on top of the degree's own suggestions. */
-export const FIELD_EXTRAS: Record<string, string[]> = {
-  Engineering: ["Engineering consultancy", "R&D labs"],
-  Science: ["Research institutes", "Analytical labs"],
-  "Medical and health": ["NHS hospitals", "Clinical research"],
-};

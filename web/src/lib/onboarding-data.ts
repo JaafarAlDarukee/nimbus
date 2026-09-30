@@ -131,3 +131,10 @@ export const ABROAD_LOCATIONS = [
   "South Africa", "India", "China", "Hong Kong", "Taiwan", "South Korea", "Japan", "Singapore", "Malaysia",
   "Australia", "New Zealand",
 ];
+
+/** Industries every degree in a field sees, on top of the degree's own suggestions. */
+export const FIELD_EXTRAS: Record<string, string[]> = {
+  Engineering: ["Engineering consultancy", "R&D labs"],
+  Science: ["Research institutes", "Analytical labs"],
+  "Medical and health": ["NHS hospitals", "Clinical research"],
+};

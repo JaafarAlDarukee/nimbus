@@ -1,6 +1,10 @@
 import type { MatchFilters, Preferences } from "@/lib/preferences";
 import { timeAgo } from "@/lib/time";
 import { industryMatch } from "@/lib/industries";
+import type { OpportunityView, Tone } from "@/lib/opportunity-types";
+
+export type { OpportunityView, Tone } from "@/lib/opportunity-types";
+export { TYPE_CHIPS } from "@/lib/opportunity-types";
 
 /** A database opportunity row (the columns the Opportunities page selects). */
 export type OpportunityRow = {
@@ -22,45 +26,6 @@ export type OpportunityRow = {
 
 export const OPPORTUNITY_SELECT =
   "id,title,company_name,kind,disciplines,skills,location_text,country,apply_url,description,published_contacts,first_seen_at,closes_at,rolling";
-
-export type Tone = "sky" | "lil" | "dawn" | "mint" | "teal" | "rose";
-
-/** What a card and the detail drawer show. */
-export type OpportunityView = {
-  id: string;
-  title: string;
-  company: string;
-  initial: string;
-  logo: string | null;
-  loc: string;
-  type: string;
-  tone: Tone;
-  found: string;
-  isNew: boolean;
-  match: number;
-  why: string[];
-  deadline: string;
-  /** "closes 24 Oct", "rolling" or "" (phone cards) */
-  closing: string;
-  source: string;
-  applyUrl: string;
-  contact: string;
-  contactNote: string;
-  advert: string;
-};
-
-/** The type chips on the page, in the design's order, and which radar kinds each one covers. */
-export const TYPE_CHIPS: { label: string; kinds: string[]; title?: "hack" | "not-hack" }[] = [
-  { label: "All types", kinds: [] },
-  { label: "Placement", kinds: ["placement"] },
-  { label: "Internship", kinds: ["internship"] },
-  { label: "Spring week", kinds: ["spring_week", "insight"] },
-  { label: "Hackathon", kinds: ["event"], title: "hack" },
-  { label: "Conference", kinds: ["event"], title: "not-hack" },
-  { label: "Graduate", kinds: ["grad_scheme", "graduate_job"] },
-  { label: "Apprenticeship", kinds: ["apprenticeship"] },
-  { label: "Research", kinds: ["research", "scholarship"] },
-];
 
 const KIND_VIEW: Record<string, { type: string; tone: Tone; plural: string }> = {
   placement: { type: "Placement", tone: "sky", plural: "Placements are" },

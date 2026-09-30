@@ -106,6 +106,17 @@ def _claim(db: httpx.Client, user_id: str, opportunity_id: str, channel: str) ->
     return bool(response.json())
 
 
+def _send_once(db: httpx.Client, telegram: "_Telegram", user_id: str, opportunity_id: str, channel: str, chat, text: str,
+               markup: dict | None = None) -> bool:
+    """Record, then send. If Telegram fails, forget the record so the next run tries again."""
+    if not _claim(db, user_id, opportunity_id, channel):
+        return False
+    if telegram.send(chat, text, markup):
+        return True
+    db.delete("/alerts_sent", params={"user_id": f"eq.{user_id}", "opportunity_id": f"eq.{opportunity_id}", "channel": f"eq.{channel}"})
+    return False
+
+
 def _linked(db: httpx.Client) -> list[dict]:
     channels = _fetch_all(db, "/notification_channels", {"select": "user_id,config", "channel": "eq.telegram", "enabled": "is.true"})
     return [c for c in channels if (c.get("config") or {}).get("chat_id")]
@@ -144,7 +155,7 @@ def send_matches(rows: list[dict]) -> None:
             chat = person["config"]["chat_id"]
             sent_here = 0
             for points, industry, row in fits[:MAX_PER_PERSON]:
-                if _claim(db, person["user_id"], row["id"], "telegram") and telegram.send(chat, format_match(row, points, industry), _buttons(row)):
+                if _send_once(db, telegram, person["user_id"], row["id"], "telegram", chat, format_match(row, points, industry), _buttons(row)):
                     sent_here += 1
             if len(fits) > MAX_PER_PERSON:
                 telegram.send(chat, f"…and {len(fits) - MAX_PER_PERSON} more new matches. They're all in <b>For you</b> on the website.")
@@ -171,7 +182,7 @@ def send_reminders() -> None:
             "select": "id,user_id,kind,title,starts_at", "user_id": f"in.({ids})", "remind": "is.true",
             "reminded_at": "is.null", "starts_at": f"gt.{now.isoformat()}",
         })
-        kinds = {"deadline": "Deadline", "online_test": "Online test", "interview": "Interview", "assessment_centre": "Assessment centre"}
+        kinds = {"deadline": "Deadline", "online_test": "Online test", "interview": "Interview", "assessment_centre": "Assessment centre", "other": "Due"}
         for event in events:
             starts = datetime.fromisoformat(event["starts_at"])
             if starts - now > timedelta(hours=30):
@@ -194,12 +205,13 @@ def send_reminders() -> None:
             name = f"<b>{e(role['title'])}</b>\n{e(role['company_name'])}"
             closes = datetime.fromisoformat(role["closes_at"]) if role.get("closes_at") else None
             if app["stage"] == "saved" and role.get("status") == "open" and closes and now < closes <= now + 3 * DAY:
-                if _claim(db, app["user_id"], role["id"], "telegram:closing"):
-                    telegram.send(chat, f"🟠 <b>Closing soon</b> · closes {_dm(closes, weekday=True)}\n{name}\nYou saved this but haven't applied yet.",
-                                  {"inline_keyboard": [[{"text": "Open and apply", "url": role["apply_url"]}],
-                                                       [{"text": "Applied", "callback_data": f"a:{role['id']}"}]]})
+                _send_once(db, telegram, app["user_id"], role["id"], "telegram:closing", chat,
+                           f"🟠 <b>Closing soon</b> · closes {_dm(closes, weekday=True)}\n{name}\nYou saved this but haven't applied yet.",
+                           {"inline_keyboard": [[{"text": "Open and apply", "url": role["apply_url"]}],
+                                                [{"text": "Applied", "callback_data": f"a:{role['id']}"}]]})
             follow = datetime.fromisoformat(app["next_follow_up_at"]) if app.get("next_follow_up_at") else None
             if app["stage"] == "applied" and follow and follow <= now:
-                if _claim(db, app["user_id"], role["id"], "telegram:follow-up"):
-                    telegram.send(chat, f"📬 <b>Time to follow up</b>\n{name}\nIt's been 14 days since you applied. A short, polite email to their early-careers team is fine. Still nothing after 21 days? Mark it ghosted in your tracker.")
+                _send_once(db, telegram, app["user_id"], role["id"], "telegram:follow-up", chat,
+                           f"📬 <b>Time to follow up</b>\n{name}\nIt's been 14 days since you applied. A short, polite email to their "
+                           "early-careers team is fine. Still nothing after 21 days? Mark it ghosted in your tracker.")
     print(f"Reminders: {telegram.sent} messages")

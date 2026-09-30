@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { createJob, ideas as getIdeas, readFile, readSignupCv, saveDetails, saveJob } from "@/app/(app)/cv-studio/actions";
 import { analyse, blankCv, cvHtml, scoreColour, type BuiltCv, type CvJob, type Experience } from "@/lib/cv";
 
@@ -26,7 +26,23 @@ export function CvStudio(props: Props) {
   const pending = useRef<Record<string, Partial<CvJob>>>({});
   const timers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
 
-  const job = jobs.find((j) => j.id === selId) ?? null;
+  // Leaving the page (or closing the tab) saves anything still waiting
+  useEffect(() => {
+    const flush = () => {
+      for (const [id, changes] of Object.entries(pending.current)) {
+        clearTimeout(timers.current[id]);
+        saveJob(id, changes);
+      }
+      pending.current = {};
+    };
+    window.addEventListener("pagehide", flush);
+    return () => {
+      window.removeEventListener("pagehide", flush);
+      flush();
+    };
+  }, []);
+
+  const job = jobs.find((j) => j.id === selId) ?? jobs[jobs.length - 1] ?? null;
 
   // Every change is shown at once and saved shortly after
   const update = (patch: Partial<CvJob>) => {

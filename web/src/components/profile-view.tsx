@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useRef, useState, useTransition } from "react";
-import { disconnectTelegram, savePreferences, signOut, telegramLinkCode } from "@/app/(app)/profile/actions";
+import { useEffect, useRef, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
+import { disconnectTelegram, savePreferences, signOut, telegramLinkCode, telegramStatus } from "@/app/(app)/profile/actions";
 import { TELEGRAM_BOT_URL } from "@/components/brand";
 import { ABROAD_LOCATIONS, DEGREES_BY_FIELD, FIELDS, SECTOR_GROUPS, TYPES, UK_LOCATIONS, YEARS } from "@/lib/onboarding-data";
 import type { Preferences } from "@/lib/preferences";
@@ -27,16 +28,54 @@ export function ProfileView(props: Props) {
   const [prefs, setPrefs] = useState(props.preferences);
   const [open, setOpen] = useState<string | null>("deg");
   const [telegram, setTelegram] = useState<"on" | "off" | "waiting">(props.telegram ? "on" : "off");
+  const [username, setUsername] = useState(props.telegram?.username ?? null);
+  const router = useRouter();
+
+  // After Connect: check every few seconds until the bot has linked this account (up to 5 minutes)
+  useEffect(() => {
+    if (telegram !== "waiting") return;
+    const started = Date.now();
+    const timer = setInterval(async () => {
+      const status = await telegramStatus();
+      if (status.on) {
+        setTelegram("on");
+        setUsername(status.username);
+        router.refresh();
+      }
+      if (status.on || Date.now() - started > 5 * 60_000) clearInterval(timer);
+    }, 3000);
+    return () => clearInterval(timer);
+  }, [telegram, router]);
   const [, startSaving] = useTransition();
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
+
+  const unsaved = useRef<Preferences | null>(null);
 
   // Every change is saved shortly after the last click
   const change = (patch: Partial<Preferences>) => {
     const next = { ...prefs, ...patch };
     setPrefs(next);
+    unsaved.current = next;
     clearTimeout(timer.current);
-    timer.current = setTimeout(() => startSaving(async () => void (await savePreferences(next))), 500);
+    timer.current = setTimeout(() => {
+      unsaved.current = null;
+      startSaving(async () => void (await savePreferences(next)));
+    }, 500);
   };
+
+  // Leaving the page within half a second of a click still saves it
+  useEffect(() => {
+    const flush = () => {
+      clearTimeout(timer.current);
+      if (unsaved.current) savePreferences(unsaved.current);
+      unsaved.current = null;
+    };
+    window.addEventListener("pagehide", flush);
+    return () => {
+      window.removeEventListener("pagehide", flush);
+      flush();
+    };
+  }, []);
 
   const locations = [...prefs.uk, ...prefs.abroad];
   const steps: Step[] = [
@@ -170,7 +209,7 @@ export function ProfileView(props: Props) {
           title="Telegram"
           sub={
             telegram === "on"
-              ? `Connected${props.telegram?.username ? ` · @${props.telegram.username}` : ""}`
+              ? `Connected${username ? ` · @${username}` : ""}`
               : telegram === "waiting"
                 ? "Press Start in Telegram to finish"
                 : "Not connected"

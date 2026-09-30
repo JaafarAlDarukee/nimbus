@@ -13,7 +13,7 @@ type Application = {
   next_step: string | null;
   due_on: string | null;
   created_at: string;
-  opportunity: { title: string; company_name: string; kind: string; closes_at: string | null } | null;
+  opportunity: { title: string; company_name: string; kind: string; closes_at: string | null; status: string } | null;
 };
 
 const DAY = 86_400_000;
@@ -28,7 +28,7 @@ async function loadRows(): Promise<TrackerRow[]> {
   const { data } = await supabase
     .from("applications")
     .select(
-      "id,stage,title,company_name,applied_at,next_follow_up_at,next_step,due_on,created_at,opportunity:opportunities(title,company_name,kind,closes_at)",
+      "id,stage,title,company_name,applied_at,next_follow_up_at,next_step,due_on,created_at,opportunity:opportunities(title,company_name,kind,closes_at,status)",
     )
     .order("created_at", { ascending: false });
 
@@ -58,7 +58,8 @@ async function loadRows(): Promise<TrackerRow[]> {
 
     let next = a.next_step ?? "";
     if (!next) {
-      if (group.name === "Saved") next = closes ? "Apply before it closes" : "Apply when you're ready";
+      if (group.name === "Saved" && a.opportunity?.status === "closed") next = "No longer open on their site";
+      else if (group.name === "Saved") next = closes ? "Apply before it closes" : "Apply when you're ready";
       else if (group.name === "Applied") {
         if (daysSinceApplied >= 21) next = `No reply in ${daysSinceApplied} days`;
         else if (followUp && followUp.getTime() - now.getTime() < 7 * DAY)

@@ -5,7 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { track } from "@/app/(app)/actions";
 import { SPARKLE, StarField, TelegramFab } from "@/components/brand";
-import { TYPE_CHIPS, type OpportunityView } from "@/lib/opportunity-view";
+import { TYPE_CHIPS, type OpportunityView } from "@/lib/opportunity-types";
 
 type Props = {
   tab: "you" | "all";
@@ -580,6 +580,13 @@ function PhoneFeed(
 ) {
   const [tab, setTab] = useState<"New" | "Closing soon" | "Saved">("New");
   const [searching, setSearching] = useState(props.find || !!props.q);
+
+  // The header's search button, pressed while already on this page
+  useEffect(() => {
+    const open = () => setSearching(true);
+    window.addEventListener("nimbus:search", open);
+    return () => window.removeEventListener("nimbus:search", open);
+  }, []);
   const list = tab === "New" ? props.opportunities : tab === "Closing soon" ? props.phone.closingSoon : props.phone.saved;
   const [top, ...rest] = list;
   const matchWord = (m: number) => (m >= 85 ? "Strong match" : m >= 75 ? "Good match" : "Match");
@@ -606,7 +613,7 @@ function PhoneFeed(
             <path d="M10.5 10.5 14 14" />
           </svg>
           <input
-            autoFocus={props.find}
+            autoFocus
             value={props.q}
             onChange={(e) => props.onQ(e.target.value)}
             placeholder="Search roles, companies, places"
