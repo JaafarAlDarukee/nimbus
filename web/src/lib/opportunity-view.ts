@@ -103,7 +103,7 @@ function siteOf(hostname: string): string {
   return parts.slice(secondLevel ? -3 : -2).join(".");
 }
 
-function kindView(row: OpportunityRow) {
+export function kindView(row: { kind: string; title: string }) {
   if (row.kind === "event") {
     return /hack/i.test(row.title)
       ? { type: "Hackathon", tone: "mint" as const, plural: "Hackathons are" }

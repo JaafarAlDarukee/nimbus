@@ -15,23 +15,39 @@ const NAV = [
   { href: "/profile", label: "Profile" },
 ];
 
-// Screens that use the brighter night background in the design
-const BRIGHT = ["/", "/calendar", "/cv-studio"];
+const glow = (top: string, mid: string, end: string) =>
+  `radial-gradient(110% 420px at 50% -160px, ${top} 0%, ${mid} 45%, ${end} 80%)`;
+
+// Each screen's palette, top glow and logo size, as in its design file
+const LOOKS: Record<string, { theme: string; glow: string; logo: number }> = {
+  "/": { theme: "bright", glow: "none", logo: 26 },
+  "/tracker": { theme: "ink", glow: glow("rgba(30,90,180,.45)", "rgba(14,40,80,.22)", "rgba(8,9,11,0)"), logo: 22 },
+  "/profile": { theme: "ink", glow: glow("rgba(30,70,140,.45)", "rgba(14,30,60,.2)", "rgba(11,14,19,0)"), logo: 22 },
+  "/calendar": { theme: "calm", glow: glow("rgba(50,100,190,.4)", "rgba(20,45,90,.18)", "rgba(15,20,29,0)"), logo: 26 },
+  "/cv-studio": { theme: "calm", glow: glow("rgba(50,100,190,.4)", "rgba(20,45,90,.18)", "rgba(15,20,29,0)"), logo: 26 },
+  "/companies": { theme: "dark", glow: glow("rgba(30,70,140,.45)", "rgba(14,30,60,.2)", "rgba(11,14,19,0)"), logo: 26 },
+};
+const DEFAULT_LOOK = LOOKS["/companies"];
 
 export function AppShell({
   children,
   lastChecked,
   telegramOn,
   isAdmin,
+  previewPath,
 }: {
   children: React.ReactNode;
   lastChecked: string | null;
   telegramOn: boolean;
   isAdmin: boolean;
+  /** Design previews (development only) pretend to be this screen */
+  previewPath?: string;
 }) {
-  const pathname = usePathname();
+  const realPath = usePathname();
+  const pathname = previewPath ?? realPath;
   const active = (href: string) => (href === "/" ? pathname === "/" : pathname.startsWith(href));
   const [checked, setChecked] = useState<string | null>(null);
+  const look = LOOKS[Object.keys(LOOKS).find((p) => (p === "/" ? pathname === "/" : pathname.startsWith(p))) ?? ""] ?? DEFAULT_LOOK;
 
   // Relative time is worked out in the browser so it stays current
   useEffect(() => {
@@ -43,12 +59,13 @@ export function AppShell({
 
   return (
     <div
-      data-theme={BRIGHT.includes(pathname) ? "bright" : "dark"}
-      className="relative min-h-screen bg-bg text-sm text-tx"
+      data-theme={look.theme}
+      className="relative min-h-screen text-sm text-tx"
+      style={{ background: look.glow === "none" ? "var(--bg)" : `${look.glow}, var(--bg)` }}
     >
-      <header className="relative z-[2] grid h-16 grid-cols-[1fr_auto] items-center border-b border-line px-5 md:grid-cols-[1fr_auto_1fr] md:px-7">
+      <header className="relative z-[2] grid min-h-[65px] grid-cols-[1fr_auto] items-center border-b border-line px-5 md:grid-cols-[1fr_auto_1fr] md:px-7">
         <Link href="/" className="flex items-center gap-[9px] !text-tx">
-          <LogoMark size={26} />
+          <LogoMark size={look.logo} />
           <Wordmark size={23} />
         </Link>
         <nav aria-label="Main" className="order-3 col-span-2 -mx-5 flex gap-0.5 overflow-x-auto px-5 pb-2 [scrollbar-width:none] md:order-none md:col-span-1 md:mx-0 md:overflow-visible md:p-0">

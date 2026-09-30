@@ -35,8 +35,13 @@ async function loadFeed(params: Awaited<PageProps<"/">["searchParams"]>): Promis
 
   const open = (columns: string, head = false) =>
     supabase.from("opportunities").select(columns, { count: "exact", head }).eq("status", "open");
-  const scoped = (columns: string, head = false) =>
-    tab === "you" ? applyMatch(open(columns, head), filters) : open(columns, head);
+  // For you: the user's matches, minus companies muted on the Companies page
+  const matched = (columns: string, head = false) => {
+    let query = applyMatch(open(columns, head), filters);
+    for (const name of prefs.muted) query = query.not("company_name", "ilike", `${name.replace(/[%_\\]/g, "\\$&")}%`);
+    return query;
+  };
+  const scoped = (columns: string, head = false) => (tab === "you" ? matched(columns, head) : open(columns, head));
 
   let list = scoped(OPPORTUNITY_SELECT);
   if (chip.kinds.length) list = list.in("kind", chip.kinds);
@@ -47,7 +52,7 @@ async function loadFeed(params: Awaited<PageProps<"/">["searchParams"]>): Promis
   const since = new Date(Date.now() - DAY).toISOString();
   const [rows, forYou, all, fresh] = await Promise.all([
     list.order("first_seen_at", { ascending: false }).limit(limit),
-    applyMatch(open("id", true), filters),
+    matched("id", true),
     open("id", true),
     scoped("id", true).gte("first_seen_at", since),
   ]);

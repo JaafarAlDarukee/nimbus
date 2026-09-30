@@ -67,6 +67,8 @@
   --b-teal: rgba(127, 214, 214, 0.14);
   --t-rose: #f4a9b8;
   --b-rose: rgba(244, 169, 184, 0.14);
+  --t-cloud: #e6ecf4;
+  --b-cloud: rgba(230, 236, 244, 0.12);
   --scrim: rgba(6, 9, 14, 0.55);
 }
 
@@ -87,6 +89,48 @@
   --t-lil: #cdc1ff;
   --t-mint: #9fe6c8;
   --t-teal: #8adcdc;
+  --t-rose: #f6b4c1;
+}
+
+/* Ink: the deepest night, used by Tracker and Profile */
+[data-theme="ink"] {
+  --bg: #08090b;
+  --s1: #111317;
+  --s2: #171a1f;
+  --line: #22262d;
+  --line2: #2e333b;
+  --tx: #f4f6f8;
+  --tx2: #a6adb8;
+  --tx3: #7a828f;
+  --t-sky: #8fc7ff;
+  --b-sky: rgba(143, 199, 255, 0.12);
+  --l-sky: rgba(143, 199, 255, 0.5);
+  --b-dawn: rgba(243, 195, 143, 0.12);
+  --b-lil: rgba(195, 181, 255, 0.12);
+  --b-mint: rgba(147, 224, 192, 0.12);
+  --b-teal: rgba(127, 214, 214, 0.12);
+  --b-rose: rgba(244, 169, 184, 0.12);
+}
+
+/* Calm: a softer night for Calendar and CV studio */
+[data-theme="calm"] {
+  --bg: #0f141d;
+  --s1: #161d29;
+  --s2: #1e2634;
+  --line: #283243;
+  --line2: #364155;
+  --tx: #f5f8fc;
+  --tx2: #b8c2d0;
+  --tx3: #8c97a8;
+  --t-sky: #9fd0ff;
+  --b-sky: rgba(143, 199, 255, 0.16);
+  --l-sky: rgba(143, 199, 255, 0.55);
+  --t-dawn: #f6cd9e;
+  --b-dawn: rgba(243, 195, 143, 0.16);
+  --t-lil: #cdc1ff;
+  --b-lil: rgba(195, 181, 255, 0.16);
+  --t-mint: #9fe6c8;
+  --b-mint: rgba(147, 224, 192, 0.14);
   --t-rose: #f6b4c1;
 }
 

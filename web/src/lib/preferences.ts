@@ -14,6 +14,8 @@ export type Preferences = {
   cvPath: string | null;
   cvName: string | null;
   emailDigest: boolean;
+  /** Companies muted on the Companies page: kept out of For you */
+  muted: string[];
 };
 
 export const DEFAULT_PREFERENCES: Preferences = {
@@ -29,6 +31,7 @@ export const DEFAULT_PREFERENCES: Preferences = {
   cvPath: null,
   cvName: null,
   emailDigest: true,
+  muted: [],
 };
 
 export function withDefaults(stored: unknown): Preferences {
