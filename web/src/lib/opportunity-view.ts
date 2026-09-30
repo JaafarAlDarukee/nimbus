@@ -39,6 +39,8 @@ export type OpportunityView = {
   match: number;
   why: string[];
   deadline: string;
+  /** "closes 24 Oct", "rolling" or "" (phone cards) */
+  closing: string;
   source: string;
   applyUrl: string;
   contact: string;
@@ -164,6 +166,11 @@ export function toView(row: OpportunityRow, prefs: Preferences, filters: MatchFi
       : row.rolling
         ? "Rolling"
         : "Not stated",
+    closing: row.closes_at
+      ? `closes ${new Date(row.closes_at).toLocaleDateString("en-GB", { day: "numeric", month: "short", timeZone: "Europe/London" })}`
+      : row.rolling
+        ? "rolling"
+        : "",
     source: source || "employer site",
     applyUrl: row.apply_url,
     contact: contact?.label || contact?.value || advertEmail || "Not published yet",

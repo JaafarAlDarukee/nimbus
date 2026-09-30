@@ -10,7 +10,7 @@ export default async function PreviewPage(props: PageProps<"/auth/preview/[scree
   const sample = SAMPLES[screen];
   if (!sample) notFound();
   return (
-    <AppShell lastChecked={CHECKED_AT} telegramOn isAdmin={false} previewPath={sample.path}>
+    <AppShell lastChecked={CHECKED_AT} telegramOn isAdmin={false} initial="S" previewPath={sample.path}>
       {sample.render()}
     </AppShell>
   );

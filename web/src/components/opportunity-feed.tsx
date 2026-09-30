@@ -17,6 +17,9 @@ type Props = {
   counts: { you: number; all: number };
   newCount: number;
   tracked: Record<string, string>;
+  /** The phone layout's extra tabs (mobile design) */
+  phone: { closingSoon: OpportunityView[]; saved: OpportunityView[]; today: number; weekday: string };
+  find: boolean;
   error: string | null;
 };
 
@@ -33,7 +36,8 @@ export function OpportunityFeed(props: Props) {
   const [pending, startTransition] = useTransition();
   const [q, setQ] = useState(props.q);
   const [selected, setSelected] = useState<OpportunityView | null>(null);
-  const [asking, setAsking] = useState(false);
+  // The role the "check your CV first?" question is about
+  const [applyFor, setApplyFor] = useState<OpportunityView | null>(null);
   // What the user just saved or applied to, on top of what the server knows
   const [changes, setChanges] = useState<Record<string, string | undefined>>({});
   const tracked: Record<string, string | undefined> = { ...props.tracked, ...changes };
@@ -65,12 +69,12 @@ export function OpportunityFeed(props: Props) {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== "Escape") return;
-      if (asking) setAsking(false);
+      if (applyFor) setApplyFor(null);
       else setSelected(null);
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [asking]);
+  }, [applyFor]);
 
   const showToast = (text: string) => {
     setToast(text);
@@ -107,7 +111,7 @@ export function OpportunityFeed(props: Props) {
   const openAndApply = () => {
     if (!selected) return;
     if (applied) window.open(selected.applyUrl, "_blank", "noopener,noreferrer");
-    else setAsking(true);
+    else setApplyFor(selected);
   };
 
   return (
@@ -134,7 +138,7 @@ export function OpportunityFeed(props: Props) {
         </svg>
       </div>
 
-      <main className="relative mx-auto flex max-w-[928px] flex-col gap-7 px-4 pb-[120px] pt-12 leading-[normal] sm:px-6 sm:pt-16">
+      <main className="relative mx-auto hidden max-w-[928px] flex-col gap-7 px-6 pb-[120px] pt-16 leading-[normal] md:flex">
         <div className="flex flex-col items-center gap-3.5 text-center">
           <span
             className="animate-fade-up flex h-[30px] items-center gap-2 rounded-full px-3 text-[13px] text-t-sky"
@@ -262,7 +266,17 @@ export function OpportunityFeed(props: Props) {
         </div>
       </main>
 
-      <TelegramFab />
+      <PhoneFeed
+        {...props}
+        tracked={tracked}
+        q={q}
+        onQ={setQ}
+        onOpen={setSelected}
+        onApply={(o) => (tracked[o.id] && tracked[o.id] !== "saved" ? window.open(o.applyUrl, "_blank", "noopener,noreferrer") : setApplyFor(o))}
+        onSave={(o) => add(o, "saved")}
+      />
+
+      <TelegramFab className="max-md:hidden" />
 
       {toast && (
         <div
@@ -430,9 +444,9 @@ export function OpportunityFeed(props: Props) {
         </>
       )}
 
-      {asking && selected && (
+      {applyFor && (
         <>
-          <div onClick={() => setAsking(false)} className="animate-scrim-in fixed inset-0 z-40" style={{ background: "rgba(6,9,14,.6)" }} />
+          <div onClick={() => setApplyFor(null)} className="animate-scrim-in fixed inset-0 z-40" style={{ background: "rgba(6,9,14,.6)" }} />
           <div
             role="dialog"
             aria-modal="true"
@@ -451,7 +465,7 @@ export function OpportunityFeed(props: Props) {
             </div>
             <button
               type="button"
-              onClick={() => router.push(`/cv-studio?job=${selected.id}`)}
+              onClick={() => router.push(`/cv-studio?job=${applyFor.id}`)}
               className="flex cursor-pointer flex-col gap-1 rounded-[14px] border border-[#8FC7FF] bg-[#EAF4FF] px-[18px] py-4 text-left text-[#0E131A]"
             >
               <span className="text-base font-semibold">Yes, check my CV</span>
@@ -460,9 +474,9 @@ export function OpportunityFeed(props: Props) {
             <button
               type="button"
               onClick={() => {
-                window.open(selected.applyUrl, "_blank", "noopener,noreferrer");
-                setAsking(false);
-                add(selected, "applied");
+                window.open(applyFor.applyUrl, "_blank", "noopener,noreferrer");
+                setApplyFor(null);
+                add(applyFor, "applied");
               }}
               className="flex cursor-pointer flex-col gap-1 rounded-[14px] border border-[#E3E8EE] bg-white px-[18px] py-4 text-left text-[#0E131A]"
             >
@@ -550,6 +564,222 @@ function Step({ n, border, children }: { n: string; border?: boolean; children: 
         {n}
       </span>
       <span className="text-sm">{children}</span>
+    </div>
+  );
+}
+
+/** The phone layout from the mobile design: For you with New / Closing soon / Saved. */
+function PhoneFeed(
+  props: Omit<Props, "tracked"> & {
+    tracked: Record<string, string | undefined>;
+    onQ: (q: string) => void;
+    onOpen: (o: OpportunityView) => void;
+    onApply: (o: OpportunityView) => void;
+    onSave: (o: OpportunityView) => void;
+  },
+) {
+  const [tab, setTab] = useState<"New" | "Closing soon" | "Saved">("New");
+  const [searching, setSearching] = useState(props.find || !!props.q);
+  const list = tab === "New" ? props.opportunities : tab === "Closing soon" ? props.phone.closingSoon : props.phone.saved;
+  const [top, ...rest] = list;
+  const matchWord = (m: number) => (m >= 85 ? "Strong match" : m >= 75 ? "Good match" : "Match");
+  const saved = (o: OpportunityView) => !!props.tracked[o.id];
+
+  return (
+    <div className="relative flex flex-col leading-[normal] md:hidden">
+      <div className="flex flex-col gap-2 px-5 pt-[26px]">
+        <span className="text-[12px] font-semibold uppercase tracking-[.1em] text-tx2">
+          {props.phone.weekday} · {props.phone.today} new today
+        </span>
+        <h1 className="m-0 text-[46px] font-normal leading-none tracking-[-.035em]" style={{ fontFamily: SERIF }}>
+          For <span className="text-t-sky">you.</span>
+        </h1>
+      </div>
+
+      {searching && (
+        <label
+          className="mx-5 mt-4 flex h-[46px] items-center gap-2.5 rounded-xl border px-3.5 text-tx3"
+          style={{ borderColor: "rgba(255,255,255,.12)", background: "rgba(255,255,255,.05)" }}
+        >
+          <svg width="16" height="16" viewBox="0 0 16 16" className="flex-none" style={{ fill: "none", stroke: "currentColor", strokeWidth: 1.5, strokeLinecap: "round" }}>
+            <circle cx="7" cy="7" r="4.5" />
+            <path d="M10.5 10.5 14 14" />
+          </svg>
+          <input
+            autoFocus={props.find}
+            value={props.q}
+            onChange={(e) => props.onQ(e.target.value)}
+            placeholder="Search roles, companies, places"
+            aria-label="Search roles, companies, places"
+            className="h-full min-w-0 flex-1 bg-transparent text-sm text-tx outline-none"
+          />
+          <button
+            type="button"
+            onClick={() => {
+              props.onQ("");
+              setSearching(false);
+            }}
+            aria-label="Close search"
+            className="text-tx3"
+          >
+            ✕
+          </button>
+        </label>
+      )}
+
+      <div
+        className="mx-5 mb-3.5 mt-[18px] grid grid-cols-3 gap-0.5 rounded-xl border p-[3px]"
+        style={{ background: "rgba(255,255,255,.05)", borderColor: "rgba(255,255,255,.08)" }}
+      >
+        {(["New", "Closing soon", "Saved"] as const).map((t) => (
+          <button
+            key={t}
+            type="button"
+            onClick={() => setTab(t)}
+            aria-pressed={tab === t}
+            className="h-[38px] cursor-pointer whitespace-nowrap rounded-[9px] text-[13px] font-medium"
+            style={{ background: tab === t ? "#F4F6F8" : "transparent", color: tab === t ? "#08090B" : "var(--tx2)" }}
+          >
+            {t}
+          </button>
+        ))}
+      </div>
+
+      <div className="flex flex-col gap-2.5 px-4">
+        {top && (
+          <div className="animate-fade-up flex flex-col gap-3 rounded-[18px] bg-[#F4F6F8] p-[18px] text-[#08090B]">
+            <div className="flex items-center justify-between">
+              <span className="flex items-center gap-2">
+                <span
+                  className="relative grid size-[22px] place-items-center overflow-hidden rounded-md border border-[#E3E8EE] bg-white text-[12px]"
+                  style={{ fontFamily: SERIF }}
+                >
+                  {top.initial}
+                  {top.logo && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={top.logo} alt="" width={16} height={16} className="absolute inset-0 m-auto bg-white" onError={(e) => (e.currentTarget.style.display = "none")} />
+                  )}
+                </span>
+                <span className="text-[12px] font-semibold uppercase tracking-[.08em] text-[#1D5C9C]">
+                  {matchWord(top.match)} · {top.match}
+                </span>
+              </span>
+              <span className="text-[11px] text-[#5A616C]" style={{ fontFamily: MONO }}>
+                {top.found}
+              </span>
+            </div>
+            <button type="button" onClick={() => props.onOpen(top)} className="flex cursor-pointer flex-col gap-1 text-left text-[#08090B]">
+              <span className="text-[26px] leading-[1.08] tracking-[-.02em]" style={{ fontFamily: SERIF }}>
+                {top.title}
+              </span>
+              <span className="text-sm text-[#3E4550]">
+                {top.company} · {top.loc}
+              </span>
+            </button>
+            <div className="flex items-center gap-2 text-[12px]">
+              <span className="flex h-6 items-center rounded-full bg-[#E6E9EE] px-[9px] font-medium">{top.type}</span>
+              {top.closing && (
+                <span className="text-[#8E5413]" style={{ fontFamily: MONO }}>
+                  {top.closing}
+                </span>
+              )}
+            </div>
+            <div className="grid grid-cols-[1fr_48px] gap-2">
+              <button
+                type="button"
+                onClick={() => props.onApply(top)}
+                className="flex h-12 cursor-pointer items-center justify-center rounded-xl bg-[#8FC7FF] text-[15px] font-medium text-[#06111D]"
+              >
+                {props.tracked[top.id] && props.tracked[top.id] !== "saved" ? "Applied · open page" : "Open and apply"}
+              </button>
+              <button
+                type="button"
+                onClick={() => props.onSave(top)}
+                aria-label={saved(top) ? "Saved" : "Save"}
+                className="grid h-12 cursor-pointer place-items-center rounded-xl border border-[#D5DAE1] bg-transparent text-[#08090B]"
+              >
+                <svg width="16" height="16" viewBox="0 0 16 16" style={{ fill: saved(top) ? "#08090B" : "none", stroke: "currentColor", strokeWidth: 1.6, strokeLinejoin: "round" }}>
+                  <path d="M4 2.5h8v11L8 10.5l-4 3z" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        )}
+
+        {rest.map((o, i) => (
+          <button
+            key={o.id}
+            type="button"
+            onClick={() => props.onOpen(o)}
+            className="animate-fade-up grid cursor-pointer grid-cols-[40px_minmax(0,1fr)_40px] items-center gap-3 rounded-2xl border p-3.5 text-left text-tx"
+            style={{ background: "rgba(255,255,255,.04)", borderColor: "rgba(255,255,255,.08)", animationDelay: `${Math.min(i, 8) * 40 + 60}ms` }}
+          >
+            <span
+              className="relative grid size-10 place-items-center overflow-hidden rounded-[10px] border border-line2 bg-white text-[19px] text-[#0E131A]"
+              style={{ fontFamily: SERIF }}
+            >
+              {o.initial}
+              {o.logo && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={o.logo} alt="" width={26} height={26} className="absolute inset-0 m-auto bg-white" onError={(e) => (e.currentTarget.style.display = "none")} />
+              )}
+            </span>
+            <div className="flex min-w-0 flex-col gap-[3px]">
+              <span className="text-[15px] font-medium leading-[1.3]">{o.title}</span>
+              <span className="text-[13px] text-tx2">
+                {o.company} · {o.loc}
+              </span>
+              <div className="mt-1 flex items-center gap-2 text-[11px]" style={{ fontFamily: MONO }}>
+                <span
+                  className="flex h-5 items-center rounded-full px-2 font-sans text-[11px] font-medium"
+                  style={{ background: `var(--b-${o.tone})`, color: `var(--t-${o.tone})` }}
+                >
+                  {o.type}
+                </span>
+                {o.closing && <span className="text-t-dawn">{o.closing}</span>}
+              </div>
+            </div>
+            <PhoneRing match={o.match} />
+          </button>
+        ))}
+
+        {list.length === 0 && (
+          <div className="rounded-2xl border border-dashed border-line2 px-5 py-10 text-center text-tx3">
+            {tab === "Saved"
+              ? "Nothing saved yet. Tap the bookmark on a role."
+              : tab === "Closing soon"
+                ? "Nothing of yours closes in the next three weeks."
+                : "Nothing matches yet."}
+          </div>
+        )}
+        {tab === "New" && props.hasMore && (
+          <a href={`/?n=${props.limit + 40}`} className="mx-auto mt-2 flex h-[38px] items-center rounded-full border border-line px-4 text-[13px] font-medium !text-tx2">
+            Show more
+          </a>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function PhoneRing({ match }: { match: number }) {
+  const colour = ringColour(match);
+  return (
+    <div className="relative grid size-10 place-items-center">
+      <svg width="40" height="40" viewBox="0 0 40 40" className="absolute inset-0 -rotate-90">
+        <circle cx="20" cy="20" r="16" style={{ fill: "none", stroke: "var(--line2)", strokeWidth: 2.5 }} />
+        <circle
+          cx="20"
+          cy="20"
+          r="16"
+          pathLength={100}
+          strokeDasharray={`${match} 100`}
+          style={{ fill: "none", stroke: colour, strokeWidth: 2.5, strokeLinecap: "round" }}
+        />
+      </svg>
+      <span className="text-[11px]" style={{ fontFamily: MONO, color: colour }}>
+        {match}
+      </span>
     </div>
   );
 }

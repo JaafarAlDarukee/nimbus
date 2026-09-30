@@ -208,6 +208,19 @@ export function ProfileView(props: Props) {
         </AlertRow>
       </div>
 
+      {/* Phones: the tab bar has four tabs, so the other two screens live here */}
+      <div className="grid grid-cols-2 gap-2.5 md:hidden">
+        {[
+          { href: "/companies", title: "Companies", sub: "Who we watch" },
+          { href: "/cv-studio", title: "CV studio", sub: "One CV per job" },
+        ].map((l) => (
+          <Link key={l.href} href={l.href} className="flex flex-col gap-1 rounded-2xl border border-line bg-s1 px-4 py-3.5 !text-tx">
+            <span className="font-medium">{l.title}</span>
+            <span className="text-[13px] text-tx3">{l.sub}</span>
+          </Link>
+        ))}
+      </div>
+
       <div className="animate-fade-up flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-line bg-s1 px-5 py-[18px]" style={{ animationDelay: "260ms" }}>
         <div className="flex min-w-0 flex-col gap-[3px]">
           <span className="break-all font-medium">Signed in as {props.email}</span>

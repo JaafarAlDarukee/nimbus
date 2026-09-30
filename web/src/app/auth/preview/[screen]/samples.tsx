@@ -2,6 +2,8 @@
 import { CalendarView, type CalendarEvent } from "@/components/calendar-view";
 import { CompaniesView } from "@/components/companies-view";
 import { CvStudio } from "@/components/cv-studio";
+import { OpportunityFeed } from "@/components/opportunity-feed";
+import type { OpportunityView } from "@/lib/opportunity-view";
 import { ProfileView } from "@/components/profile-view";
 import { COMPANIES } from "@/lib/companies-data";
 import { TrackerView, type TrackerRow } from "@/components/tracker-view";
@@ -109,6 +111,31 @@ export const SAMPLES: Record<string, { path: string; render: () => React.ReactNo
           saved={saved}
           hasSaved
           signupCv={null}
+        />
+      );
+    },
+  },
+  opportunities: {
+    path: "/",
+    render: () => {
+      const o = (id: number, type: string, tone: OpportunityView["tone"], match: number, title: string, company: string, loc: string, found: string, isNew: boolean, domain: string | null, closing: string): OpportunityView => ({
+        id: String(id), type, tone, match, title, company, loc, found, isNew, initial: company[0], closing,
+        logo: domain ? `https://www.google.com/s2/favicons?sz=64&domain=${domain}` : null,
+        why: ["Internships are one of the types you picked", "Manufacturing fits your Mechanical Engineering", "Based in the UK, where you said you'd work"],
+        deadline: "24 Oct 2026", source: "careers.example.com", applyUrl: "https://example.com", contact: "Early Careers team", contactNote: "Listed by the employer", advert: "",
+      });
+      const list = [
+        o(1, "Internship", "lil", 94, "Operational Excellence Intern", "Müller UK & Ireland", "Telford", "35m ago", true, "muller.co.uk", "closes 24 Oct"),
+        o(2, "Spring week", "dawn", 91, "Discover: Behind the Scenes", "Rolls-Royce", "Solihull", "2h ago", true, "rolls-royce.com", "closes 16 Oct"),
+        o(3, "Placement", "sky", 89, "Industrial Placement 2027: Mechanical", "Jaguar Land Rover", "Gaydon", "5h ago", true, "jaguarlandrover.com", "closes 1 Nov"),
+        o(4, "Internship", "lil", 86, "Internship Programme 2027: R&D", "Kerry", "UK", "1h ago", true, "kerry.com", "closes 31 Oct"),
+        o(5, "Research", "rose", 81, "Summer Research Assistant: Soft Robotics", "Bristol Robotics Lab", "Bristol", "1d ago", false, null, "closes 20 Oct"),
+        o(6, "Apprenticeship", "teal", 78, "Apprentice Calibration Technician", "Triumph Motorcycles", "Hinckley", "3h ago", true, "triumphmotorcycles.co.uk", "closes 8 Nov"),
+      ];
+      return (
+        <OpportunityFeed
+          tab="you" type="All types" q="" limit={40} opportunities={list} hasMore={false} counts={{ you: 9, all: 1284 }} newCount={8}
+          tracked={{ "2": "saved" }} phone={{ closingSoon: [list[1], list[4]], saved: [list[1]], today: 3, weekday: "Tuesday" }} find={false} error={null}
         />
       );
     },
