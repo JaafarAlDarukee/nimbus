@@ -9,4 +9,5 @@ Back to [[00 Start Here]]
 - Likes: calm Runway/Linear style, Telegram-first, honesty about limits. Dislikes: gimmicky names/wording ("cringe"), blank lifeless UI.
 - Friends (mixed disciplines) will use it later; possibly a business later.
 - Leads decisions to Claude ("you are the leader") but cares about: no defence/nuclear, never messaging employers, privacy of their inbox, getting jobs the moment they open (more than CV tools).
+- **Designs must match exactly.** When a screen has a design file, it must look like it; compare side by side before saying it's done (see [[07 Design#How to match a screen (lesson from 2026-09-30)]]).
 - Keep replies scannable: short headers, bullets, bold for key actions. Give direct links (e.g. Supabase dashboard pages with the project ref).

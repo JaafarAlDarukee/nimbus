@@ -11,15 +11,17 @@ Back to [[00 Start Here]] · updated 2026-09-30
 - **Stage 5, Nimbus inbox**: dedicated Gmail + app password connected; parser for Gradcracker, LinkedIn, RateMyPlacement, Bright Network, Handshake, TARGETjobs, Prospects, Indeed. Owner still setting up alerts/forwarding (LinkedIn filter only `jobalerts-noreply@linkedin.com`; other sites sign up directly with the Nimbus Gmail).
 - **Design**: owner's Claude Design handoff (10 screens) received and saved locally. See [[07 Design]].
 - **Website phase 1**: design tokens + fonts + brand; Landing (pixel-matched); 10-step Onboarding with live matching count; invite-by-approval (request access → admin approves → email); `/admin` page. See [[06 Website]].
+- **Opportunities (2026-09-30)**: design top bar + Opportunities page matched side by side with `Nimbus Opportunities.dc.html` (desktop and phone): For you / All, search, type chips, match rings, light drawer, CV-check popup, toast. Save / Apply write to `applications`. Other nav items show a "Being built next" stand-in.
+- **Location fix**: `radar/geo.py` now puts US states / Canadian provinces / Australian states before UK town names ("Cambridge, MA" is US); multi-city lists count as UK if any city is. 93 saved rows corrected.
 
 ## In progress 🔄
 - Owner is going through onboarding (animation added 2026-09-30).
 
 ## Next ⏭️ (in order)
 1. ~~Animation pass on landing + onboarding~~ ✅ done 2026-09-30.
-2. **Opportunities** page from design + For you feed + detail drawer + "Open and apply" modal → Tracker.
+2. ~~**Opportunities** page from design~~ ✅ done 2026-09-30 (owner hasn't seen it signed in yet: ask for feedback).
 3. **Personal Telegram alerts** (bot links accounts via `telegram_links`; per-user matching; the shared channel becomes news only).
-4. **Tracker** (Notion-style table + board, stages, ghosted after 21 days).
+4. **Tracker** from `Nimbus Tracker.dc.html` (table + board, stages, ghosted after 21 days). The Opportunities toast already links to `/tracker`, so this is the most-needed next screen.
 5. **Profile** (edit preferences, alerts, log out).
 6. **Calendar** (deadlines, interviews, "expected to open" predictions).
 7. **Companies** (directory by field → degree → industry; company drawer).

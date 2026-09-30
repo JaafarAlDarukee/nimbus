@@ -11,12 +11,14 @@ Back to [[00 Start Here]] · code in `web/` (Next.js 16.3, React 19, Tailwind 4,
 | `/auth/callback` | `src/app/auth/callback/route.ts` | ✅ PKCE code exchange (same browser) |
 | `/auth/confirm` | `src/app/auth/confirm/page.tsx` | ✅ handles hash tokens, token_hash, code |
 | `/onboarding` | `src/app/onboarding/page.tsx`, `onboarding-flow.tsx` | ✅ 10 steps, saves to `profiles` |
-| `/` Opportunities | `src/app/(app)/page.tsx` | ⚠️ old first version; to be rebuilt from design |
+| `/` Opportunities | `src/app/(app)/page.tsx` (data) + `src/components/opportunity-feed.tsx` (UI) + `src/lib/opportunity-view.ts` (row → card, match score, why) | ✅ design-matched |
 | `/admin` | `src/app/(app)/admin/` | ✅ approve / decline access requests |
-| Tracker, Calendar, Companies, CV studio, Profile | — | ⏭️ not built |
+| `/tracker`, `/calendar`, `/companies`, `/cv-studio`, `/profile` | `src/app/(app)/<name>/page.tsx` using `components/coming-soon.tsx` | ⏭️ stand-ins; build each from its design file |
 
 - `src/proxy.ts`: refreshes the session; signed-out visitors → `/login` (except `/login`, `/auth/*`).
-- `src/app/(app)/layout.tsx`: requires login and `onboarded_at`, else → `/onboarding`. Still uses the **old** `AppSidebar`; replace with the design's 64px top bar.
+- `src/app/(app)/layout.tsx`: requires login and `onboarded_at`, else → `/onboarding`; renders `components/app-shell.tsx` (design top bar; sets `data-theme="bright"` on /, /calendar, /cv-studio). "checked Xm ago" comes from the `radar_last_checked()` SQL function.
+- `src/app/(app)/actions.ts`: `track(opportunityId, "saved" | "applied")` writes `applications` (applied → `applied_at`, follow-up in 14 days; saving never downgrades an applied row).
+- Opportunities details: `?tab=all`, `?type=<chip label>`, `?q=`, `?n=` (show more). Match score is a transparent heuristic (58 base + type/discipline/location/skills overlaps, max 97) and every "why" line is a real overlap. Logos: Google favicon of the employer's own domain only (not hiring-system hosts), else the initial.
 
 ## Brand and tokens
 - `src/app/globals.css`: Night (default) and Cloud (`[data-theme="light"]`) tokens from the design (`--bg`, `--s1`, `--sky`, `--dawn`…), exposed as Tailwind colours (`bg-s1`, `text-tx2`, `border-line2`, `text-t-sky`…), plus shadcn variable mapping.

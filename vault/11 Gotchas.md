@@ -7,6 +7,9 @@ Back to [[00 Start Here]]
 - `Set-Content -Encoding utf8` in PowerShell 5.1 writes a **BOM**; write files with the Write tool or `[IO.File]::WriteAllText(..., New-Object System.Text.UTF8Encoding $false)`.
 - Double quotes inside PowerShell here-strings break `git commit -m`: use `git commit -F <file>`.
 - `jq` strings with spaces inside `gh ... --jq '...'` break in PowerShell; use the Bash tool for jq, or simpler output.
+- Editing Python regexes through a Bash heredoc into a Python string can turn `\b` into a backspace character. Use the Edit tool for regex lines, then check with `od -c`.
+- The in-app browser pauses CSS animations in a background tab: a drawer can look half-transparent in a screenshot. Bring the tab to the front before judging.
+- Design files use `content-box` and `line-height: normal`; Tailwind uses `border-box` and 1.5 (see [[07 Design]]).
 - `Set-Location` persists between PowerShell calls; return to the project root afterwards.
 
 ## GitHub
