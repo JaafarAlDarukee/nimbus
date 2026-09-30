@@ -118,13 +118,23 @@ export function StarField({
 
 export const TELEGRAM_BOT_URL = "https://t.me/NimbusRadarBot";
 
-export function TelegramFab({ href = TELEGRAM_BOT_URL, className }: { href?: string; className?: string }) {
+export function TelegramFab({
+  href = TELEGRAM_BOT_URL,
+  className,
+  onClick,
+}: {
+  href?: string;
+  className?: string;
+  /** Client pages can take over the click (e.g. to link the account first) */
+  onClick?: (e: React.MouseEvent<HTMLAnchorElement>) => void;
+}) {
   return (
     <a
       href={href}
       target="_blank"
       rel="noopener noreferrer"
       title="Open Nimbus in Telegram"
+      onClick={onClick}
       className={cn("fixed bottom-5 right-5 z-10 flex h-14 items-center gap-2.5 rounded-full bg-telegram px-4 text-sm font-medium !text-white hover:brightness-105 sm:bottom-7 sm:right-7 sm:pl-4 sm:pr-5", className)}
       style={{ boxShadow: "0 10px 30px -8px rgba(42,171,238,.6)" }}
     >

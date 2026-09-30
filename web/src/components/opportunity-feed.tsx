@@ -4,7 +4,8 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { track } from "@/app/(app)/actions";
-import { SPARKLE, StarField, TelegramFab } from "@/components/brand";
+import { telegramLinkCode } from "@/app/(app)/profile/actions";
+import { SPARKLE, StarField, TELEGRAM_BOT_URL, TelegramFab } from "@/components/brand";
 import { TYPE_CHIPS, type OpportunityView } from "@/lib/opportunity-types";
 
 type Props = {
@@ -20,6 +21,8 @@ type Props = {
   /** The phone layout's extra tabs (mobile design) */
   phone: { closingSoon: OpportunityView[]; saved: OpportunityView[]; today: number; weekday: string };
   find: boolean;
+  /** Linked to the bot already? If not, "Open in Telegram" links the account on the way */
+  telegramLinked: boolean;
   error: string | null;
 };
 
@@ -276,7 +279,19 @@ export function OpportunityFeed(props: Props) {
         onSave={(o) => add(o, "saved")}
       />
 
-      <TelegramFab className="max-md:hidden" />
+      <TelegramFab
+        className="max-md:hidden"
+        onClick={async (e) => {
+          if (props.telegramLinked) return;
+          e.preventDefault();
+          // Open the tab straight away (browsers block pop-ups opened later), then point it at the bot
+          const tab = window.open("", "_blank");
+          const code = await telegramLinkCode();
+          const url = code ? `${TELEGRAM_BOT_URL}?start=${code}` : TELEGRAM_BOT_URL;
+          if (tab) tab.location.href = url;
+          else window.location.href = url;
+        }}
+      />
 
       {toast && (
         <div

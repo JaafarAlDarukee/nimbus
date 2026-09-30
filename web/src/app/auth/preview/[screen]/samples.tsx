@@ -135,7 +135,7 @@ export const SAMPLES: Record<string, { path: string; render: () => React.ReactNo
       return (
         <OpportunityFeed
           tab="you" type="All types" q="" limit={40} opportunities={list} hasMore={false} counts={{ you: 9, all: 1284 }} newCount={8}
-          tracked={{ "2": "saved" }} phone={{ closingSoon: [list[1], list[4]], saved: [list[1]], today: 3, weekday: "Tuesday" }} find={false} error={null}
+          tracked={{ "2": "saved" }} phone={{ closingSoon: [list[1], list[4]], saved: [list[1]], today: 3, weekday: "Tuesday" }} find={false} telegramLinked error={null}
         />
       );
     },

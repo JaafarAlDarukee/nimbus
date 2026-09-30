@@ -49,10 +49,11 @@ async function loadFeed(params: Awaited<PageProps<"/">["searchParams"]>): Promis
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  const [{ data: profile }, { data: hiddenRows }] = await Promise.all([
+  const [{ data: profile }, { data: hiddenRows }, { data: telegram }] = await Promise.all([
     supabase.from("profiles").select("preferences,cv_details").eq("id", user!.id).maybeSingle(),
     // "Not for me" in Telegram
     supabase.from("hidden_opportunities").select("opportunity_id").limit(500),
+    supabase.from("notification_channels").select("id").eq("channel", "telegram").eq("enabled", true).limit(1),
   ]);
   const hidden = (hiddenRows ?? []).map((h) => h.opportunity_id as string);
   const extras = { cvSkills: ((profile?.cv_details as { skills?: string[] } | null)?.skills ?? []) };
@@ -130,6 +131,7 @@ async function loadFeed(params: Awaited<PageProps<"/">["searchParams"]>): Promis
       weekday: new Date().toLocaleDateString("en-GB", { weekday: "long", timeZone: "Europe/London" }),
     },
     find: first(params.find) === "1",
+    telegramLinked: (telegram ?? []).length > 0,
     error: rows.error ? "Couldn't load opportunities just now. Try again in a moment." : null,
   };
 }
