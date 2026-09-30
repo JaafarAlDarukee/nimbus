@@ -30,7 +30,8 @@ KIND_RULES: list[tuple[str, re.Pattern]] = [
     ("internship", _rx(
         r"\bintern(ship)?s?\b", r"\bsummer (placement|student|programme|program)\b",
         r"\bvacation (scheme|placement|student)\b", r"\bworking student\b", r"\bwerkstudent\b",
-        r"\bco-?op\b", r"\bstagiaire\b|\bstage\b(?= .*(ingénieur|engineer))", r"\bpraktikum\b",
+        # French "stage" only with French around it: "Stage Test Engineer" is a rocket stage
+        r"\bco-?op\b", r"\bstagiaire\b", r"\bstage (ingénieur|de fin|en |d'été|h/f)", r"\bpraktikum\b",
     )),
     ("placement", _rx(
         r"\bplacements?\b", r"\byear in industry\b", r"\bindustrial (trainee|year)\b", r"\bsandwich\b",
@@ -49,6 +50,7 @@ KIND_RULES: list[tuple[str, re.Pattern]] = [
 STAFF_ROLE = _rx(
     r"\bsenior\b", r"\bprincipal\b", r"\bhead of\b", r"\bdirector\b", r"\brecruit(er|ment|ing)\b",
     r"\bmanager\b", r"\bcoordinator\b", r"\bdelivery lead\b", r"\bpartner\b", r"\bprofessor\b", r"\blecturer\b",
+    r"\bstaff\b", r"\blead (engineer|scientist|developer)\b", r"\btalent sourcer\b", r"\bpostdoc", r"\bpost-doctoral\b",
 )
 
 # Hints some hiring systems give in their own fields (employment type, experience level)
@@ -75,9 +77,38 @@ DISCIPLINES: dict[str, re.Pattern] = {
     "business": _rx(
         r"\bfinance\b", r"\bcommercial\b", r"\bprocurement\b", r"\bsupply chain\b", r"\bhuman resources\b",
         r"\bhr\b", r"\bmarketing\b", r"\bsales\b", r"\bbusiness (development|support|analyst|management)\b",
-        r"\bpublic affairs\b", r"\bcompliance\b", r"\bproject management\b",
+        r"\bpublic affairs\b", r"\bcompliance\b", r"\bproject management\b", r"\btreasury\b", r"\btrading\b",
+        r"\bquant", r"\binvestment\b", r"\baudit\b", r"\btax\b", r"\baccount(ing|ancy)\b", r"\blegal\b",
+        r"\boperations associate\b", r"\bconsult(ant|ing)\b", r"\bcrypto\b",
+    ),
+    # Not engineering at all: keeps these out of every engineering student's For you
+    "creative": _rx(
+        r"\bgraphic design", r"\bbrand\b", r"\bsocial media\b", r"\bcontent\b", r"\bwriters?\b", r"\bjournalis",
+        r"\bcopywrit", r"\bvideo\b", r"\bphotograph", r"\bevent (producer|planner|coordinator)\b", r"\bcommunications\b",
     ),
 }
+
+# The description is only trusted with stricter wording, and only for titles that sound technical;
+# otherwise company blurbs ("marketing materials", "we manufacture...") tag every job
+DESCRIPTION_DISCIPLINES: dict[str, re.Pattern] = {
+    "mechanical": _rx(r"\bmechanical engineering\b", r"\bmechanical engineer\b", r"\bmechanical design\b"),
+    "manufacturing": _rx(
+        r"\bmanufacturing engineer", r"\bproduction engineer", r"\bprocess engineer", r"\blean manufacturing\b",
+        r"\bindustrial engineering\b",
+    ),
+    "robotics": _rx(r"\brobotics\b", r"\bmechatronics\b", r"\bcontrol systems\b"),
+    "electrical": _rx(r"\belectrical engineering\b", r"\belectronic engineering\b", r"\belectrical engineer\b", r"\bembedded systems\b"),
+    "aerospace": _rx(r"\baerospace engineering\b", r"\baeronautical\b", r"\bpropulsion\b", r"\bavionics\b"),
+    "automotive": _rx(r"\bautomotive engineering\b", r"\bvehicle dynamics\b", r"\bpowertrain\b", r"\bmotorsport\b"),
+    "materials": _rx(r"\bmaterials (science|engineering|engineer|scientist)\b", r"\bmetallurg", r"\bcomposites\b"),
+    "civil": _rx(r"\bcivil engineering\b", r"\bstructural engineering\b"),
+    "chemical": _rx(r"\bchemical engineering\b", r"\bprocess chemistry\b"),
+    "software": _rx(r"\bsoftware engineering\b", r"\bsoftware developer\b", r"\bcomputer science\b"),
+}
+TECHNICAL_TITLE = _rx(
+    r"\bengineer", r"\btechnical\b", r"\btechnician\b", r"\bscientist\b", r"\bresearch\b", r"\br&d\b", r"\blab\b",
+    r"\btest\b", r"\bdesign\b(?! intern)", r"\bstem\b", r"\bscience\b",
+)
 
 SKILLS: dict[str, re.Pattern] = {
     "CAD": _rx(r"\bcad\b"),
@@ -122,8 +153,9 @@ def _kind(title: str, hint: str | None) -> str | None:
         if pattern.search(title):
             return kind
     if hint:
+        # Whole words only: "Internal" and "International" are not internships
         for word, kind in HINT_KINDS.items():
-            if word in hint.lower():
+            if re.search(rf"\b{word}\b", hint, re.I):
                 return kind
     return None
 
@@ -161,16 +193,28 @@ def fingerprint(company: str, title: str, place: str) -> str:
     return hashlib.sha1(key.encode()).hexdigest()
 
 
+def disciplines_for(title: str, description: str) -> list[str]:
+    """From the title when it names a field; otherwise from the description's own wording (said at
+    least twice), and only when the title sounds technical."""
+    found = [name for name, pattern in DISCIPLINES.items() if pattern.search(title)]
+    if found or not TECHNICAL_TITLE.search(title):
+        return found
+    return [name for name, pattern in DESCRIPTION_DISCIPLINES.items() if len(pattern.findall(description)) >= 2]
+
+
+def kind_for(title: str, hint: str | None = None) -> str | None:
+    """The opportunity type, or None for roles that aren't for students (senior, staff, managers)."""
+    if STAFF_ROLE.search(title):
+        return None
+    return _kind(title, hint)
+
+
 def classify(job: RawJob) -> Opportunity | None:
     kind = _kind(job.title, _hint(job))
     if kind is None or STAFF_ROLE.search(job.title) or excluded(job.company, job.title, job.description):
         return None
 
-    # Disciplines come from the title when it names one; otherwise only from words the description
-    # repeats, so company boilerplate ("we build aircraft...") doesn't tag every job
-    disciplines = [name for name, pattern in DISCIPLINES.items() if pattern.search(job.title)]
-    if not disciplines:
-        disciplines = [name for name, pattern in DISCIPLINES.items() if len(pattern.findall(job.description)) >= 2]
+    disciplines = disciplines_for(job.title, job.description)
     skills = [name for name, pattern in SKILLS.items() if pattern.search(f"{job.title} {job.description}")]
     country = job.country or guess_country(job.location) or guess_country(job.description[:500])
     city = first_city(job.location)
