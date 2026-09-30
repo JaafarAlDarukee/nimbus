@@ -22,10 +22,11 @@ export type OpportunityRow = {
   first_seen_at: string;
   closes_at: string | null;
   rolling: boolean | null;
+  source_kind: string | null;
 };
 
 export const OPPORTUNITY_SELECT =
-  "id,title,company_name,kind,disciplines,skills,location_text,country,apply_url,description,published_contacts,first_seen_at,closes_at,rolling";
+  "id,title,company_name,kind,disciplines,skills,location_text,country,apply_url,description,published_contacts,first_seen_at,closes_at,rolling,source_kind";
 
 const KIND_VIEW: Record<string, { type: string; tone: Tone; plural: string }> = {
   placement: { type: "Placement", tone: "sky", plural: "Placements are" },
@@ -162,7 +163,9 @@ export function toView(row: OpportunityRow, prefs: Preferences, filters: MatchFi
     type: kind.type,
     tone: kind.tone,
     found: timeAgo(row.first_seen_at, now),
-    isNew: age < 6 * HOUR,
+    // Job-board copies appear days after the employer posts them: never "just opened"
+    isNew: age < 6 * HOUR && row.source_kind !== "adzuna",
+    via: row.source_kind === "adzuna" ? "Adzuna" : null,
     match,
     why,
     deadline: row.closes_at

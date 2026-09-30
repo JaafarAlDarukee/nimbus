@@ -161,9 +161,10 @@ def main() -> None:
         new, first_run = save(opportunities, stats, args.tier)
         send_new(new, first_run, total_tracked=len(opportunities))
 
-        from .notify.personal import send_matches, send_reminders
+        from .notify.personal import send_matches, send_reminders, send_welcome
 
         if not first_run:
+            send_welcome()
             send_matches(new)
         send_reminders()
 

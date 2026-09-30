@@ -157,7 +157,7 @@ export function OpportunityFeed(props: Props) {
             Opportunities <span className="italic text-t-sky">{tab === "you" ? "for you." : "everywhere."}</span>
           </h1>
           <p className="animate-fade-up m-0 text-[15px] text-tx2" style={{ animationDelay: "120ms" }}>
-            Newest first. Everything here was found on the employer&apos;s own site.
+            Newest first. Straight from employers&apos; own sites, plus job-board finds marked &ldquo;via&rdquo;.
           </p>
         </div>
 
@@ -246,6 +246,7 @@ export function OpportunityFeed(props: Props) {
                   {o.company} · {o.loc}{" "}
                   <span className="text-[12px] text-tx3" style={{ fontFamily: MONO }}>
                     · found {o.found}
+                    {o.via && ` · via ${o.via}`}
                   </span>
                 </span>
               </div>
@@ -759,6 +760,7 @@ function PhoneFeed(
                   {o.type}
                 </span>
                 {o.closing && <span className="text-t-dawn">{o.closing}</span>}
+                {o.via && <span className="text-tx3">via {o.via}</span>}
               </div>
             </div>
             <PhoneRing match={o.match} />

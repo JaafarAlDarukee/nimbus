@@ -17,7 +17,7 @@ from .pipeline.exclusions import excluded
 from .pipeline.names import clean_company_name
 from .store import _batches, _fetch_all, client
 
-RETIRED_SOURCES = {"adzuna"}
+RETIRED_SOURCES: set[str] = set()
 HINTS = ("employmentType", "commitment", "experience", "employment")
 
 

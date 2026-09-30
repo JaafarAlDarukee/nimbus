@@ -25,6 +25,8 @@ export type OpportunityView = {
   contact: string;
   contactNote: string;
   advert: string;
+  /** Found on a job board rather than the employer's own site ("Adzuna") */
+  via: string | null;
 };
 
 /** The type chips on the page, in the design's order, and which radar kinds each one covers. */

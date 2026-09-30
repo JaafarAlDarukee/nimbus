@@ -122,7 +122,7 @@ export const SAMPLES: Record<string, { path: string; render: () => React.ReactNo
         id: String(id), type, tone, match, title, company, loc, found, isNew, initial: company[0], closing,
         logo: domain ? `https://www.google.com/s2/favicons?sz=64&domain=${domain}` : null,
         why: ["Internships are one of the types you picked", "Manufacturing fits your Mechanical Engineering", "Based in the UK, where you said you'd work"],
-        deadline: "24 Oct 2026", source: "careers.example.com", applyUrl: "https://example.com", contact: "Early Careers team", contactNote: "Listed by the employer", advert: "",
+        deadline: "24 Oct 2026", source: "careers.example.com", applyUrl: "https://example.com", contact: "Early Careers team", contactNote: "Listed by the employer", advert: "", via: null,
       });
       const list = [
         o(1, "Internship", "lil", 94, "Operational Excellence Intern", "Müller UK & Ireland", "Telford", "35m ago", true, "muller.co.uk", "closes 24 Oct"),

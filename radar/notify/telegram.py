@@ -60,6 +60,8 @@ def format_alert(row: dict) -> str:
         lines.append(e(" · ".join(p for p in (tags, skills) if p)))
     if row.get("rolling"):
         lines.append("Rolling deadline: apply early")
+    if row.get("source_kind") == "adzuna":
+        lines.append("<i>via Adzuna (job board, may be a few days old)</i>")
     return "\n".join(lines)
 
 

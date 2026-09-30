@@ -62,6 +62,8 @@ def format_match(row: dict, points: int, industry: str | None) -> str:
     ]
     if tags:
         lines.append(" ".join(tags))
+    if row.get("source_kind") == "adzuna":
+        lines.append("<i>via Adzuna: found on a job board, so it may be a few days old</i>")
     return "\n".join(lines)
 
 
@@ -161,6 +163,47 @@ def send_matches(rows: list[dict]) -> None:
                 telegram.send(chat, f"…and {len(fits) - MAX_PER_PERSON} more new matches. They're all in <b>For you</b> on the website.")
             reached += sent_here > 0
     print(f"Personal alerts: {telegram.sent} messages to {reached} people")
+
+
+WELCOME_COLUMNS = "id,title,company_name,kind,disciplines,skills,country,location_text,closes_at,posted_at,first_seen_at,rolling,apply_url,source_kind"
+
+
+def send_welcome() -> None:
+    """Someone who just connected gets their 3 best open matches straight away, so they see what
+    alerts look like instead of waiting for the next new role."""
+    token = os.environ.get("TELEGRAM_BOT_TOKEN")
+    if not token:
+        return
+    with client() as db:
+        people = _linked(db)
+        if not people:
+            return
+        ids = ",".join(p["user_id"] for p in people)
+        started = {a["user_id"] for a in _fetch_all(db, "/alerts_sent", {"select": "user_id", "user_id": f"in.({ids})", "channel": "eq.telegram"})}
+        newcomers = [p for p in people if p["user_id"] not in started]
+        if not newcomers:
+            return
+        since = (datetime.now(timezone.utc) - timedelta(days=14)).isoformat()
+        recent = _fetch_all(db, "/opportunities", {"select": WELCOME_COLUMNS, "status": "eq.open", "first_seen_at": f"gt.{since}", "order": "first_seen_at.desc"})
+        newcomer_ids = ",".join(p["user_id"] for p in newcomers)
+        profiles = {p["id"]: p for p in _fetch_all(db, "/profiles", {"select": "id,preferences,cv_details", "id": f"in.({newcomer_ids})"})}
+        telegram = _Telegram(token)
+        for person in newcomers:
+            profile = profiles.get(person["user_id"]) or {}
+            prefs = with_defaults(profile.get("preferences"))
+            filters = filters_for(prefs)
+            cv_skills = (profile.get("cv_details") or {}).get("skills") or []
+            fits = sorted(
+                ((score(r, prefs, filters, cv_skills), r) for r in recent if is_match(r, prefs, filters)),
+                key=lambda f: -f[0][0],
+            )[:3]
+            if not fits:
+                continue
+            chat = person["config"]["chat_id"]
+            telegram.send(chat, "👋 <b>To get you started</b>, here are your best open matches right now. New ones will arrive the moment they open.")
+            for (points, _, industry), row in fits:
+                _send_once(db, telegram, person["user_id"], row["id"], "telegram", chat, format_match(row, points, industry), _buttons(row))
+    print(f"Welcome matches: {telegram.sent} messages")
 
 
 def send_reminders() -> None:
