@@ -35,15 +35,15 @@ export default async function LandingPage(props: PageProps<"/login">) {
 
       <main className="relative flex w-full max-w-[760px] flex-1 flex-col items-center gap-7 px-6 pb-16 pt-[clamp(56px,12vh,120px)] text-center">
         <span className="animate-fade-up font-mono text-xs uppercase tracking-[0.12em] text-tx2">
-          Join the Children of Khan
+          Private job radar · UK engineering
         </span>
         <h1
           className="animate-fade-up m-0 font-serif font-normal leading-none"
           style={{ fontSize: "clamp(48px, 9vw, 84px)", letterSpacing: "-0.035em", textWrap: "balance", animationDelay: "0.08s" }}
         >
-          Opportunities,
+          Welcome to
           <br />
-          <span className="text-t-sky">the moment they form.</span>
+          <span className="text-t-sky">Children of Khan</span>, boy 🫵
         </h1>
         <p
           className="animate-fade-up m-0 max-w-[520px] text-[17px] leading-[1.55] text-tx2"
