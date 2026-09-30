@@ -18,6 +18,7 @@ type Props = {
   preferences: Preferences;
   count: number;
   telegram: { username: string | null } | null;
+  isAdmin?: boolean;
 };
 
 type Step = { key: string; title: string; single?: boolean; opts: string[]; soon?: string[]; value: string[] };
@@ -252,6 +253,7 @@ export function ProfileView(props: Props) {
         {[
           { href: "/companies", title: "Companies", sub: "Who we watch" },
           { href: "/cv-studio", title: "CV studio", sub: "One CV per job" },
+          ...(props.isAdmin ? [{ href: "/admin", title: "Admin", sub: "Access requests and suggestions" }] : []),
         ].map((l) => (
           <Link key={l.href} href={l.href} className="flex flex-col gap-1 rounded-2xl border border-line bg-s1 px-4 py-3.5 !text-tx">
             <span className="font-medium">{l.title}</span>

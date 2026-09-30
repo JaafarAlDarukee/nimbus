@@ -12,7 +12,7 @@ async function loadProfile(): Promise<React.ComponentProps<typeof ProfileView>> 
     data: { user },
   } = await supabase.auth.getUser();
   const [{ data: profile }, { data: telegram }] = await Promise.all([
-    supabase.from("profiles").select("first_name,last_name,preferences").eq("id", user!.id).maybeSingle(),
+    supabase.from("profiles").select("first_name,last_name,preferences,is_admin").eq("id", user!.id).maybeSingle(),
     supabase.from("notification_channels").select("config").eq("channel", "telegram").eq("enabled", true).limit(1),
   ]);
   const preferences = withDefaults(profile?.preferences);
@@ -29,5 +29,6 @@ async function loadProfile(): Promise<React.ComponentProps<typeof ProfileView>> 
     preferences,
     count: count ?? 0,
     telegram: telegram?.length ? { username: config?.username ?? null } : null,
+    isAdmin: !!profile?.is_admin,
   };
 }
