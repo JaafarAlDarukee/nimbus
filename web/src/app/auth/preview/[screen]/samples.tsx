@@ -1,6 +1,7 @@
 // Sample data taken from the design files, for the development-only previews.
 import { CalendarView, type CalendarEvent } from "@/components/calendar-view";
 import { CompaniesView } from "@/components/companies-view";
+import { CvStudio } from "@/components/cv-studio";
 import { ProfileView } from "@/components/profile-view";
 import { COMPANIES } from "@/lib/companies-data";
 import { TrackerView, type TrackerRow } from "@/components/tracker-view";
@@ -85,6 +86,29 @@ export const SAMPLES: Record<string, { path: string; render: () => React.ReactNo
             ev("2026-10-01", "interview", "Interview: Industrial Placement", "Jaguar Land Rover", "10:00 · video"),
             ev("2026-10-01", "deadline", "Year in Industry: Test Engineer", "Renishaw", "23:59"),
           ]}
+        />
+      );
+    },
+  },
+  "cv-studio": {
+    path: "/cv-studio",
+    render: () => {
+      const saved = {
+        name: "Sam Okafor", email: "sam.okafor@student.ac.uk", phone: "07700 900123", address: "Birmingham", uni: "University of Birmingham",
+        degree: "BEng Mechanical Engineering", dates: "2024 – 2028", grade: "On track for a 2:1", skills: ["CAD", "ANSYS", "FEA", "CNC", "Python", "Teamwork"],
+        exp: [
+          { role: "Formula Student, suspension lead", org: "UoB Racing", dates: "2025 – now", bullets: "Designed uprights in CAD and ran FEA in ANSYS\nCut upright mass by 18% while keeping the safety factor above 2", on: true },
+          { role: "Summer production operative", org: "Bakery line, Birmingham", dates: "Summer 2025", bullets: "Helped run Kaizen and 5S projects\nTracked downtime on the line", on: true },
+        ],
+      };
+      const jd = "We are looking for an Operational Excellence Intern to support continuous improvement across our manufacturing site. You will use Lean and Six Sigma tools, run root cause analysis, track OEE and support Kaizen events. Requirements: studying Mechanical or Manufacturing Engineering, confident with data analysis and Excel, strong communication and teamwork, awareness of health and safety, experience with 5S or PFMEA is a plus.";
+      return (
+        <CvStudio
+          jobs={[{ id: "a", title: "Operational Excellence Intern", company: "Müller UK & Ireland", link: "https://careers.muller.co.uk", jd, jdName: "Muller_OpEx_Intern.pdf", mode: "build", cvName: null, cvText: null, cv: saved, step: 3 }]}
+          selectedId="a"
+          saved={saved}
+          hasSaved
+          signupCv={null}
         />
       );
     },
