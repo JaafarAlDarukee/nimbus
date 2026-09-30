@@ -1,5 +1,5 @@
 import { OpportunityFeed } from "@/components/opportunity-feed";
-import { OPPORTUNITY_SELECT, TYPE_CHIPS, toView, type OpportunityRow } from "@/lib/opportunity-view";
+import { OPPORTUNITY_SELECT, TYPE_CHIPS, toView, type OpportunityRow, type OpportunityView } from "@/lib/opportunity-view";
 import { applyMatch, matchFilters, withDefaults } from "@/lib/preferences";
 import { createClient } from "@/lib/supabase/server";
 
@@ -14,6 +14,18 @@ const safeSearch = (text?: string) =>
     ?.replace(/[^\p{L}\p{N} &'-]/gu, " ")
     .replace(/\s+/g, " ")
     .trim() || undefined;
+
+/** One card per role: the same title at the same employer in several places becomes "Leeds +3 more". */
+function collapse(list: OpportunityView[]): OpportunityView[] {
+  const seen = new Map<string, { card: OpportunityView; more: number }>();
+  for (const card of list) {
+    const key = `${card.company.toLowerCase()}|${card.title.toLowerCase().replace(/\s+/g, " ").trim()}`;
+    const first = seen.get(key);
+    if (first) first.more += 1;
+    else seen.set(key, { card, more: 0 });
+  }
+  return [...seen.values()].map(({ card, more }) => (more ? { ...card, loc: `${card.loc} +${more} more` } : card));
+}
 
 /** Midnight today in the UK, as an ISO time (handles BST). */
 function londonMidnight(): string {
@@ -88,8 +100,8 @@ async function loadFeed(params: Awaited<PageProps<"/">["searchParams"]>): Promis
 
   const now = Date.now();
   const view = (list: unknown) => ((list ?? []) as OpportunityRow[]).map((row) => toView(row, prefs, filters, now, extras));
-  const opportunities = view(rows.data);
-  const closingSoon = view(closing.data);
+  const opportunities = collapse(view(rows.data));
+  const closingSoon = collapse(view(closing.data));
   const saved = view(((savedApps.data ?? []) as unknown as { opportunity: OpportunityRow | null }[]).map((a) => a.opportunity).filter(Boolean));
 
   const ids = [...new Set([...opportunities, ...closingSoon].map((o) => o.id))];

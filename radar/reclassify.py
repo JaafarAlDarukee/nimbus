@@ -1,7 +1,8 @@
 """Re-apply today's rules to every open opportunity already saved.
 
-Fixes labels from older, looser rules (types and disciplines), closes jobs that are excluded or
-not for students, and closes job-board copies (Adzuna) that are no longer used. Closing is
+Fixes labels from older, looser rules (types and disciplines) and employer names saved before the
+name tidy-up, closes jobs that are excluded or not for students, duplicates, and job-board copies
+(Adzuna) that are no longer used. Closing is
 reversible (status only). Prints counts only, since the logs are public.
 
     python -m radar.reclassify
@@ -11,8 +12,9 @@ from __future__ import annotations
 
 from collections import defaultdict
 
-from .pipeline.classify import disciplines_for, kind_for
+from .pipeline.classify import disciplines_for, fingerprint, kind_for
 from .pipeline.exclusions import excluded
+from .pipeline.names import clean_company_name
 from .store import _batches, _fetch_all, client
 
 RETIRED_SOURCES = {"adzuna"}
@@ -25,7 +27,7 @@ def main() -> None:
             db,
             "/opportunities",
             {
-                "select": "id,title,company_name,description,kind,disciplines,source_kind,"
+                "select": "id,fingerprint,title,company_name,city,location_text,description,kind,disciplines,source_kind,"
                 + ",".join(f"{h}:raw->>{h}" for h in HINTS),
                 "status": "eq.open",
                 "order": "id",
@@ -33,8 +35,26 @@ def main() -> None:
         )
         close: dict[str, list[str]] = defaultdict(list)
         relabel: dict[tuple[str, tuple[str, ...]], list[str]] = defaultdict(list)
+        rename: list[tuple[str, str, str]] = []  # (id, clean name, new fingerprint)
+
+        # Employer names saved before the name tidy-up ("cat", "1054 GlaxoSmithKline..."): rename them,
+        # or close them when the tidy-named copy of the same job already exists
+        taken = {r["fingerprint"] for r in _fetch_all(db, "/opportunities", {"select": "fingerprint", "order": "id"})}
+        for row in rows:
+            clean = clean_company_name(row["company_name"] or "")
+            if clean == (row["company_name"] or ""):
+                continue
+            new_fp = fingerprint(clean, row["title"] or "", row.get("city") or row.get("location_text") or "")
+            if new_fp != row["fingerprint"] and new_fp in taken:
+                close["duplicate under an old name"].append(row["id"])
+            else:
+                rename.append((row["id"], clean, new_fp))
+                taken.add(new_fp)
+        duplicates = set(close["duplicate under an old name"])
 
         for row in rows:
+            if row["id"] in duplicates:
+                continue
             title, description = row["title"] or "", row["description"] or ""
             if row["source_kind"] in RETIRED_SOURCES:
                 close["job board copy"].append(row["id"])
@@ -54,6 +74,8 @@ def main() -> None:
         for ids in close.values():
             for chunk in _batches(ids, 100):
                 db.patch("/opportunities", params={"id": f"in.({','.join(chunk)})"}, json={"status": "closed"}).raise_for_status()
+        for row_id, clean, new_fp in rename:
+            db.patch("/opportunities", params={"id": f"eq.{row_id}"}, json={"company_name": clean, "fingerprint": new_fp}).raise_for_status()
         for (kind, disciplines), ids in relabel.items():
             for chunk in _batches(ids, 100):
                 db.patch(
@@ -66,6 +88,7 @@ def main() -> None:
     for reason, ids in close.items():
         print(f"Closed {len(ids)}: {reason}")
     print(f"Relabelled {sum(len(ids) for ids in relabel.values())}")
+    print(f"Renamed {len(rename)} employers to their tidy names")
 
 
 if __name__ == "__main__":

@@ -21,8 +21,9 @@ _PREFIXES = [
     re.compile(r"^(united kingdom|uk|gbr?|ww_uk)\s*[-–]\s*", re.I),      # UK - Rackspace, GBR - Kantar
     re.compile(r"^(united kingdom|uk)\s{2,}", re.I),                     # "United Kingdom  Avis Budget"
     re.compile(r"^company \d+\s*[-–]\s*", re.I),                         # Company 64 - MFC Global
+    re.compile(r"^\d{1,6}\s+(?=[A-Za-z]{2})"),                           # 02 Reed Specialist, 1054 GlaxoSmithKline
     # Codes with a digit or underscore, 3+ characters (so brands like '3M' survive): GBA0, C_012, LE-1000
-    re.compile(r"^(?=\S*[\d_])[A-Za-z0-9_]{3,14}(-[A-Za-z0-9]+)?\s*[-–]?\s+"),
+    re.compile(r"^(?!\d+(st|nd|rd|th)\b)(?=\S*[\d_])[A-Za-z0-9_]{3,14}(-[A-Za-z0-9]+)?\s*[-–]?\s+"),
     re.compile(r"^[A-Z]{2,6}-(?=[A-Z])"),                                # ALEU-Adobe, NAA-Jones
     re.compile(r"^[A-Z0-9_]{2,6}\s+[-–]\s+"),                            # TGB - Trumpf
     re.compile(r"^[A-Z]{2,6}\([A-Z]{2,3}\)\s+"),                         # FQM(UK) First Quantum
