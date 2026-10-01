@@ -79,9 +79,17 @@ function siteOf(hostname: string): string {
 
 export function kindView(row: { kind: string; title: string }) {
   if (row.kind === "event") {
-    return /hack/i.test(row.title)
-      ? { type: "Hackathon", tone: "mint" as const, plural: "Hackathons are" }
-      : { type: /conference|summit|expo/i.test(row.title) ? "Conference" : "Event", tone: "rose" as const, plural: "Events are" };
+    if (/hack/i.test(row.title)) return { type: "Hackathon", tone: "mint" as const, plural: "Hackathons are" };
+    const type = /careers? (fair|festival)|graduate fair/i.test(row.title)
+      ? "Careers fair"
+      : /\b(expo|exhibition|show|week)\b|\((expo|science festival)\)/i.test(row.title)
+        ? "Expo"
+        : /conference|summit|symposium|congress/i.test(row.title)
+          ? "Conference"
+          : /competition|challenge/i.test(row.title)
+            ? "Competition"
+            : "Event";
+    return { type, tone: "rose" as const, plural: "Events are" };
   }
   return KIND_VIEW[row.kind] ?? { type: "Opportunity", tone: "sky" as const, plural: "" };
 }

@@ -8,3 +8,5 @@ Nimbus inbox,inbox,gmail,priority,"Job-alert emails (Gradcracker, LinkedIn, Rate
 Adzuna (UK),adzuna,gb,priority,"Job-search API: many UK employers not watched directly yet. Ads appear a few days after the employer posts, so they are labelled via Adzuna; credit ""Jobs by Adzuna"""
 Mitsubishi Electric,workable,mitsubishi-electric,priority,UK Workable board (Hatfield); placements are rarely advertised
 Devpost,devpost,hackathons,standard,Hackathons (online and in the UK/Europe) from Devpost's public listing
+Major League Hacking,mlh,hackathons,standard,Student hackathons (UK/Europe and online) from MLH's season page
+Nimbus events list,events,events,standard,"Expos, conferences, careers fairs and science festivals researched by hand (data/seed/events.csv)"

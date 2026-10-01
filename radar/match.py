@@ -10,7 +10,7 @@ from pathlib import Path
 
 from .pipeline.classify import DISCIPLINES
 
-DEFAULT_TYPES = ["Placement", "Summer internship", "Spring week", "Hackathon", "Competition", "Conference"]
+DEFAULT_TYPES = ["Placement", "Summer internship", "Spring week", "Hackathon", "Competition", "Conference", "Expo or careers fair"]
 
 _PREFERENCES_TS = Path(__file__).resolve().parent.parent / "web" / "src" / "lib" / "preferences.ts"
 

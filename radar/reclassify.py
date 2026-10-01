@@ -56,6 +56,8 @@ def main() -> None:
             if row["id"] in duplicates:
                 continue
             title, description = row["title"] or "", row["description"] or ""
+            if row["kind"] == "event":  # event readers set type and subject themselves; nothing to re-derive
+                continue
             if row["source_kind"] in RETIRED_SOURCES:
                 close["job board copy"].append(row["id"])
                 continue

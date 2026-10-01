@@ -118,9 +118,12 @@ const TYPE_KINDS: Record<string, string[]> = {
   Hackathon: ["event"],
   Competition: ["event"],
   Conference: ["event"],
+  "Expo or careers fair": ["event"],
   "Networking event": ["event"],
   "Summer school": ["event"],
   "Mentoring programme": ["event"],
+  "Clinical shadowing": ["insight"],
+  Fieldwork: ["research"],
 };
 
 const COUNTRY_CODES: Record<string, string> = {

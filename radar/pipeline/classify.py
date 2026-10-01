@@ -55,7 +55,10 @@ STAFF_ROLE = _rx(
 
 # Hints some hiring systems give in their own fields (employment type, experience level)
 HINT_KINDS = {"intern": "internship", "internship": "internship", "apprentice": "apprenticeship", "graduate": "grad_scheme",
-              "hackathon": "event"}
+              "hackathon": "event", "event": "event"}
+# Readers of event listings (Devpost, MLH, data/seed/events.csv) say so outright: a careers fair
+# titled "Graduate Fair" is still an event, not a graduate job
+EVENT_HINTS = {"hackathon", "event"}
 
 DISCIPLINES: dict[str, re.Pattern] = {
     "mechanical": _rx(
@@ -195,6 +198,8 @@ CLOSING = re.compile(
 
 
 def _kind(title: str, hint: str | None) -> str | None:
+    if hint and hint.strip().lower() in EVENT_HINTS:
+        return "event"
     for kind, pattern in KIND_RULES:
         if pattern.search(title):
             return kind
@@ -260,7 +265,8 @@ def classify(job: RawJob) -> Opportunity | None:
     if kind is None or STAFF_ROLE.search(job.title) or excluded(job.company, job.title, job.description):
         return None
 
-    disciplines = disciplines_for(job.title, job.description)
+    # Event readers set the subject themselves: [] for hackathons (open to everyone), a list for a lab expo
+    disciplines = job.raw["disciplines"] if "disciplines" in job.raw else disciplines_for(job.title, job.description)
     skills = [name for name, pattern in SKILLS.items() if pattern.search(f"{job.title} {job.description}")]
     country = job.country or guess_country(job.location) or guess_country(job.description[:500])
     city = first_city(job.location)

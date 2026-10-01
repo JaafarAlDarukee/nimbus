@@ -36,7 +36,7 @@ export const TYPE_CHIPS: { label: string; kinds: string[]; title?: "hack" | "not
   { label: "Internship", kinds: ["internship"] },
   { label: "Spring week", kinds: ["spring_week", "insight"] },
   { label: "Hackathon", kinds: ["event"], title: "hack" },
-  { label: "Conference", kinds: ["event"], title: "not-hack" },
+  { label: "Expos and events", kinds: ["event"], title: "not-hack" },
   { label: "Graduate", kinds: ["grad_scheme", "graduate_job"] },
   { label: "Apprenticeship", kinds: ["apprenticeship"] },
   { label: "Research", kinds: ["research", "scholarship"] },

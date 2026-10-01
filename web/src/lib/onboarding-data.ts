@@ -103,6 +103,7 @@ export const TYPES: { t: string; d: string }[] = [
   { t: "Hackathon", d: "Build something in a weekend" },
   { t: "Competition", d: "Design challenges and prizes" },
   { t: "Conference", d: "Student tickets and bursaries" },
+  { t: "Expo or careers fair", d: "Engineering shows, lab expos and science festivals" },
   { t: "Networking event", d: "Meet engineers and recruiters" },
   { t: "Summer school", d: "Short courses, UK and abroad" },
   { t: "Scholarship or bursary", d: "Funding from employers and institutions" },
@@ -117,7 +118,7 @@ export const TYPES: { t: string; d: string }[] = [
   { t: "Funded PhD or Masters", d: "Studentships and research funding" },
 ];
 
-export const DEFAULT_TYPES = ["Placement", "Summer internship", "Spring week", "Hackathon", "Competition", "Conference"];
+export const DEFAULT_TYPES = ["Placement", "Summer internship", "Spring week", "Hackathon", "Competition", "Conference", "Expo or careers fair"];
 
 export const UK_LOCATIONS = [
   "Anywhere in the UK", "London", "South East", "South West", "East of England", "East Midlands", "West Midlands",

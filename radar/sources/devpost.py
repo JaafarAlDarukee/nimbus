@@ -58,7 +58,7 @@ async def fetch(board: Board, http: Fetcher, tier: str) -> list[RawJob]:
                     description=" · ".join(p for p in (f"Themes: {themes}" if themes else "", f"Prizes: {prize}" if prize else "",
                                                        f"Dates: {h.get('submission_period_dates', '')}") if p),
                     closes_at=_end_date(h.get("submission_period_dates", "")),
-                    raw={"employment": "hackathon", "registrations": h.get("registrations_count")},
+                    raw={"employment": "hackathon", "disciplines": [], "registrations": h.get("registrations_count")},
                 )
             )
         if len(hackathons) < 9:
