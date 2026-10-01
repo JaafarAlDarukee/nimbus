@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import html
 import os
+import re
 import time
 from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
@@ -38,6 +39,21 @@ def _hashtag(word: str) -> str:
     return "#" + "".join(part[:1].upper() + part[1:] for part in word.replace("&", " ").split())
 
 
+def event_type(title: str) -> str:
+    """The same labels as the website's cards (web/src/lib/opportunity-view.ts kindView)."""
+    if re.search(r"hack", title, re.I):
+        return "Hackathon"
+    if re.search(r"careers? (fair|festival)|graduate fair", title, re.I):
+        return "Careers fair"
+    if re.search(r"(expo|exhibition|show|week)|\((expo|science festival)\)", title, re.I):
+        return "Expo"
+    if re.search(r"conference|summit|symposium|congress", title, re.I):
+        return "Conference"
+    if re.search(r"competition|challenge", title, re.I):
+        return "Competition"
+    return "Event"
+
+
 def format_match(row: dict, points: int, industry: str | None) -> str:
     e = html.escape
     label = "Strong match for you" if points >= 85 else "Good match for you" if points >= 75 else "New for you"
@@ -45,11 +61,14 @@ def format_match(row: dict, points: int, industry: str | None) -> str:
     posted = row.get("posted_at") or row.get("first_seen_at")
     posted_text = "posted today" if posted and datetime.fromisoformat(posted).astimezone(UK).date() == datetime.now(UK).date() else (
         f"posted {_day(posted)}" if posted else "just found")
-    details = [KIND_LABELS.get(row.get("kind") or "", "Opportunity"), posted_text]
-    if row.get("closes_at"):
-        details.append(f"deadline {_day(row['closes_at'])}")
-    elif row.get("rolling"):
-        details.append("rolling, apply early")
+    if row.get("kind") == "event":  # an expo or hackathon: what it is and when it ends, not a deadline
+        details = [event_type(row.get("title") or "")] + ([f"ends {_day(row['closes_at'])}"] if row.get("closes_at") else [])
+    else:
+        details = [KIND_LABELS.get(row.get("kind") or "", "Opportunity"), posted_text]
+        if row.get("closes_at"):
+            details.append(f"deadline {_day(row['closes_at'])}")
+        elif row.get("rolling"):
+            details.append("rolling, apply early")
     tags = [_hashtag(DISCIPLINE_WORDS.get(d, d).replace(" engineering", "")) for d in (row.get("disciplines") or [])[:3]]
     if industry:
         tags.append(_hashtag(industry))
