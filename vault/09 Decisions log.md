@@ -28,4 +28,5 @@ No Airbus, BAE Systems, Boeing, or any nuclear / weapons / defence company or ro
 - **ATS**: build our own checker in the website (owner's choice), not a third-party service.
 - **AI**: no Gemini key for now (owner doesn't want to manage keys); use built-in ideas + "Copy to Claude" prompts.
 - Sites that block tools (robots.txt Disallow, 403) are never read; they get a "How to get in" route instead and their roles come via job-alert emails.
-
+- **2026-10-01 · No in-browser AI model**: a local model would be hundreds of MB per phone, slow and weaker than Claude. Instead: rule-based tailoring and checks (explainable, never invents) + one-click Tailor with Claude. A built-in AI via the Anthropic API is offered to the owner (needs their key in Vercel; pennies per CV); Gemini free tier not used for CVs because Google may use free-tier data.
+- **2026-10-01 · Soft skills**: kept in Skills only when the advert asks for them (screening software counts them); otherwise shown in bullets.

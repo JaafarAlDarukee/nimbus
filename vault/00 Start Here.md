@@ -25,7 +25,7 @@ Done already: every design screen, personal Telegram (owner connected 1 Oct), Ad
 6. [ ] Keep researching big employers' boards (list in [[04 Radar#Changes 2026-10-01]]) and adding routes to `web/src/lib/company-routes.ts`.
 7. [~] Before inviting friends: ✅ site online at https://nimbus-pi-three.vercel.app (Vercel, 1 Oct; auth site_url pushed). ✅ Supabase SMTP via the Nimbus Gmail (owner set it in the dashboard with a new app password "Supabase"; sender name "Children of Khan"). ✅ Nimbus email templates live (config push). Email rate limit raised to 30/h in the dashboard. ⏳ Test sign-up with one friend. Custom domain later.
 
-**1 Oct, later ("check everything for all degrees" + events):** done: science/health/environmental tags, every degree mapped (incl. Civil, Aerospace, Electronic, Mechatronics, Automotive, Manufacturing, Materials, General Engineering), MLH hackathons, `data/seed/events.csv` (16 researched UK expos/conferences), "Expo or careers fair" type, Higherin tracker links. **Waiting on the owner:** approval to reopen 1,268 roles that the 1 Oct reclassify wrongly closed (ids were in the scratchpad; recompute with the query in [[11 Gotchas#Reclassify and type hints]]). Also: owner picking a nicer `*.vercel.app` name; testing sign-up with one friend. Science coverage is thin (UK: ~21 life-sciences, ~57 healthcare roles): next, add pharma/biotech/NHS employers' boards.
+**1 Oct, later ("check everything for all degrees" + events):** done: science/health/environmental tags, every degree mapped (incl. Civil, Aerospace, Electronic, Mechatronics, Automotive, Manufacturing, Materials, General Engineering), MLH hackathons, `data/seed/events.csv` (16 researched UK expos/conferences), "Expo or careers fair" type, Higherin tracker links. The roles the 1 Oct reclassify wrongly closed reopened themselves: every radar run sets `status=open` on rows it sees again (`store.py`). Waiting on the owner: owner picking a nicer `*.vercel.app` name; testing sign-up with one friend. Science coverage is thin (UK: ~21 life-sciences, ~57 healthcare roles): next, add pharma/biotech/NHS employers' boards.
 
 The owner says they are "kinda shit in computing": give one small step at a time, exact clicks, and do everything that doesn't need their accounts yourself.
 
@@ -44,3 +44,5 @@ The owner says they are "kinda shit in computing": give one small step at a time
 - [[12 Working with the user]]
 - [[13 Ideas backlog]]
 - [[Sessions/2026-09-26 to 30]]: what happened, in order
+
+**1 Oct, evening (owner: "highest chance for my boys", easier CV, local AI?, LinkedIn tips):** built "Use my CV" (upload once, rebuilt in the template and tailored), Tailor it, three kinds of skill suggestions incl. ones learned from real adverts, evidence hints, Tailor with Claude, LinkedIn "Before you apply" (CV studio + drawer). Decision pending with the owner: built-in AI via an Anthropic API key (pennies per CV) vs staying with Copy-to-Claude. See [[09 Decisions log]].

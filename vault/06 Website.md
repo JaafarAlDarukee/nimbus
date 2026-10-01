@@ -56,3 +56,11 @@ Back to [[00 Start Here]] · code in `web/` (Next.js 16.3, React 19, Tailwind 4,
 - New type "Expo or careers fair" (in DEFAULT_TYPES). "Clinical shadowing" → insight, "Fieldwork" → research. Part-time/seasonal/freelance/HCA have no radar kind yet.
 - `applyMatch`: `disciplines.ov.{...}` or `and(kind.eq.event,disciplines.eq.{})`.
 - Cards: events show Hackathon / Expo / Conference / Careers fair / Competition (`kindView`); the Opportunities chip is "Events".
+
+## CV studio, easy path (2026-10-01 evening)
+- **Use my CV** (step 3, "Easiest"): upload or sign-up CV → `cvFromText` (lib/cv-tailor.ts) reads it into BuiltCv (name/contact, first university, grade, modules, entries by section, skills) → `tailorCv` → straight to the check with "What Nimbus changed". "Just check my file as it is" keeps the old upload-only check.
+- **Tailor it** (builder): strongest bullet first, advert skills the CV proves (literal, or PROVABLE evidence like lathes → Machining) added to Skills, soft skills the advert doesn't ask for moved out, entries with nothing for the job left out only past ~18 bullets.
+- **Skills panel**: advert asks (lilac), your bullets show (mint), common in real adverts for your degree (`popularSkills` server action: top skills across ≤400 saved roles matching the degree's tags).
+- **Checker**: EVIDENCE map in lib/keywords.ts ("you show X in other words"); keyword bank ~200.
+- **Tailor with Claude**: `tailorPrompt` (no name/contact), copied + opens claude.ai/new (with `?q=` when short).
+- **LinkedIn**: `components/apply-tips.tsx` (`peopleToFind`, notes, headline) on the check page; people links in the Opportunities drawer. Nimbus never sends anything.
