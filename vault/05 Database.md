@@ -19,7 +19,7 @@ Back to [[00 Start Here]] · project `nimbus`, ref `rwcpwqhjmhsxtslamudm`, regio
 - Invite by approval: `hook_before_user_created` refuses emails not approved in `access_requests` (enabled via `supabase/config.toml` + `npx supabase config push`).
 - Owner's email is approved (added directly in the DB, not in the repo). Owner's profile: `is_admin = true`.
 - Site URL `http://localhost:3000`, redirect `http://localhost:3000/**` (update when deployed).
-- Emails currently use Supabase's default sender (only delivers to project members). Custom templates ready in `supabase/templates/` but need SMTP. See [[11 Gotchas#Supabase email]].
+- Emails go through custom SMTP (the Nimbus Gmail, set in the dashboard, not in config.toml) with the Nimbus templates in `supabase/templates/` (live since 2026-10-01). Gmail allows a few hundred emails a day: fine for friends.
 
 ## Cron
 `cron.job`: `nimbus-radar-priority` (`5,35 * * * *`) and `nimbus-radar-full` (`50 */6 * * *`), calling `dispatch_radar` with the GitHub token in **Vault** as `github_dispatch_token`.

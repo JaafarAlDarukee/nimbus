@@ -195,7 +195,7 @@ password_requirements = ""
 
 [auth.rate_limit]
 # Number of emails that can be sent per hour. Requires auth.email.smtp to be enabled.
-email_sent = 2
+email_sent = 30
 # Number of SMS messages that can be sent per hour. Requires auth.sms to be enabled.
 sms_sent = 30
 # Number of anonymous sign-ins that can be made per hour per IP address. Requires enable_anonymous_sign_ins = true.
@@ -243,14 +243,15 @@ otp_expiry = 3600
 # sender_name = "Admin"
 
 # Nimbus emails (supabase/templates/*.html). Supabase's free plan only allows custom templates
-# with your own email sender, so enable these together with [auth.email.smtp] (the Nimbus Gmail).
-# [auth.email.template.confirmation]
-# subject = "You're in: confirm your Nimbus account"
-# content_path = "./supabase/templates/confirmation.html"
-#
-# [auth.email.template.magic_link]
-# subject = "Your Nimbus login link"
-# content_path = "./supabase/templates/magic_link.html"
+# with your own email sender: SMTP is set in the dashboard (the Nimbus Gmail, app password typed
+# by the owner), so it isn't declared here and config push leaves it alone.
+[auth.email.template.confirmation]
+subject = "You're in: confirm your Nimbus account"
+content_path = "./supabase/templates/confirmation.html"
+
+[auth.email.template.magic_link]
+subject = "Your Nimbus login link"
+content_path = "./supabase/templates/magic_link.html"
 
 # Uncomment to customize notification email template
 # [auth.email.notification.password_changed]
