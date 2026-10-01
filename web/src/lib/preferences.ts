@@ -110,13 +110,14 @@ export function matchFilters(p: Preferences): MatchFilters {
 }
 
 /** Anything with .in / .overlaps (a Supabase query) gets the user's filters applied. */
-export function applyMatch<Q extends { in: (c: string, v: string[]) => Q; overlaps: (c: string, v: string[]) => Q }>(
+export function applyMatch<Q extends { in: (c: string, v: string[]) => Q; or: (filters: string) => Q }>(
   query: Q,
   filters: MatchFilters,
 ): Q {
   let q = query;
   if (filters.kinds.length) q = q.in("kind", filters.kinds);
-  if (filters.disciplines.length) q = q.overlaps("disciplines", filters.disciplines);
-  if (filters.countries) q = q.in("country", filters.countries);
+  // Hackathons and other events aren't tied to a degree, and online ones aren't tied to a country
+  if (filters.disciplines.length) q = q.or(`disciplines.ov.{${filters.disciplines.join(",")}},kind.eq.event`);
+  if (filters.countries) q = q.or(`country.in.(${filters.countries.join(",")}),and(kind.eq.event,remote.is.true)`);
   return q;
 }

@@ -163,9 +163,11 @@ def is_match(row: dict, prefs: dict, filters: tuple) -> bool:
     kinds, disciplines, countries = filters
     if kinds and row.get("kind") not in kinds:
         return False
-    if disciplines and not disciplines & set(row.get("disciplines") or []):
+    event = row.get("kind") == "event"
+    # Hackathons and other events aren't tied to a degree, and online ones aren't tied to a country
+    if disciplines and not event and not disciplines & set(row.get("disciplines") or []):
         return False
-    if countries is not None and row.get("country") not in countries:
+    if countries is not None and row.get("country") not in countries and not (event and row.get("remote")):
         return False
     company = (row.get("company_name") or "").lower()
     return not any(company.startswith(m.lower()) for m in prefs.get("muted", []))

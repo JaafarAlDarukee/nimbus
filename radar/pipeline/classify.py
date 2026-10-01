@@ -54,7 +54,8 @@ STAFF_ROLE = _rx(
 )
 
 # Hints some hiring systems give in their own fields (employment type, experience level)
-HINT_KINDS = {"intern": "internship", "internship": "internship", "apprentice": "apprenticeship", "graduate": "grad_scheme"}
+HINT_KINDS = {"intern": "internship", "internship": "internship", "apprentice": "apprenticeship", "graduate": "grad_scheme",
+              "hackathon": "event"}
 
 DISCIPLINES: dict[str, re.Pattern] = {
     "mechanical": _rx(r"\bmechanical\b", r"\bmech\b", r"\bdesign engineer", r"\bstress\b", r"\bthermo", r"\bfluids?\b"),

@@ -165,7 +165,7 @@ def send_matches(rows: list[dict]) -> None:
     print(f"Personal alerts: {telegram.sent} messages to {reached} people")
 
 
-WELCOME_COLUMNS = "id,title,company_name,kind,disciplines,skills,country,location_text,closes_at,posted_at,first_seen_at,rolling,apply_url,source_kind"
+WELCOME_COLUMNS = "id,title,company_name,kind,disciplines,skills,country,remote,location_text,closes_at,posted_at,first_seen_at,rolling,apply_url,source_kind"
 
 
 def send_welcome() -> None:
