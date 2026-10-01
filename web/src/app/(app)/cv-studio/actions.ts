@@ -27,6 +27,14 @@ export async function createJob(): Promise<string | null> {
   return (data?.id as string) ?? null;
 }
 
+/** Delete one CV job (only the student's own: row-level security). */
+export async function deleteJob(id: string): Promise<{ ok: boolean }> {
+  const supabase = await createClient();
+  const { error } = await supabase.from("cv_jobs").delete().eq("id", id);
+  revalidatePath("/cv-studio");
+  return { ok: !error };
+}
+
 /** Autosave: the fields of one job that changed. */
 export async function saveJob(id: string, patch: Partial<Omit<CvJob, "id">>): Promise<{ ok: boolean }> {
   const row: Record<string, unknown> = { updated_at: new Date().toISOString() };
@@ -150,7 +158,7 @@ export async function ideas(input: { exp: Experience; title: string; company: st
   const prompt = `Suggest 3 short CV bullet ideas (one per line, no numbering) for a student's "${exp.role}" at "${exp.org}". Existing points: ${exp.bullets}. Target job: ${title} at ${company}. Advert: ${jd.slice(0, 800)}. Use the advert's keywords, include a place for a measurable result, never invent employers.`;
   try {
     const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${process.env.GEMINI_MODEL ?? "gemini-2.5-flash"}:generateContent`,
+      `https://generativelanguage.googleapis.com/v1beta/models/${process.env.GEMINI_MODEL ?? "gemini-flash-latest"}:generateContent`,
       {
         method: "POST",
         headers: { "content-type": "application/json", "x-goog-api-key": key },
@@ -329,4 +337,79 @@ export async function popularSkills(): Promise<{ degree: string; adverts: number
     .slice(0, 24)
     .map(([name, n]) => ({ name, share: Math.round((n / adverts.length) * 100) }));
   return { degree: prefs.degrees[0] ?? prefs.field, adverts: adverts.length, skills };
+}
+
+export type AiReview = {
+  verdict: string;
+  fit: number;
+  strengths: string[];
+  fixes: { problem: string; fix: string; example: string }[];
+  rewrites: { before: string; after: string }[];
+  missing: string[];
+};
+
+async function gemini(key: string, prompt: string): Promise<string> {
+  for (const model of [process.env.GEMINI_MODEL, "gemini-flash-latest", "gemini-2.5-flash"].filter(Boolean)) {
+    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
+      method: "POST",
+      headers: { "content-type": "application/json", "x-goog-api-key": key },
+      body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { responseMimeType: "application/json", temperature: 0.3 } }),
+      signal: AbortSignal.timeout(45000),
+    });
+    if (res.status === 404) continue;
+    if (!res.ok) throw new Error(`Gemini ${res.status}`);
+    const data = await res.json();
+    return data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+  }
+  throw new Error("no model");
+}
+
+/**
+ * Free AI review (Google Gemini's free tier, switched on by GEMINI_API_KEY): reads the CV against
+ * the advert like a recruiter and suggests rewrites. The CV arrives without name or contact details.
+ */
+export async function aiReview(input: { cv: string; jd: string; title: string; company: string }): Promise<AiReview | { error: string }> {
+  const key = process.env.GEMINI_API_KEY;
+  if (!key) return { error: "off" };
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Sign in again to use the AI review." };
+
+  const prompt = `You are a UK engineering graduate recruiter screening CVs for "${input.title || "a student role"}" at ${input.company || "a company"}.
+Judge the CV against the advert the way a recruiter and an applicant tracking system would, using r/EngineeringResumes standards:
+bullets start with a past-tense verb and show a measurable result; the advert's exact skill words appear where true; one page; no summary.
+Never invent experience. In rewrites, only rephrase what the CV already says; put [X] where a number is needed.
+
+Reply with JSON only, in this shape:
+{"verdict": "two short sentences in plain English", "fit": 0-100 (how likely this CV gets an interview for this advert),
+ "strengths": ["up to 3 short points"],
+ "fixes": [{"problem": "short", "fix": "what to do", "example": "a rewritten line or phrase"}] (up to 5, most important first),
+ "rewrites": [{"before": "a bullet from the CV, word for word", "after": "the stronger version"}] (up to 4),
+ "missing": ["skills the advert wants that the CV doesn't show"] (up to 6)}
+
+ADVERT:
+"""
+${input.jd.slice(0, 6000)}
+"""
+
+CV (name and contact details removed):
+"""
+${input.cv.slice(0, 8000)}
+"""`;
+  try {
+    const raw = JSON.parse(await gemini(key, prompt)) as Partial<AiReview>;
+    const list = <T,>(v: unknown, n: number) => (Array.isArray(v) ? (v as T[]).slice(0, n) : []);
+    return {
+      verdict: String(raw.verdict ?? ""),
+      fit: Math.max(0, Math.min(100, Math.round(Number(raw.fit) || 0))),
+      strengths: list<string>(raw.strengths, 3).map(String),
+      fixes: list<AiReview["fixes"][number]>(raw.fixes, 5).filter((f) => f && f.problem),
+      rewrites: list<AiReview["rewrites"][number]>(raw.rewrites, 4).filter((r) => r && r.before && r.after),
+      missing: list<string>(raw.missing, 6).map(String),
+    };
+  } catch {
+    return { error: "The AI review didn't answer just now (the free tier has a daily limit). Try again later, or use the Claude or Gemini prompt." };
+  }
 }

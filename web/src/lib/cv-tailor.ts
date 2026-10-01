@@ -172,6 +172,6 @@ export function tailorCv(input: BuiltCv, advert: string): { cv: BuiltCv; changes
     total -= lines(x).length;
     changes.push(`Left out “${label(x)}” for this job so the CV fits on one page (tick it to bring it back).`);
   }
-  if (!changes.length) changes.push("Your CV was already in good order for this job.");
+  if (!changes.length) changes.push("The order and skills already fit this advert, so nothing needed moving.");
   return { cv, changes };
 }

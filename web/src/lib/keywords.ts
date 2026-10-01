@@ -63,15 +63,15 @@ export const EVIDENCE: Record<string, RegExp> = {
   "Technical drawings": /\b(engineering drawings?|technical drawings?|drawings?)\b/i,
   Prototyping: /\b(prototyp(e|es|ed)|built (a|the) (rig|model|prototype))\b/i,
   Testing: /\b(test(ed|s|ing)?|trials?|experiment(s|ed)?)\b/i,
-  "Data analysis": /\b(analys(ed|is|ing)|data|results|measurements?)\b/i,
-  "Root cause": /\b(diagnos(ed|is)|troubleshoot(ing|ed)?|fault[- ]find(ing)?|why it failed|cause)\b/i,
+  "Data analysis": /\b(analys(ed|ing) (the |our |test )?(data|results|measurements|readings)|data (analysis|logging|sets?)|plotted|trend(s|ed)|dashboards?)\b/i,
+  "Root cause": /\b(diagnos(ed|is)|troubleshoot(ing|ed)?|fault[- ]find(ing)?|why it failed|traced (the|a) (fault|problem|failure))\b/i,
   "Problem solving": /\b(solved|fixed|diagnos(ed|is)|troubleshoot|resolved|figured out)\b/i,
   Teamwork: /\b(team|together|collaborat(ed|ing|ion))\b/i,
   Communication: /\b(present(ed|ation)|explained|translat(ed|ion)|liaised|report(ed)?|wrote)\b/i,
   Leadership: /\b(led|lead|captain(ed)?|managed|organis(ed|ing)|organiz(ed|ing)|mentored|coordinated|president|chair)\b/i,
   Presentation: /\b(present(ed|ation)s?|pitch(ed)?|talks?)\b/i,
   "Project management": /\b(managed (the )?project|deadlines?|gantt|planned|scheduled|budget)\b/i,
-  "Health and safety": /\b(safety|risk assessments?|ppe|coshh|safe working)\b/i,
+  "Health and safety": /\b(health (and|&) safety|risk assessments?|ppe|coshh|safe working|safety (training|induction|checks?|procedures?|rules|briefings?))\b/i,
   "Risk assessment": /\b(risk assessments?|hazards?)\b/i,
   "Report writing": /\b(report|wrote|write-?up|documented)\b/i,
   "3D printing": /\b(3d print(ed|ing)?|additive|fdm|sla printing)\b/i,
@@ -86,16 +86,20 @@ export const EVIDENCE: Record<string, RegExp> = {
   "Customer service": /\b(customers?|clients?|members of the public|front of house)\b/i,
   "Stakeholder management": /\b(stakeholders?|clients?|liaised|suppliers?)\b/i,
   "Time management": /\b(deadlines?|alongside (my )?studies|while studying|balanced)\b/i,
-  "Attention to detail": /\b(accura(te|cy)|precise|precision|tolerances?|checked|inspect(ed|ion))\b/i,
+  "Attention to detail": /\b(accura(te|cy)|precise|precision|tolerances?|inspect(ed|ion))\b/i,
 };
+
+// Acronyms that are also everyday words ("spice", "cam", "sap", "doe"): only count them in capitals
+const CASED = new Set(["SPICE", "CAM", "SAP", "DOE", "GIS", "ROS", "NMR", "PCR", "GCP", "CDM", "TPM", "SPC", "DFM", "OEE", "NHS", "BIM", "CMM", "PLC", "FEA", "CFD", "CAD", "GLP", "GMP"]);
 
 const escape = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 const has = (text: string, keyword: string) =>
   new RegExp(`(^|[^a-z0-9+#])${escape(keyword.toLowerCase())}($|[^a-z0-9+#])`).test(text);
+const hasCased = (text: string, keyword: string) => new RegExp(`(^|[^A-Za-z0-9+#])${escape(keyword)}($|[^A-Za-z0-9+#])`).test(text);
 
 export const keywordsIn = (text: string) => {
   const lower = (text ?? "").toLowerCase();
-  return KEYWORDS.filter((k) => has(lower, k));
+  return KEYWORDS.filter((k) => (CASED.has(k) ? hasCased(text ?? "", k) : has(lower, k)));
 };
 
 /** The first line of the CV that shows a skill in other words, if any. */

@@ -20,28 +20,48 @@ export function peopleToFind(company: string, title: string, uni?: string): { la
  * "Before you apply": who to find on LinkedIn at this company, a short note to send, and a profile
  * checklist. Nimbus never messages anyone: the student opens LinkedIn and sends it themselves.
  */
+/** "BEng (Hons) Mechanical Engineering (with Foundation Year)" → "Mechanical Engineering". */
+export function shortDegree(degree = ""): string {
+  return degree
+    .replace(/\([^)]*\)/g, " ")
+    .replace(/\b(BEng|MEng|BSc|MSc|MChem|MPhys|MSci|BA|MA|Hons|Integrated Masters?|with .*$)\b\.?/gi, " ")
+    .replace(/[,|–-]+\s*$/, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/** A company name worth searching for (not "a", "x" or "g"). */
+const realName = (s: string) => /[a-z]{2,}/i.test(s) && s.trim().length >= 3;
+
 export function ApplyTips({ company, title, degree, uni, skills = [] }: { company: string; title: string; degree?: string; uni?: string; skills?: string[] }) {
   const [copied, setCopied] = useState<string | null>(null);
   const placement = /placement|year in industry|industrial/i.test(title);
   const kind = placement ? "placement" : /intern/i.test(title) ? "intern" : "graduate";
-  const me = [degree ? `${degree} student` : "student", uni ? `at ${uni}` : ""].filter(Boolean).join(" ");
+  const subject = shortDegree(degree);
+  const me = `${subject ? `${subject} student` : "student"}${uni ? ` at ${uni}` : ""}`;
+  const role = realName(title) ? title.trim() : placement ? "placement" : "role";
   const top = skills.slice(0, 3);
+  const known = realName(company);
 
-  const people = peopleToFind(company, title, uni);
+  const people = known ? peopleToFind(company, title, uni) : [];
 
   const notes = [
     {
       key: "student",
       to: placement ? "To a placement student" : "To a recent intern or graduate",
-      text: `Hi [name], I'm a ${me} applying for ${company}'s ${title}. I saw you ${placement ? "are on placement" : "work"} there and would really value 10 minutes to hear what it's like. Thanks!`,
+      text: `Hi [name], I'm a ${me} applying for the ${role} at ${known ? company : "[company]"}. I saw you ${placement ? "did a placement" : "work"} there and would really value 10 minutes to hear what it's like. Thanks!`,
     },
     {
       key: "team",
       to: "To someone in the team or early careers",
-      text: `Hi [name], I'm applying for the ${title} at ${company}${top.length ? ` and have been building experience in ${top.slice(0, 2).join(" and ")}` : ""}. I'd love to follow your work and learn what makes someone do well in the team. Thank you!`,
+      text: `Hi [name], I'm a ${me} applying for the ${role} at ${known ? company : "[company]"}${top.length ? `. I've been building experience in ${top.slice(0, 2).join(" and ")}` : ""}, and I'd love to learn what makes someone do well in your team. Thank you!`,
     },
   ];
-  const headline = [degree ? `${degree} student${uni ? ` at ${uni}` : ""}` : "Engineering student", `Seeking ${placement ? "a placement" : kind === "intern" ? "an internship" : "a graduate role"}`, top.join(" · ")]
+  const headline = [
+    subject ? `${subject} student${uni ? ` at ${uni}` : ""}` : "Engineering student",
+    `Seeking ${placement ? "a placement" : kind === "intern" ? "an internship" : "a graduate role"}`,
+    top.join(" · "),
+  ]
     .filter(Boolean)
     .join(" | ");
 
@@ -57,7 +77,8 @@ export function ApplyTips({ company, title, degree, uni, skills = [] }: { compan
       <span className={eyebrow}>Before you apply · LinkedIn</span>
 
       <div className="flex flex-col gap-2">
-        <span className="text-sm font-medium">Find people at {company}</span>
+        <span className="text-sm font-medium">{known ? `Find people at ${company}` : "Find people at the company"}</span>
+        {!known && <span className="text-[13px] text-tx3">Add the company&apos;s name on step 1 and the LinkedIn searches appear here.</span>}
         {people.map((p) => (
           <a key={p.label} href={p.url} target="_blank" rel="noopener noreferrer" className="group flex flex-col gap-0.5 rounded-[10px] border border-line2 px-3 py-2 hover:border-l-sky">
             <span className="text-[13px] font-medium text-t-sky group-hover:text-tx">{p.label} ↗</span>

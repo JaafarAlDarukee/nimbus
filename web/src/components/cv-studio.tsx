@@ -1,15 +1,18 @@
 "use client";
 
 import { useEffect, useRef, useState, useTransition } from "react";
-import { createJob, ideas as getIdeas, popularSkills, readFile, readJobLink, readSignupCv, saveDetails, saveJob } from "@/app/(app)/cv-studio/actions";
+import { aiReview, createJob, deleteJob, ideas as getIdeas, popularSkills, readFile, readJobLink, readSignupCv, saveDetails, saveJob } from "@/app/(app)/cv-studio/actions";
 import { ApplyTips } from "@/components/apply-tips";
-import { AREA_COLOUR, analyse, blankCv, cvDocx, cvHtml, ideasPrompt, scoreColour, tailorPrompt, type BuiltCv, type CvJob, type Experience } from "@/lib/cv";
+import type { AiReview } from "@/app/(app)/cv-studio/actions";
+import { AREA_COLOUR, analyse, blankCv, cvDocx, cvHtml, cvLines, ideasPrompt, scoreColour, tailorPrompt, type BuiltCv, type CvJob, type Experience, type Line } from "@/lib/cv";
+import { EXAMPLE_CV, EXAMPLE_NOTES, EXAMPLE_RULES } from "@/lib/cv-example";
 import { cvFromText, tailorCv } from "@/lib/cv-tailor";
 import { SOFT, keywordsIn } from "@/lib/keywords";
+import { tipFor } from "@/lib/skill-tips";
 
 type Popular = { degree: string; adverts: number; skills: { name: string; share: number }[] };
 
-type Props = { jobs: CvJob[]; selectedId: string | null; saved: BuiltCv; hasSaved: boolean; signupCv: string | null };
+type Props = { jobs: CvJob[]; selectedId: string | null; saved: BuiltCv; hasSaved: boolean; signupCv: string | null; aiOn: boolean };
 
 const SERIF = "var(--font-newsreader), Georgia, serif";
 const MONO = "var(--font-geist-mono), ui-monospace, monospace";
@@ -30,6 +33,7 @@ export function CvStudio(props: Props) {
   // What "Use my CV" / "Tailor it for this job" changed, shown on the check page
   const [changes, setChanges] = useState<string[] | null>(null);
   const [popular, setPopular] = useState<Popular | null>(null);
+  const [exampleOpen, setExampleOpen] = useState(false);
 
   // Skills that real adverts for this student's degree ask for most (learned from Nimbus's saved roles)
   useEffect(() => {
@@ -95,6 +99,21 @@ export function CvStudio(props: Props) {
     setCv({ exp });
   };
 
+  const remove = (id: string) => {
+    const gone = jobs.find((j) => j.id === id);
+    if (!gone || !window.confirm(`Delete “${gone.title || "Untitled job"}” and its CV? This can't be undone.`)) return;
+    clearTimeout(timers.current[id]);
+    delete pending.current[id];
+    deleteJob(id);
+    const rest = jobs.filter((j) => j.id !== id);
+    setJobs(rest);
+    if (id === job?.id) {
+      const nextId = rest[rest.length - 1]?.id ?? null;
+      setSelId(nextId);
+      window.history.replaceState(null, "", nextId ? `/cv-studio?id=${nextId}` : "/cv-studio");
+    }
+  };
+
   const select = (id: string) => {
     setSelId(id);
     setFileError(null);
@@ -144,6 +163,8 @@ export function CvStudio(props: Props) {
   const step = job.step;
   const can = [true, !!(job.title.trim() && job.company.trim()), !!job.jd.trim(), !!job.mode];
   const cv = job.cv ?? blankCv();
+  const reachable = (n: number) => n <= step || can.slice(1, n).every(Boolean);
+  const others = jobs.filter((j) => j.id !== job.id && j.mode === "build" && j.cv && j.cv.exp.length);
 
   const next = async () => {
     if (!can[step]) return;
@@ -163,19 +184,29 @@ export function CvStudio(props: Props) {
           const s = j.mode ? analyse(j).score : 0;
           const on = j.id === job.id;
           return (
-            <button
-              key={j.id}
-              type="button"
-              onClick={() => select(j.id)}
-              className="flex min-w-[200px] cursor-pointer flex-col gap-1 rounded-xl border p-3 text-left text-tx md:min-w-0"
-              style={{ borderColor: on ? "var(--l-sky)" : "var(--line)", background: on ? "var(--b-sky)" : "transparent" }}
-            >
-              <span className="text-sm font-medium leading-[1.3]">{j.title || "Untitled job"}</span>
-              <span className="text-[12px] text-tx3">{j.company || "Add company"}</span>
-              <span className="text-[11px]" style={{ fontFamily: MONO, color: s ? scoreColour(s) : "#8C97A8" }}>
-                {s ? `ATS ${s}` : `Step ${j.step} of 4`}
-              </span>
-            </button>
+            <div key={j.id} className="group relative min-w-[200px] md:min-w-0">
+              <button
+                type="button"
+                onClick={() => select(j.id)}
+                className="flex w-full cursor-pointer flex-col gap-1 rounded-xl border p-3 pr-9 text-left text-tx"
+                style={{ borderColor: on ? "var(--l-sky)" : "var(--line)", background: on ? "var(--b-sky)" : "transparent" }}
+              >
+                <span className="text-sm font-medium leading-[1.3]">{j.title || "Untitled job"}</span>
+                <span className="text-[12px] text-tx3">{j.company || "Add company"}</span>
+                <span className="text-[11px]" style={{ fontFamily: MONO, color: s ? scoreColour(s) : "#8C97A8" }}>
+                  {s ? `ATS ${s}` : `Step ${j.step} of 4`}
+                </span>
+              </button>
+              <button
+                type="button"
+                onClick={() => remove(j.id)}
+                aria-label={`Delete ${j.title || "this job"}`}
+                title="Delete"
+                className="absolute right-2 top-2 grid size-7 cursor-pointer place-items-center rounded-lg text-[16px] leading-none text-tx3 hover:bg-s2 hover:text-t-rose"
+              >
+                ×
+              </button>
+            </div>
           );
         })}
         <button
@@ -200,9 +231,9 @@ export function CvStudio(props: Props) {
                 <button
                   key={label}
                   type="button"
-                  onClick={() => n < step && update({ step: n })}
+                  onClick={() => reachable(n) && n !== step && update({ step: n })}
                   className="flex flex-1 flex-col gap-2 text-left text-tx"
-                  style={{ cursor: n < step ? "pointer" : "default" }}
+                  style={{ cursor: reachable(n) && n !== step ? "pointer" : "default" }}
                 >
                   <span className="h-1 rounded-full" style={{ background: n < step ? "#8FC7FF" : n === step ? "#F5F8FC" : "var(--line2)" }} />
                   <span className="text-[13px]" style={{ color: n === step ? "var(--tx)" : "var(--tx3)" }}>
@@ -284,6 +315,13 @@ export function CvStudio(props: Props) {
           </div>
         )}
 
+        {step === 3 && (
+          <button type="button" onClick={() => setExampleOpen(true)} className="-mt-2 cursor-pointer self-start text-[13px] font-medium text-t-sky hover:text-tx">
+            See what a great student CV looks like (an example with notes) →
+          </button>
+        )}
+        {exampleOpen && <ExampleCv onClose={() => setExampleOpen(false)} />}
+
         {step === 3 && !job.mode && (
           <div className="animate-fade-up flex max-w-[760px] flex-col gap-3">
             <div className="grid gap-3 sm:grid-cols-2">
@@ -328,6 +366,29 @@ export function CvStudio(props: Props) {
               >
                 {reading ? "Reading…" : `Or use ${props.signupCv}, the CV you gave when you signed up`}
               </button>
+            )}
+            {others.length > 0 && (
+              <div className="flex flex-col gap-2 rounded-2xl border border-line2 bg-s1 p-4">
+                <span className="text-sm text-tx2">Or start from a CV you made for another job: Nimbus copies it here and tailors it to this advert.</span>
+                <div className="flex flex-wrap gap-2">
+                  {others.slice(-6).map((o) => (
+                    <button
+                      key={o.id}
+                      type="button"
+                      onClick={() => {
+                        const copy = { ...o.cv!, skills: [...o.cv!.skills], exp: o.cv!.exp.map((x) => ({ ...x })) };
+                        const tailored = tailorCv(copy, job.jd);
+                        update({ mode: "build", cv: tailored.cv, step: 4 });
+                        setChanges([`Copied your CV from “${o.title || "another job"}”. Your other CV is unchanged.`, ...tailored.changes]);
+                      }}
+                      className="h-9 cursor-pointer rounded-[10px] border border-line2 px-3 text-[13px] font-medium text-t-sky hover:text-tx"
+                    >
+                      {o.title || "Untitled"}
+                      {o.company ? ` · ${o.company}` : ""}
+                    </button>
+                  ))}
+                </div>
+              </div>
             )}
             <label className="cursor-pointer self-start text-[13px] text-tx3 hover:text-tx">
               <input
@@ -451,6 +512,8 @@ export function CvStudio(props: Props) {
             job={job}
             changes={changes}
             me={{ degree: job.cv?.degree || saved.degree, uni: job.cv?.uni || saved.uni }}
+            aiOn={props.aiOn}
+            onExample={() => setExampleOpen(true)}
             onEdit={() => update({ step: 3 })}
           />
         )}
@@ -499,10 +562,14 @@ function Skills({ cv, req, popular, onChange }: { cv: BuiltCv; req: string[]; po
   const [draft, setDraft] = useState("");
   const mine = new Set(cv.skills.map((s) => s.toLowerCase()));
   const own = (k: string) => mine.has(k.toLowerCase());
-  const suggestions = req.filter((k) => !own(k));
   // Skills the student's own bullets and modules already show, but that aren't listed yet
-  const shown = keywordsIn([cv.modules ?? "", ...cv.exp.filter((x) => x.on).map((x) => x.bullets)].join("\n")).filter((k) => !own(k) && !SOFT.has(k) && !req.includes(k));
+  const shown = keywordsIn([cv.modules ?? "", ...cv.exp.filter((x) => x.on).map((x) => x.bullets)].join("\n")).filter((k) => !own(k) && !SOFT.has(k));
+  const suggestions = req.filter((k) => !own(k) && !shown.includes(k));
   const common = (popular?.skills ?? []).filter((s) => !own(s.name) && !req.includes(s.name) && !shown.includes(s.name)).slice(0, 14);
+  // Listed skills no bullet backs up yet, the ones this job wants first
+  const bulletText = cv.exp.filter((x) => x.on).map((x) => x.bullets).join("\n");
+  const proven = new Set(keywordsIn(bulletText).map((k) => k.toLowerCase()));
+  const unproven = cv.skills.filter((k) => !SOFT.has(k) && !proven.has(k.toLowerCase())).sort((a, b) => Number(req.includes(b)) - Number(req.includes(a)));
   const chip = (k: string, colour: string, note?: string) => (
     <button
       key={k}
@@ -550,7 +617,7 @@ function Skills({ cv, req, popular, onChange }: { cv: BuiltCv; req: string[]; po
       {shown.length > 0 && (
         <div className="flex flex-col gap-2 rounded-xl border px-3.5 py-3" style={{ borderColor: "rgba(147,224,192,.3)", background: "rgba(147,224,192,.06)" }}>
           <span className="text-[13px] text-t-mint">Your bullets already show these. List them so screening software finds them.</span>
-          <div className="flex flex-wrap gap-1.5">{shown.map((k) => chip(k, "#9FE6C8"))}</div>
+          <div className="flex flex-wrap gap-1.5">{shown.map((k) => chip(k, "#9FE6C8", req.includes(k) ? "job wants" : undefined))}</div>
         </div>
       )}
       {common.length > 0 && (
@@ -559,6 +626,18 @@ function Skills({ cv, req, popular, onChange }: { cv: BuiltCv; req: string[]; po
             Often asked for in {popular?.degree} roles: from {popular?.adverts} real adverts Nimbus has found. Learn or add the ones that fit you.
           </span>
           <div className="flex flex-wrap gap-1.5">{common.map((s) => chip(s.name, "var(--tx2)", `${s.share}%`))}</div>
+        </div>
+      )}
+      {unproven.length > 0 && (
+        <div className="flex flex-col gap-2 rounded-xl border border-line2 px-3.5 py-3">
+          <span className="text-[13px] text-tx2">
+            <b className="text-tx">Make your skills count.</b> These are listed but not in any bullet yet. Recruiters trust a skill when a bullet shows it:
+          </span>
+          {unproven.slice(0, 4).map((k) => (
+            <span key={k} className="text-[13px] leading-[1.45] text-tx3">
+              <span className="font-medium text-tx">{k}:</span> {tipFor(k)}
+            </span>
+          ))}
         </div>
       )}
       <div className="flex max-w-[420px] gap-2">
@@ -650,7 +729,7 @@ function ExperienceCard({ x, job, onChange }: { x: Experience; job: CvJob; onCha
           }}
           className="h-[34px] cursor-pointer rounded-[9px] border border-line2 px-3 text-[13px] font-medium text-tx2 hover:text-tx"
         >
-          {copied ? "Copied: paste it into Claude" : "Copy a prompt for Claude"}
+          {copied ? "Copied: paste it into Claude or Gemini" : "Copy a prompt for Claude or Gemini"}
         </button>
         <span className="text-[12px] text-tx3">Rewrite ideas in your own words. Never add something you didn&apos;t do.</span>
       </div>
@@ -676,7 +755,21 @@ function ExperienceCard({ x, job, onChange }: { x: Experience; job: CvJob; onCha
 const PAPER = '"Times New Roman", Times, serif';
 
 /** The ATS check: the CV as the template prints it, problems marked in place, the score and how to raise it. */
-function AtsCheck({ job, changes, me, onEdit }: { job: CvJob; changes: string[] | null; me: { degree: string; uni: string }; onEdit: () => void }) {
+function AtsCheck({
+  job,
+  changes,
+  me,
+  aiOn,
+  onExample,
+  onEdit,
+}: {
+  job: CvJob;
+  changes: string[] | null;
+  me: { degree: string; uni: string };
+  aiOn: boolean;
+  onExample: () => void;
+  onEdit: () => void;
+}) {
   const A = analyse(job);
   const R = A.report;
   const [note, setNote] = useState<string | null>(null);
@@ -705,46 +798,18 @@ function AtsCheck({ job, changes, me, onEdit }: { job: CvJob; changes: string[] 
 
   return (
     <div className="animate-fade-up grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
-      <div className="flex flex-col rounded-md bg-white px-6 py-8 text-black sm:px-11 sm:py-10" style={{ fontFamily: PAPER, boxShadow: "0 20px 60px -20px rgba(0,0,0,.6)" }}>
-        {A.lines.map((l, i) => {
-          let hl = "transparent";
-          let tag = "";
-          let tagFg = "#000";
-          const plain = l.t.replace(/^•\s*/, "");
-          if (l.kind === "b" && weakStart.has(plain)) [hl, tag, tagFg] = ["rgba(244,169,184,.28)", "Start with a verb", "#9C3550"];
-          else if (l.kind === "b" && noNumber.has(plain)) [hl, tag, tagFg] = ["rgba(244,169,184,.28)", "Add a result", "#9C3550"];
-          if (i === skillsLine && A.missing.length) [hl, tag, tagFg] = ["rgba(243,195,143,.32)", `Missing ${A.missing.length} keywords`, "#8E5413"];
-          const tagEl = tag && (
-            <span className="ml-2 text-[10px] font-semibold uppercase tracking-[.04em]" style={{ fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif", color: tagFg }}>
-              {tag}
-            </span>
-          );
-          if (l.kind === "name") return <div key={i} className="text-center text-[26px] leading-tight">{l.t}</div>;
-          if (l.kind === "contact") return <div key={i} className="mb-1 text-center text-[13px]">{l.t}</div>;
-          if (l.kind === "h")
-            return (
-              <div key={i} className="mt-3 border-b border-black pb-px text-[14px] font-bold uppercase tracking-[.04em]">
-                {l.t}
-              </div>
-            );
-          if (l.kind === "role" || l.kind === "sub")
-            return (
-              <div key={i} className={`flex justify-between gap-3 text-[14px] ${l.kind === "role" ? "mt-1.5 font-bold" : "italic"}`}>
-                <span>{l.t}</span>
-                {l.right && <span>{l.right}</span>}
-              </div>
-            );
-          return (
-            <div
-              key={i}
-              className={`-mx-2 rounded-[4px] px-2 py-px text-[13.5px] leading-[1.4] ${l.kind === "b" ? "pl-6 -indent-3" : ""}`}
-              style={{ background: hl }}
-            >
-              {l.t}
-              {tagEl}
-            </div>
-          );
-        })}
+      <div className="flex min-w-0 flex-col gap-4">
+        <Paper
+          lines={A.lines}
+          mark={(l, i) => {
+            const plain = l.t.replace(/^•\s*/, "");
+            if (i === skillsLine && A.missing.length) return { bg: "rgba(243,195,143,.32)", tag: `Missing ${A.missing.length} keywords`, fg: "#8E5413" };
+            if (l.kind === "b" && weakStart.has(plain)) return { bg: "rgba(244,169,184,.28)", tag: "Start with a verb", fg: "#9C3550" };
+            if (l.kind === "b" && noNumber.has(plain)) return { bg: "rgba(244,169,184,.28)", tag: "Add a result", fg: "#9C3550" };
+            return null;
+          }}
+        />
+        <ReadByAts job={job} lines={A.lines} />
       </div>
 
       <div className="flex flex-col gap-4">
@@ -756,6 +821,12 @@ function AtsCheck({ job, changes, me, onEdit }: { job: CvJob; changes: string[] 
                 <li key={c}>· {c}</li>
               ))}
             </ul>
+            {R.issues.some((i) => i.severity === "fix") && (
+              <span className="text-[13px] leading-[1.45] text-tx">
+                <b>Still up to you:</b> {R.issues.filter((i) => i.severity === "fix").slice(0, 2).map((i) => i.title.toLowerCase()).join("; ")}. Nimbus won&apos;t
+                invent results for you: see the fix list below, or use Tailor with Claude or Gemini.
+              </span>
+            )}
             <span className="text-[12px] text-tx3">Nothing was made up: every change uses what your CV already says. Undo any of it on step 3.</span>
           </div>
         )}
@@ -807,7 +878,9 @@ function AtsCheck({ job, changes, me, onEdit }: { job: CvJob; changes: string[] 
             <span className="text-[12px] leading-normal text-tx2">
               Screening software keeps CVs that contain the advert&apos;s words, so <b>keywords</b> count most (40%). Then <b>measurable impact</b> (25%): bullets that
               start with a verb and show a number. <b>Parsing and layout</b> (20%): one column, one page, readable text. <b>Sections</b> (15%): Education, Experience,
-              Projects, Technical Skills and contact details. Fix the top item, check again, repeat.
+              Projects, Technical Skills and contact details. Fix the top item, check again, repeat. No employer shares a score: real systems (Workday,
+              Greenhouse, SuccessFactors) turn your CV into fields, then recruiters search and rank those fields by the advert&apos;s words. This checklist
+              copies what they look for; see &ldquo;How screening software reads your CV&rdquo; under your CV.
             </span>
           )}
         </div>
@@ -888,31 +961,270 @@ function AtsCheck({ job, changes, me, onEdit }: { job: CvJob; changes: string[] 
             </button>
           </div>
           <span className="text-[12px] text-tx3">{note ?? "Template: r/EngineeringResumes style, one column, one page."}</span>
+          <button type="button" onClick={onExample} className="cursor-pointer self-start text-[12px] font-medium text-t-sky hover:text-tx">
+            Compare with a great example →
+          </button>
         </div>
 
+        {aiOn && <AiReviewCard job={job} lines={A.lines} />}
+
         <div className="flex flex-col gap-2.5 rounded-2xl border px-[18px] py-4" style={{ borderColor: "rgba(195,181,255,.4)", background: "rgba(195,181,255,.07)" }}>
-          <span className={EYEBROW}>Make it even stronger with Claude</span>
+          <span className={EYEBROW}>Make it even stronger with AI</span>
           <span className="text-[13px] leading-[1.45] text-tx2">
-            Hands Claude your CV (without your name or contact details), this advert, the fix list and the template rules. It rewrites every bullet for this job and marks
-            any number you need to fill in. A free Claude account works.
+            Hands Claude or Gemini your CV (without your name or contact details), this advert, the fix list and the template rules. It rewrites every bullet for this job
+            and marks any number you need to fill in. A free account works.
           </span>
-          <button
-            type="button"
-            onClick={() => {
-              const prompt = tailorPrompt(A.lines, job.jd, job.title, job.company, R.issues.map((i) => i.title));
-              navigator.clipboard?.writeText(prompt).catch(() => {});
-              window.open(prompt.length < 7000 ? `https://claude.ai/new?q=${encodeURIComponent(prompt)}` : "https://claude.ai/new", "_blank", "noopener");
-              flash("Prompt copied. If Claude opens empty, paste it in (Ctrl+V) and send.");
-            }}
-            className="h-11 cursor-pointer rounded-[10px] bg-[#C3B5FF] text-[13px] font-semibold text-[#120B2A]"
-          >
-            Tailor with Claude
-          </button>
+          <div className="grid grid-cols-2 gap-1.5">
+            <button
+              type="button"
+              onClick={() => {
+                const prompt = tailorPrompt(A.lines, job.jd, job.title, job.company, R.issues.map((i) => i.title));
+                navigator.clipboard?.writeText(prompt).catch(() => {});
+                window.open(prompt.length < 7000 ? `https://claude.ai/new?q=${encodeURIComponent(prompt)}` : "https://claude.ai/new", "_blank", "noopener");
+                flash("Prompt copied. If Claude opens empty, paste it in (Ctrl+V) and send.");
+              }}
+              className="h-11 cursor-pointer rounded-[10px] bg-[#C3B5FF] text-[13px] font-semibold text-[#120B2A]"
+            >
+              Claude
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                navigator.clipboard?.writeText(tailorPrompt(A.lines, job.jd, job.title, job.company, R.issues.map((i) => i.title))).catch(() => {});
+                window.open("https://gemini.google.com/app", "_blank", "noopener");
+                flash("Prompt copied. Paste it into Gemini (Ctrl+V) and send.");
+              }}
+              className="h-11 cursor-pointer rounded-[10px] border border-[#C3B5FF] bg-transparent text-[13px] font-semibold text-t-lil"
+            >
+              Gemini
+            </button>
+          </div>
           <span className="text-[12px] text-tx3">Check what it writes: keep only what&apos;s true, then paste it back into step 3 and check again.</span>
         </div>
 
-        <ApplyTips company={job.company || "the company"} title={job.title || "this role"} degree={me.degree} uni={me.uni} skills={A.req} />
+        <ApplyTips company={job.company} title={job.title} degree={me.degree} uni={me.uni} skills={A.matched.filter((k) => !SOFT.has(k))} />
       </div>
+    </div>
+  );
+}
+
+type Mark = { bg: string; tag: string; fg: string } | null;
+
+/** A CV as it prints: Times New Roman on white, dates on the right. `mark` highlights and tags lines. */
+function Paper({ lines, mark }: { lines: Line[]; mark?: (l: Line, i: number) => Mark }) {
+  return (
+    <div className="flex flex-col rounded-md bg-white px-6 py-8 text-black sm:px-11 sm:py-10" style={{ fontFamily: PAPER, boxShadow: "0 20px 60px -20px rgba(0,0,0,.6)" }}>
+      {lines.map((l, i) => {
+        const m = mark?.(l, i) ?? null;
+        const tagEl = m?.tag && (
+          <span className="ml-2 text-[10px] font-semibold uppercase tracking-[.04em]" style={{ fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif", color: m.fg }}>
+            {m.tag}
+          </span>
+        );
+        if (l.kind === "name") return <div key={i} className="text-center text-[26px] leading-tight">{l.t}</div>;
+        if (l.kind === "contact")
+          return (
+            <div key={i} className="mb-1 rounded-[4px] text-center text-[13px]" style={{ background: m?.bg }}>
+              {l.t}
+              {tagEl}
+            </div>
+          );
+        if (l.kind === "h")
+          return (
+            <div key={i} className="mt-3 border-b border-black pb-px text-[14px] font-bold uppercase tracking-[.04em]" style={{ background: m?.bg }}>
+              {l.t}
+              {tagEl}
+            </div>
+          );
+        if (l.kind === "role" || l.kind === "sub")
+          return (
+            <div key={i} className={`-mx-2 flex justify-between gap-3 rounded-[4px] px-2 text-[14px] ${l.kind === "role" ? "mt-1.5 font-bold" : "italic"}`} style={{ background: m?.bg }}>
+              <span>
+                {l.t}
+                {tagEl}
+              </span>
+              {l.right && <span className="shrink-0">{l.right}</span>}
+            </div>
+          );
+        return (
+          <div key={i} className={`-mx-2 rounded-[4px] px-2 py-px text-[13.5px] leading-[1.4] ${l.kind === "b" ? "pl-6 -indent-3" : ""}`} style={{ background: m?.bg ?? "transparent" }}>
+            {l.t}
+            {tagEl}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+/** The example CV with notes on what makes it work, over the page. */
+function ExampleCv({ onClose }: { onClose: () => void }) {
+  const lines = cvLines({ id: "example", title: "", company: "", link: "", jd: "", jdName: null, mode: "build", cvName: null, cvText: null, cvMeta: null, cv: EXAMPLE_CV, step: 4 });
+  useEffect(() => {
+    const esc = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    window.addEventListener("keydown", esc);
+    return () => window.removeEventListener("keydown", esc);
+  }, [onClose]);
+  return (
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-[rgba(6,9,14,.78)] px-4 py-8 backdrop-blur-sm" onClick={onClose}>
+      <div className="mx-auto grid max-w-[1100px] items-start gap-5 lg:grid-cols-[minmax(0,1fr)_320px]" onClick={(e) => e.stopPropagation()}>
+        <Paper
+          lines={lines}
+          mark={(l) => {
+            const note = EXAMPLE_NOTES.find((n) => l.t.startsWith(n.starts));
+            return note ? { bg: "rgba(147,224,192,.22)", tag: note.note, fg: "#1F6B4C" } : null;
+          }}
+        />
+        <div className="flex flex-col gap-3 rounded-2xl border border-line bg-s1 p-5 text-tx">
+          <div className="flex items-center justify-between">
+            <span className={EYEBROW}>What makes it work</span>
+            <button type="button" onClick={onClose} className="h-8 cursor-pointer rounded-lg border border-line2 px-2.5 text-[13px] text-tx2 hover:text-tx">
+              Close
+            </button>
+          </div>
+          <ol className="m-0 flex list-decimal flex-col gap-2 pl-5 text-[13px] leading-[1.5] text-tx2">
+            {EXAMPLE_RULES.map((r) => (
+              <li key={r}>{r}</li>
+            ))}
+          </ol>
+          <span className="text-[12px] leading-[1.45] text-tx3">
+            Sam is made up; the shape is real. Based on the r/EngineeringResumes wiki. Nimbus builds yours in exactly this template.
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** What a tracking system would pull out of this CV, field by field. */
+function ReadByAts({ job, lines }: { job: CvJob; lines: Line[] }) {
+  const read = job.mode === "upload" ? cvFromText(job.cvText ?? "") : (job.cv ?? blankCv());
+  const exp = read.exp.filter((x) => x.on);
+  const undated = exp.filter((x) => !x.dates).map((x) => x.role || x.org).filter(Boolean);
+  const rows: { label: string; value: string; ok: boolean }[] = [
+    { label: "Name", value: read.name || "not found", ok: !!read.name },
+    { label: "Email", value: read.email || "not found", ok: !!read.email },
+    { label: "Phone", value: read.phone || "not found", ok: !!read.phone },
+    { label: "LinkedIn", value: read.linkedin || "not found (optional)", ok: !!read.linkedin },
+    { label: "University", value: read.uni || "not found", ok: !!read.uni },
+    { label: "Degree", value: read.degree || "not found", ok: !!read.degree },
+    { label: "Study dates", value: read.dates || "not found", ok: !!read.dates },
+    { label: "Jobs", value: `${exp.filter((x) => (x.kind ?? "work") === "work").length} found`, ok: exp.some((x) => (x.kind ?? "work") === "work") },
+    { label: "Projects", value: `${exp.filter((x) => x.kind === "project").length} found`, ok: exp.some((x) => x.kind === "project") },
+    { label: "Dates on each entry", value: undated.length ? `missing on ${undated.slice(0, 2).join(", ")}` : "all present", ok: !undated.length },
+    { label: "Skills", value: `${read.skills.length} found`, ok: read.skills.length > 0 },
+  ];
+  return (
+    <div className="flex flex-col gap-2.5 rounded-2xl border border-line bg-s1 px-[18px] py-4 text-tx">
+      <span className={EYEBROW}>How screening software reads your CV</span>
+      <span className="text-[13px] leading-[1.45] text-tx2">
+        Before a person sees it, systems like Workday, Greenhouse and SuccessFactors pull your CV into fields like these. Recruiters then search the fields for the
+        advert&apos;s words. Anything &ldquo;not found&rdquo; here may go missing there too.
+      </span>
+      <div className="grid gap-x-4 gap-y-1.5 sm:grid-cols-2">
+        {rows.map((r) => (
+          <div key={r.label} className="flex min-w-0 items-baseline gap-2 text-[13px]">
+            <span style={{ color: r.ok ? "#9FE6C8" : "#F6B4C1" }}>{r.ok ? "✓" : "✕"}</span>
+            <span className="shrink-0 text-tx3">{r.label}</span>
+            <span className="truncate text-tx2">{r.value}</span>
+          </div>
+        ))}
+      </div>
+      {lines.length > 0 && job.mode === "upload" && (
+        <span className="text-[12px] text-tx3">Fix a &ldquo;not found&rdquo; by putting it on its own line in a plain layout, or use the Nimbus template.</span>
+      )}
+    </div>
+  );
+}
+
+/** The free AI review (Gemini free tier): a recruiter's read of this CV against this advert. */
+function AiReviewCard({ job, lines }: { job: CvJob; lines: Line[] }) {
+  const [review, setReview] = useState<AiReview | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [busy, startBusy] = useTransition();
+  const cv = lines
+    .filter((l) => l.kind !== "name" && l.kind !== "contact")
+    .map((l) => (l.right ? `${l.t} | ${l.right}` : l.t))
+    .join("\n");
+  return (
+    <div className="flex flex-col gap-2.5 rounded-2xl border px-[18px] py-4 text-tx" style={{ borderColor: "rgba(147,224,192,.4)", background: "rgba(147,224,192,.06)" }}>
+      <span className={EYEBROW}>Free AI review</span>
+      {!review && (
+        <>
+          <span className="text-[13px] leading-[1.45] text-tx2">
+            An AI reads your CV against this advert like a recruiter: how likely an interview is, what to fix first, and stronger versions of your bullets. Sent to Google
+            Gemini without your name or contact details.
+          </span>
+          <button
+            type="button"
+            disabled={busy || !job.jd.trim()}
+            onClick={() =>
+              startBusy(async () => {
+                setError(null);
+                const r = await aiReview({ cv, jd: job.jd, title: job.title, company: job.company });
+                if ("error" in r) setError(r.error === "off" ? "The AI review isn't switched on yet." : r.error);
+                else setReview(r);
+              })
+            }
+            className="h-11 cursor-pointer rounded-[10px] bg-[#9FE6C8] text-[13px] font-semibold text-[#06140E] disabled:opacity-50"
+          >
+            {busy ? "Reading your CV…" : job.jd.trim() ? "Review my CV for this job" : "Add the advert first"}
+          </button>
+        </>
+      )}
+      {error && <span className="text-[13px] text-t-rose">{error}</span>}
+      {review && (
+        <div className="flex flex-col gap-3 text-[13px] leading-[1.45]">
+          <div className="flex items-baseline gap-2">
+            <span className="text-[34px] leading-none" style={{ fontFamily: SERIF, color: scoreColour(review.fit) }}>
+              {review.fit}
+            </span>
+            <span className="text-tx3">interview chance (AI estimate)</span>
+          </div>
+          <span className="text-tx2">{review.verdict}</span>
+          {review.strengths.length > 0 && (
+            <div className="flex flex-col gap-1">
+              <span className="font-medium text-tx">Working well</span>
+              {review.strengths.map((t) => (
+                <span key={t} className="text-tx2">
+                  · {t}
+                </span>
+              ))}
+            </div>
+          )}
+          {review.fixes.length > 0 && (
+            <div className="flex flex-col gap-1.5">
+              <span className="font-medium text-tx">Fix first</span>
+              {review.fixes.map((f) => (
+                <span key={f.problem} className="flex flex-col gap-0.5">
+                  <span className="text-tx">{f.problem}</span>
+                  <span className="text-tx2">{f.fix}</span>
+                  {f.example && <span className="text-tx3">e.g. &ldquo;{f.example}&rdquo;</span>}
+                </span>
+              ))}
+            </div>
+          )}
+          {review.rewrites.length > 0 && (
+            <div className="flex flex-col gap-1.5">
+              <span className="font-medium text-tx">Stronger bullets (copy the ones that are true)</span>
+              {review.rewrites.map((r) => (
+                <span key={r.before} className="flex flex-col gap-0.5 rounded-[9px] border border-line2 px-2.5 py-2">
+                  <span className="text-tx3 line-through decoration-[rgba(255,255,255,.25)]">{r.before}</span>
+                  <span className="text-tx">{r.after}</span>
+                  <button type="button" onClick={() => navigator.clipboard?.writeText(r.after).catch(() => {})} className="self-start text-[12px] font-medium text-t-sky hover:text-tx">
+                    Copy
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
+          {review.missing.length > 0 && <span className="text-tx2">Missing for this advert: {review.missing.join(", ")}.</span>}
+          <button type="button" onClick={() => setReview(null)} className="self-start text-[12px] font-medium text-t-sky hover:text-tx">
+            Review again after changes
+          </button>
+          <span className="text-[12px] text-tx3">AI can be wrong: keep only what&apos;s true about you.</span>
+        </div>
+      )}
     </div>
   );
 }

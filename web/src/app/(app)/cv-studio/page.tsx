@@ -77,6 +77,8 @@ export default async function CvStudioPage(props: PageProps<"/cv-studio">) {
       saved={saved ?? { ...blankCv(), name: [profile?.first_name, profile?.last_name].filter(Boolean).join(" "), email: user!.email ?? "", degree: prefs.degrees[0] ?? "" }}
       hasSaved={!!saved}
       signupCv={prefs.cvPath ? (prefs.cvName ?? "your CV") : null}
+      // The free AI review appears once a Gemini key is set (Vercel → Environment Variables)
+      aiOn={!!process.env.GEMINI_API_KEY}
     />
   );
 }

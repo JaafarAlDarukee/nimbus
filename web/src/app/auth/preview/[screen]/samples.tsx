@@ -118,6 +118,7 @@ export const SAMPLES: Record<string, { path: string; render: () => React.ReactNo
           saved={saved}
           hasSaved
           signupCv={null}
+          aiOn={false}
         />
       );
     },
