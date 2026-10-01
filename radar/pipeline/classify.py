@@ -50,7 +50,8 @@ KIND_RULES: list[tuple[str, re.Pattern]] = [
 STAFF_ROLE = _rx(
     r"\bsenior\b", r"\bprincipal\b", r"\bhead of\b", r"\bdirector\b", r"\brecruit(er|ment|ing)\b",
     r"\bmanager\b", r"\bcoordinator\b", r"\bdelivery lead\b", r"\bpartner\b", r"\bprofessor\b", r"\blecturer\b",
-    r"\bstaff\b", r"\blead (engineer|scientist|developer)\b", r"\btalent sourcer\b", r"\bpostdoc", r"\bpost-doctoral\b",
+    # "Staff Engineer" is senior; an NHS "Staff Nurse" is a newly qualified nurse
+    r"\bstaff (engineer|scientist|developer|software|data|accountant|product)", r"\blead (engineer|scientist|developer)\b", r"\btalent sourcer\b", r"\bpostdoc", r"\bpost-doctoral\b",
 )
 
 # Hints some hiring systems give in their own fields (employment type, experience level)
@@ -105,7 +106,8 @@ DISCIPLINES: dict[str, re.Pattern] = {
         r"\bformulation\b", r"\bforensic", r"\bfood scien",
     ),
     "healthcare": _rx(
-        r"\bclinical\b", r"\bpharmac(y|ist)\b", r"\bnurs(e|es|ing)\b", r"\bmedic(al|ine)\b(?! (device|technolog|engineer|physics|imaging))", r"\bnhs\b", r"\bhealth ?care\b",
+        r"\bclinical\b", r"\bclinicians?\b", r"\bmsk\b", r"\baudiolog", r"\bhealth screen", r"\bwellbeing\b", r"\bpractitioners?\b",
+        r"\btherapists?\b", r"\bmental health\b", r"\bcwp\b", r"\bpharmac(y|ist)\b", r"\bnurs(e|es|ing)\b", r"\bmedic(al|ine)\b(?! (device|technolog|engineer|physics|imaging))", r"\bnhs\b", r"\bhealth ?care\b",
         r"\bpatients?\b", r"\bphysiotherap", r"\bradiograph", r"\bdental\b", r"\bdentist", r"\bveterinar", r"\bmidwi",
         r"\boptometr", r"\bparamedic", r"\bpsycholog", r"\bpublic health\b", r"\bdigital health\b", r"\boccupational therap",
         r"\bdietit", r"\bnutrition", r"\bspeech and language\b", r"\bsports? scien", r"\bexercise scien",
