@@ -45,7 +45,7 @@ def event_type(title: str) -> str:
         return "Hackathon"
     if re.search(r"careers? (fair|festival)|graduate fair", title, re.I):
         return "Careers fair"
-    if re.search(r"(expo|exhibition|show|week)|\((expo|science festival)\)", title, re.I):
+    if re.search(r"\b(expo|exhibition|show|week)\b|\((expo|science festival)\)", title, re.I):
         return "Expo"
     if re.search(r"conference|summit|symposium|congress", title, re.I):
         return "Conference"
