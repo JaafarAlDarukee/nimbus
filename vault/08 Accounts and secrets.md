@@ -13,7 +13,7 @@ Back to [[00 Start Here]]
 | Gmail | a dedicated "Nimbus" Gmail with 2-step verification + app password "Nimbus" | Used by the radar inbox (IMAP). Owner's main Gmail is NOT connected |
 | Adzuna | developer API (app id + key) | Credit "Jobs by Adzuna" wherever its jobs show |
 | Google AI Studio / Gemini | not set up yet | For parsing/CV features later |
-| Vercel, domain | not set up yet | See [[13 Ideas backlog]] |
+| Vercel | Owner signed up with GitHub (Hobby), 1 Oct. Project `nimbus` (team slug `nimbus24`), root directory `web`, deploys on every push to `main`. Live at https://nimbus-pi-three.vercel.app | Env vars (Production + Preview): `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, pasted by the owner. Supabase `site_url` + redirect URLs point here (`supabase/config.toml`, config push). Custom domain: not yet. |
 
 ## Where each secret lives (names only)
 - **GitHub Actions secrets**: `SUPABASE_URL`, `SUPABASE_SECRET_KEY`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID` (channel), `TELEGRAM_ADMIN_CHAT_ID` (owner's DM), `ADZUNA_APP_ID`, `ADZUNA_APP_KEY`, `GMAIL_ADDRESS`, `GMAIL_APP_PASSWORD`. List names with `gh secret list`.
