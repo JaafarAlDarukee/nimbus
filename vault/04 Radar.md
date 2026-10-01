@@ -51,3 +51,13 @@ Back to [[00 Start Here]] · code in `radar/`
 - `radar/sources/devpost.py`: hackathons (hint "hackathon" → kind event). Events bypass the discipline filter; online events bypass the country filter (web `applyMatch`, radar `is_match`).
 - Telegram `send_welcome()`: 3 best open matches for someone who just connected.
 
+## Changes 2026-10-01 (later)
+- **Disciplines** (`pipeline/classify.py` DISCIPLINES): added `biomedical`, `life_sciences`, `healthcare`, `environmental` (+ description variants), and engineering words that were missing (high voltage, protection & control, FPGA, geotechnical, dams, NDT, welding, calibration, metrology, HVAC, CFD, machine learning/AI). "Medical device/technology/engineer..." is biomedical, not healthcare.
+- **Matching rules live in one place**: `web/src/lib/preferences.ts` (`DEGREE_DISCIPLINES`, `FIELD_DISCIPLINES`, `TYPE_KINDS`). `radar/match.py` parses them from that file (keep keys quoted, one entry per line) and takes title patterns from the classifier. A typed-in degree falls back to its field's tags.
+- **Events**: event readers set `raw.employment` ("hackathon"/"event", which always means kind `event`) and `raw.disciplines` ([] = every degree). Events with tags only reach matching degrees; reclassify skips events.
+  - `sources/mlh.py`: MLH season page (www.mlh.com/seasons/<year>/events, robots allow), schema.org Event microdata; keeps UK/Europe/online.
+  - `sources/events.py` + `data/seed/events.csv`: hand-researched expos, conferences, fairs, science festivals (official dates and links). Add rows to add events; past ones drop out.
+  - Devpost hackathons now `disciplines: []`.
+- **Store** keeps the hiring system's type fields in `opportunities.raw` (`HINT_FIELDS`), so reclassify can re-apply rules. Reclassify no longer closes a role just because the title alone has no type (only staff titles close).
+- **Inbox**: tracker links with the real address in the path (Amazon SES `awstrack.me`, used by Higherin) are decoded. TARGETjobs (`e.targetjobs.co.uk`) and Bright Network (`email.m.brightnetwork.co.uk`) use opaque trackers: check the first real alerts ("link hosts" log line).
+- **Telegram**: event alerts read "Expo · ends 5 Nov" (`event_type` in `notify/personal.py`, same labels as the cards).

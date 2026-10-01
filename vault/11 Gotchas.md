@@ -39,3 +39,7 @@ Back to [[00 Start Here]]
 - Telegram webhooks and `getUpdates` can't both work: with the webhook set, the old `telegram-setup` workflow (getUpdates) returns nothing.
 - `radar.reclassify` must be re-run after changing classify/names rules; the radar only fixes new rows.
 
+## Reclassify and type hints
+- Until 1 Oct 2026 the store didn't save the hiring system's type fields, so `radar.reclassify` closed 1,190 roles whose type came from those fields (SmartRecruiters "intern", Devpost hackathons). Fixed in code. Rows still to reopen (owner approval needed for the bulk update): `status='closed' and last_seen_at > now()-3 days and (closes_at is null or closes_at > now()-1 day)` where `kind_for(title, None)` is None, not staff, not excluded.
+- Bulk `update` statements on the live database are blocked by the safety check unless the owner approves; ask first.
+- Shell heredocs on this PC still turn `\b` into a backspace character inside Python strings: write patch scripts with the Write tool, then grep for `\x08`.

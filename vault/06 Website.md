@@ -50,3 +50,9 @@ Back to [[00 Start Here]] · code in `web/` (Next.js 16.3, React 19, Tailwind 4,
 - **Downloads**: PDF (print window from `cvHtml`), Word (real .docx from `cvDocx`, npm `docx`, right tab stop for dates), Google Doc (copies text, opens a new doc).
 - **AI**: no key. "Give me ideas" uses built-in templates (`fallbackIdeas`); "Copy a prompt for Claude" copies `ideasPrompt` (no personal details beyond what the student typed for that entry).
 - Next: keywords learned from Nimbus's own adverts per role type; tables/images checks for Word uploads.
+
+## Degrees, types and events (2026-10-01)
+- Engineering degrees: Mechanical, Biomedical, Chemical, Electrical, Electronic, Aerospace, Civil, Mechatronics and Robotics, Automotive, Manufacturing, Materials, General. Every degree in `onboarding-data.ts` must have an entry in `DEGREE_DISCIPLINES` (`preferences.ts`); check with the snippet in [[10 How to run things#Checks]].
+- New type "Expo or careers fair" (in DEFAULT_TYPES). "Clinical shadowing" → insight, "Fieldwork" → research. Part-time/seasonal/freelance/HCA have no radar kind yet.
+- `applyMatch`: `disciplines.ov.{...}` or `and(kind.eq.event,disciplines.eq.{})`.
+- Cards: events show Hackathon / Expo / Conference / Careers fair / Competition (`kindView`); the Opportunities chip is "Events".

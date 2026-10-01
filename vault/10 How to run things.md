@@ -23,6 +23,10 @@ $env:Path = [Environment]::GetEnvironmentVariable('Path','Machine') + ';' + [Env
 - Type-check: `npx tsc --noEmit` inside `web/`. Build: `npm run build` inside `web/`.
 - Design reference server: `preview_start design` → http://localhost:8765.
 
+## Checks
+- How many UK roles each degree's For you gets (defaults): fetch `select kind, disciplines, country, remote from public.opportunities where status='open' and (country='GB' or (kind='event' and remote))` with `npx supabase db query --linked`, then run `radar.match.filters_for` / `is_match` per degree from `DEGREES_BY_FIELD` (see session 1 Oct). Multi-line SQL: collapse to one line first.
+- Degrees without tags: parse `DEGREES_BY_FIELD` and compare with `radar.match.DEGREE_DISCIPLINES` (must be empty).
+
 ## Git
 - Commit messages via a file (`git commit -F file`) when they contain quotes; end with `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`.
 - `git pull --rebase` before push (discovery workflow commits to `data/discovered/`).
