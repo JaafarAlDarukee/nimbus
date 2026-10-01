@@ -61,3 +61,9 @@ Back to [[00 Start Here]] · code in `radar/`
 - **Store** keeps the hiring system's type fields in `opportunities.raw` (`HINT_FIELDS`), so reclassify can re-apply rules. Reclassify no longer closes a role just because the title alone has no type (only staff titles close).
 - **Inbox**: tracker links with the real address in the path (Amazon SES `awstrack.me`, used by Higherin) are decoded. TARGETjobs (`e.targetjobs.co.uk`) and Bright Network (`email.m.brightnetwork.co.uk`) use opaque trackers: check the first real alerts ("link hosts" log line).
 - **Telegram**: event alerts read "Expo · ends 5 Nov" (`event_type` in `notify/personal.py`, same labels as the cards).
+
+## Changes 2026-10-01 (night)
+- `sources/nhsjobs.py`: NHS Jobs public search (robots.txt sets no rules), 11 entry-level keywords, 1 page (priority) or 3 (full). Titles with trainee/graduate(s)/newly qualified/preceptorship/assistant psychologist/student get the "graduate" hint; others must match the normal rules. Source kind `nhsjobs` (migration 20261001040000).
+- `STAFF_ROLE` no longer matches bare "staff" (NHS Staff Nurse is entry level); only "staff engineer/scientist/developer/software/data/accountant/product".
+- Health tags: clinician, MSK, audiology, health screening, wellbeing, practitioner, therapist, mental health, CWP.
+- Workday science boards: found by POSTing likely site names to `/wday/cxs/{tenant}/{site}/jobs` (the tenant root returns 406, no redirect).
