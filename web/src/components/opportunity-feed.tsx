@@ -403,10 +403,31 @@ export function OpportunityFeed(props: Props) {
                     </Link>
                   </Step>
                   <Step n="02" border>
-                    Apply on the employer&apos;s page at{" "}
-                    <a href={selected.applyUrl} target="_blank" rel="noopener noreferrer" className="text-[12px] !text-[#0E131A] underline decoration-[#CFD6DF] underline-offset-2" style={{ fontFamily: MONO }}>
-                      {selected.source}
-                    </a>
+                    {selected.via ? (
+                      <>
+                        Found via {selected.via}, a job board. To apply straight to {selected.company}, use{" "}
+                        <a
+                          href={`https://www.google.com/search?q=${encodeURIComponent(`${selected.company} "${selected.title}" careers apply`)}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="font-medium !text-[#1D5C9C]"
+                        >
+                          Find it on their own site
+                        </a>
+                        , or apply through{" "}
+                        <a href={selected.applyUrl} target="_blank" rel="noopener noreferrer" className="!text-[#0E131A] underline decoration-[#CFD6DF] underline-offset-2">
+                          {selected.via}
+                        </a>
+                        .
+                      </>
+                    ) : (
+                      <>
+                        Apply on the employer&apos;s page at{" "}
+                        <a href={selected.applyUrl} target="_blank" rel="noopener noreferrer" className="text-[12px] !text-[#0E131A] underline decoration-[#CFD6DF] underline-offset-2" style={{ fontFamily: MONO }}>
+                          {selected.source}
+                        </a>
+                      </>
+                    )}
                   </Step>
                   <Step n="03" border>
                     Mark it applied. We add it to your tracker and remind you to follow up in 14 days.

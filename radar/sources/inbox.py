@@ -41,7 +41,9 @@ SITES = [
     Site("Gradcracker", ("gradcracker.com",),
          re.compile(r"gradcracker\.com/hub/\d+/[^/?#\s]+/[^/?#\s]+/\d+/[^?#\s]+", re.I)),
     Site("LinkedIn", ("linkedin.com",), re.compile(r"linkedin\.com/(comm/)?jobs/view/\d+", re.I), uk_only=False),
-    Site("RateMyPlacement", ("ratemyplacement.co.uk",), re.compile(r"ratemyplacement\.co\.uk/jobs/\d+", re.I)),
+    # RateMyPlacement is now Higherin (higherin.com); old links and senders still appear
+    Site("Higherin", ("higherin.com", "ratemyplacement.co.uk"),
+         re.compile(r"(higherin\.com|ratemyplacement\.co\.uk)/jobs/[^?#\s]+", re.I)),
     Site("Bright Network", ("brightnetwork.co.uk",),
          re.compile(r"brightnetwork\.co\.uk/(graduate-jobs|internships|jobs|graduate-schemes)/[^?#\s]+", re.I)),
     Site("Handshake", ("joinhandshake.co.uk", "joinhandshake.com"),

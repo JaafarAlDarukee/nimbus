@@ -55,7 +55,7 @@ const DISCIPLINE_WORD: Record<string, string> = {
 
 /** Hosts that belong to hiring systems or job boards rather than the employer: no useful logo there. */
 const NOT_EMPLOYER =
-  /(greenhouse\.io|lever\.co|ashbyhq\.com|workable\.com|smartrecruiters\.com|myworkdayjobs\.com|myworkdaysite\.com|adzuna\.|successfactors\.|sapsf\.|taleo\.net|icims\.com|gradcracker\.com|linkedin\.com|indeed\.|joinhandshake\.|ratemyplacement\.|brightnetwork\.|targetjobs\.|prospects\.ac\.uk|teamtailor\.com|pinpointhq\.com|oraclecloud\.com)/i;
+  /(greenhouse\.io|lever\.co|ashbyhq\.com|workable\.com|smartrecruiters\.com|myworkdayjobs\.com|myworkdaysite\.com|adzuna\.|successfactors\.|sapsf\.|taleo\.net|icims\.com|gradcracker\.com|linkedin\.com|indeed\.|joinhandshake\.|ratemyplacement\.|higherin\.com|devpost\.com|brightnetwork\.|targetjobs\.|prospects\.ac\.uk|teamtailor\.com|pinpointhq\.com|oraclecloud\.com)/i;
 
 function host(url: string): string {
   try {
