@@ -12,13 +12,13 @@ from __future__ import annotations
 
 from collections import defaultdict
 
-from .pipeline.classify import disciplines_for, fingerprint, kind_for
+from .pipeline.classify import STAFF_ROLE, disciplines_for, fingerprint, kind_for
 from .pipeline.exclusions import excluded
 from .pipeline.names import clean_company_name
+from .store import HINT_FIELDS as HINTS
 from .store import _batches, _fetch_all, client
 
 RETIRED_SOURCES: set[str] = set()
-HINTS = ("employmentType", "commitment", "experience", "employment")
 
 
 def main() -> None:
@@ -65,8 +65,12 @@ def main() -> None:
             hint = " ".join(str(row[h]) for h in HINTS if row.get(h)) or None
             kind = kind_for(title, hint)
             if kind is None:
-                close["not a student role"].append(row["id"])
-                continue
+                if STAFF_ROLE.search(title):
+                    close["not a student role"].append(row["id"])
+                    continue
+                # The title alone doesn't say, and rows saved before 1 Oct 2026 have no hint kept:
+                # trust the type given when it was saved
+                kind = row["kind"]
             disciplines = disciplines_for(title, description)
             if kind != row["kind"] or sorted(disciplines) != sorted(row["disciplines"] or []):
                 relabel[(kind, tuple(disciplines))].append(row["id"])

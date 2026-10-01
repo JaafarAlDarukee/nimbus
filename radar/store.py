@@ -93,6 +93,9 @@ def _record_boards(db: httpx.Client, board_results: list, now: str) -> tuple[dic
     return ids, new_boards
 
 
+HINT_FIELDS = ("employmentType", "commitment", "experience", "employment")
+
+
 def _row(o: Opportunity, company_ids: dict[str, str], source_ids: dict[str, str]) -> dict:
     return {
         "fingerprint": o.fingerprint,
@@ -113,6 +116,9 @@ def _row(o: Opportunity, company_ids: dict[str, str], source_ids: dict[str, str]
         "closes_at": _iso(o.closes_at),
         "rolling": o.rolling,
         "source_kind": o.source_kind,
+        # The hiring system's own type fields (employmentType "Intern", Devpost "hackathon"): kept so
+        # reclassify can re-apply the same rules later
+        "raw": {k: o.raw[k] for k in HINT_FIELDS if o.raw.get(k)} or None,
     }
 
 
