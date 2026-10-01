@@ -7,7 +7,7 @@
 export type FieldOption = { label: string; soon: boolean; d: string };
 
 export const FIELDS: FieldOption[] = [
-  { label: "Engineering", soon: false, d: "Mechanical, biomedical, chemical and electrical" },
+  { label: "Engineering", soon: false, d: "Mechanical, civil, electrical, aerospace, biomedical and more" },
   { label: "Science", soon: false, d: "Biomedical science, biochemistry, marine biology and more" },
   { label: "Medical and health", soon: false, d: "Medicine, pharmacy, nursing, allied health" },
   { label: "Computing", soon: true, d: "" },
@@ -15,7 +15,11 @@ export const FIELDS: FieldOption[] = [
 ];
 
 export const DEGREES_BY_FIELD: Record<string, string[]> = {
-  Engineering: ["Mechanical Engineering", "Biomedical Engineering", "Chemical Engineering", "Electrical Engineering"],
+  Engineering: [
+    "Mechanical Engineering", "Biomedical Engineering", "Chemical Engineering", "Electrical Engineering",
+    "Electronic Engineering", "Aerospace Engineering", "Civil Engineering", "Mechatronics and Robotics",
+    "Automotive Engineering", "Manufacturing Engineering", "Materials Engineering", "General Engineering",
+  ],
   Science: [
     "Biomedical Science", "Biochemistry", "Marine Biology", "Biology", "Chemistry", "Physics", "Microbiology",
     "Genetics", "Neuroscience", "Pharmacology", "Biotechnology", "Zoology", "Ecology and Conservation",
@@ -34,6 +38,14 @@ export const DEGREE_NOTES: Record<string, string> = {
   "Biomedical Engineering": "Medical devices, prosthetics, biomaterials and clinical engineering",
   "Chemical Engineering": "Process, pharma, energy, food and materials",
   "Electrical Engineering": "Electronics, power systems, control and embedded systems",
+  "Electronic Engineering": "Circuits, embedded systems, semiconductors and RF",
+  "Aerospace Engineering": "Aircraft, propulsion, space and aerostructures",
+  "Civil Engineering": "Structures, infrastructure, geotechnics and water",
+  "Mechatronics and Robotics": "Robots, automation, control and embedded software",
+  "Automotive Engineering": "Vehicles, powertrains, EVs and motorsport",
+  "Manufacturing Engineering": "Production, lean, quality and automation",
+  "Materials Engineering": "Metals, polymers, composites and testing",
+  "General Engineering": "Roles across every engineering discipline",
   "Biomedical Science": "Lab medicine, diagnostics, pathology and research",
   Biochemistry: "Molecular biology, pharma R&D and biotech",
   "Marine Biology": "Oceans, fisheries, aquaculture and conservation",
@@ -63,6 +75,14 @@ export const SUGGEST: Record<string, string[]> = {
   "Mechanical Engineering": ["Motorsport", "Automotive", "Civil aerospace", "Robotics", "Consumer products", "Industrial automation", "Wind and solar", "Rail", "Engineering consultancy"],
   "Biomedical Engineering": ["Medtech and devices", "Surgical robotics", "Prosthetics and orthotics", "Pharmaceuticals", "Biotech", "Diagnostics", "NHS and clinical engineering"],
   "Chemical Engineering": ["Pharmaceuticals", "Oil and gas", "Hydrogen", "Food and drink manufacturing", "Carbon capture", "Water and wastewater", "Consumer products"],
+  "Electronic Engineering": ["Electronics and hardware", "Semiconductors", "Space and satellites", "Robotics", "Audio and music tech"],
+  "Aerospace Engineering": ["Civil aerospace", "Space and satellites", "Motorsport", "Composites and materials", "Engineering consultancy"],
+  "Civil Engineering": ["Construction", "Infrastructure", "Structural consultancy", "Water and wastewater", "Rail", "Geotechnical", "Transport planning"],
+  "Mechatronics and Robotics": ["Robotics", "Industrial automation", "Autonomous vehicles", "Surgical robotics", "Electronics and hardware"],
+  "Automotive Engineering": ["Automotive", "Motorsport", "EV and batteries", "Autonomous vehicles", "Motorcycles"],
+  "Manufacturing Engineering": ["Industrial automation", "Additive manufacturing", "Food and drink manufacturing", "Consumer products", "Machinery and tooling", "Steel and metals"],
+  "Materials Engineering": ["Composites and materials", "Steel and metals", "Additive manufacturing", "Semiconductors", "Civil aerospace"],
+  "General Engineering": ["Engineering consultancy", "Automotive", "Civil aerospace", "Infrastructure", "Wind and solar", "Consumer products"],
   "Electrical Engineering": ["Power grid and utilities", "Electronics and hardware", "Semiconductors", "EV and batteries", "Rail", "Wind and solar", "Robotics", "Space and satellites"],
   "Biomedical Science": ["NHS hospitals", "Diagnostics", "Analytical labs", "Clinical research", "Biotech", "Research institutes"],
   Biochemistry: ["Pharmaceuticals", "Biotech", "Research institutes", "Genomics", "Analytical labs", "Food science"],
