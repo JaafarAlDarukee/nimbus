@@ -289,3 +289,22 @@ ${cv.slice(0, 8000)}
 ${fixes.length ? `\nA checker flagged these: ${fixes.join("; ")}.\n` : ""}
 Give me: 1) the rewritten CV, ready to paste, 2) the [X] numbers I need to fill in and how to estimate them, 3) up to 5 skills from the advert I'm missing and a quick way to show each (a small project or course).`;
 }
+
+/** The prompt to paste after attaching the downloaded CV file to Claude or Gemini. */
+export function attachPrompt(jd: string, title: string, company: string, fixes: string[]): string {
+  return `I've attached my CV. I'm a UK student applying for ${title ? `the "${title}" role` : "a role"}${company ? ` at ${company}` : ""}. Act as an expert engineering recruiter and CV writer.
+
+1. Tell me in 3 lines how well my CV fits this advert and the biggest thing holding it back.
+2. Rewrite my CV for this job in the r/EngineeringResumes style:
+   - one page, one column; Education, Experience, Projects, Technical Skills; no summary
+   - every bullet starts with a past-tense action verb and shows a result with a number (%, time, money, quantity, tolerance)
+   - use the advert's exact words for skills I really have; put the most relevant bullet first in each entry
+   - NEVER invent experience, tools or numbers: where a number is missing write [X] and tell me how to work it out
+   - British English
+3. List up to 5 skills the advert wants that my CV doesn't show, and a quick way to show each one.
+${fixes.length ? `\nA CV checker already flagged: ${fixes.join("; ")}.\n` : ""}
+The job advert:
+"""
+${jd.trim().slice(0, 6000) || "(I'll paste the advert next)"}
+"""`;
+}

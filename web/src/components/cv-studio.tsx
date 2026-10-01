@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import { aiReview, createJob, deleteJob, ideas as getIdeas, popularSkills, readFile, readJobLink, readSignupCv, saveDetails, saveJob } from "@/app/(app)/cv-studio/actions";
 import { ApplyTips } from "@/components/apply-tips";
 import type { AiReview } from "@/app/(app)/cv-studio/actions";
-import { AREA_COLOUR, analyse, blankCv, cvDocx, cvHtml, cvLines, ideasPrompt, scoreColour, tailorPrompt, type BuiltCv, type CvJob, type Experience, type Line } from "@/lib/cv";
+import { AREA_COLOUR, analyse, attachPrompt, blankCv, cvDocx, cvHtml, cvLines, ideasPrompt, scoreColour, tailorPrompt, type BuiltCv, type CvJob, type Experience, type Line } from "@/lib/cv";
 import { EXAMPLE_CV, EXAMPLE_NOTES, EXAMPLE_RULES } from "@/lib/cv-example";
 import { cvFromText, tailorCv } from "@/lib/cv-tailor";
 import { SOFT, keywordsIn } from "@/lib/keywords";
@@ -154,7 +154,11 @@ export function CvStudio(props: Props) {
           <button type="button" onClick={newJob} disabled={creating} className="h-12 cursor-pointer rounded-xl bg-[#8FC7FF] px-6 text-[15px] font-semibold text-[#06111D]">
             {creating ? "Starting…" : "New job"}
           </button>
+          <button type="button" onClick={() => setExampleOpen(true)} className="cursor-pointer text-[14px] font-medium text-t-sky hover:text-tx">
+            See what a great student CV looks like →
+          </button>
         </div>
+        {exampleOpen && <ExampleCv onClose={() => setExampleOpen(false)} />}
       </div>
     );
   }
@@ -247,6 +251,9 @@ export function CvStudio(props: Props) {
 
         {step === 1 && (
           <div className="animate-fade-up flex max-w-[640px] flex-col gap-3.5">
+            <button type="button" onClick={() => setExampleOpen(true)} className="cursor-pointer self-start text-[13px] font-medium text-t-sky hover:text-tx">
+              First time? See what a great student CV looks like →
+            </button>
             <Field label="Job title" value={job.title} onChange={(v) => update({ title: v })} placeholder="e.g. Operational Excellence Intern" big />
             <Field label="Company" value={job.company} onChange={(v) => update({ company: v })} placeholder="e.g. Müller UK & Ireland" big />
             <Field label="Link to the job" value={job.link} onChange={(v) => update({ link: v })} placeholder="https://careers.company.com/role" mono />
@@ -968,38 +975,105 @@ function AtsCheck({
 
         {aiOn && <AiReviewCard job={job} lines={A.lines} />}
 
-        <div className="flex flex-col gap-2.5 rounded-2xl border px-[18px] py-4" style={{ borderColor: "rgba(195,181,255,.4)", background: "rgba(195,181,255,.07)" }}>
-          <span className={EYEBROW}>Make it even stronger with AI</span>
-          <span className="text-[13px] leading-[1.45] text-tx2">
-            Hands Claude or Gemini your CV (without your name or contact details), this advert, the fix list and the template rules. It rewrites every bullet for this job
-            and marks any number you need to fill in. A free account works.
-          </span>
-          <div className="grid grid-cols-2 gap-1.5">
-            <button
-              type="button"
-              onClick={() => {
-                const prompt = tailorPrompt(A.lines, job.jd, job.title, job.company, R.issues.map((i) => i.title));
-                navigator.clipboard?.writeText(prompt).catch(() => {});
-                window.open(prompt.length < 7000 ? `https://claude.ai/new?q=${encodeURIComponent(prompt)}` : "https://claude.ai/new", "_blank", "noopener");
-                flash("Prompt copied. If Claude opens empty, paste it in (Ctrl+V) and send.");
-              }}
-              className="h-11 cursor-pointer rounded-[10px] bg-[#C3B5FF] text-[13px] font-semibold text-[#120B2A]"
-            >
-              Claude
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                navigator.clipboard?.writeText(tailorPrompt(A.lines, job.jd, job.title, job.company, R.issues.map((i) => i.title))).catch(() => {});
-                window.open("https://gemini.google.com/app", "_blank", "noopener");
-                flash("Prompt copied. Paste it into Gemini (Ctrl+V) and send.");
-              }}
-              className="h-11 cursor-pointer rounded-[10px] border border-[#C3B5FF] bg-transparent text-[13px] font-semibold text-t-lil"
-            >
-              Gemini
-            </button>
-          </div>
-          <span className="text-[12px] text-tx3">Check what it writes: keep only what&apos;s true, then paste it back into step 3 and check again.</span>
+        <div className="flex flex-col gap-3 rounded-2xl border px-[18px] py-4" style={{ borderColor: "rgba(195,181,255,.4)", background: "rgba(195,181,255,.07)" }}>
+          <span className={EYEBROW}>Polish it with Claude or Gemini · free</span>
+          <span className="text-[13px] leading-[1.45] text-tx2">Five steps, about two minutes. Works with a free Claude or Gemini account.</span>
+          <ol className="m-0 flex list-none flex-col gap-2.5 p-0 text-[13px] leading-[1.45]">
+            <li className="flex gap-2.5">
+              <span className="grid size-6 shrink-0 place-items-center rounded-full bg-[#C3B5FF] text-[12px] font-semibold text-[#120B2A]">1</span>
+              <span className="flex flex-col gap-1.5 text-tx2">
+                <span>
+                  <b className="text-tx">Download your CV.</b> Word is the quickest to attach.
+                </span>
+                <span className="flex gap-1.5">
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      saveBlob(await cvDocx(A.lines), `${fname}.docx`);
+                      flash(`Saved ${fname}.docx in your Downloads`);
+                    }}
+                    className="h-8 cursor-pointer rounded-lg border border-line2 px-2.5 text-[12px] font-medium text-tx hover:border-l-sky"
+                  >
+                    Word file
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const w = window.open("", "_blank");
+                      if (!w) return;
+                      w.document.write(html);
+                      w.document.close();
+                      setTimeout(() => w.print(), 300);
+                      flash('Choose "Save as PDF" in the print window.');
+                    }}
+                    className="h-8 cursor-pointer rounded-lg border border-line2 px-2.5 text-[12px] font-medium text-tx hover:border-l-sky"
+                  >
+                    PDF
+                  </button>
+                </span>
+              </span>
+            </li>
+            <li className="flex gap-2.5">
+              <span className="grid size-6 shrink-0 place-items-center rounded-full bg-[#C3B5FF] text-[12px] font-semibold text-[#120B2A]">2</span>
+              <span className="flex flex-col gap-1.5 text-tx2">
+                <span>
+                  <b className="text-tx">Copy the prompt.</b> It has this advert, the fix list and the template rules in it.
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigator.clipboard?.writeText(attachPrompt(job.jd, job.title, job.company, R.issues.map((i) => i.title))).catch(() => {});
+                    flash("Prompt copied.");
+                  }}
+                  className="h-8 cursor-pointer self-start rounded-lg bg-[#C3B5FF] px-3 text-[12px] font-semibold text-[#120B2A]"
+                >
+                  Copy the prompt
+                </button>
+              </span>
+            </li>
+            <li className="flex gap-2.5">
+              <span className="grid size-6 shrink-0 place-items-center rounded-full bg-[#C3B5FF] text-[12px] font-semibold text-[#120B2A]">3</span>
+              <span className="flex flex-col gap-1.5 text-tx2">
+                <span>
+                  <b className="text-tx">Open Claude or Gemini</b> and start a new chat.
+                </span>
+                <span className="flex gap-1.5">
+                  <a href="https://claude.ai/new" target="_blank" rel="noopener noreferrer" className="flex h-8 items-center rounded-lg border border-line2 px-2.5 text-[12px] font-medium !text-tx hover:border-l-sky">
+                    Claude ↗
+                  </a>
+                  <a href="https://gemini.google.com/app" target="_blank" rel="noopener noreferrer" className="flex h-8 items-center rounded-lg border border-line2 px-2.5 text-[12px] font-medium !text-tx hover:border-l-sky">
+                    Gemini ↗
+                  </a>
+                </span>
+              </span>
+            </li>
+            <li className="flex gap-2.5">
+              <span className="grid size-6 shrink-0 place-items-center rounded-full bg-[#C3B5FF] text-[12px] font-semibold text-[#120B2A]">4</span>
+              <span className="text-tx2">
+                <b className="text-tx">Attach the file</b> with the paperclip or <b className="text-tx">+</b> button, paste the prompt (Ctrl+V, or hold and Paste on a phone) and send.
+              </span>
+            </li>
+            <li className="flex gap-2.5">
+              <span className="grid size-6 shrink-0 place-items-center rounded-full bg-[#C3B5FF] text-[12px] font-semibold text-[#120B2A]">5</span>
+              <span className="text-tx2">
+                <b className="text-tx">Bring the good bits back.</b> Copy the bullets you like into{" "}
+                <button type="button" onClick={onEdit} className="font-medium text-t-sky hover:text-tx">
+                  Edit this CV
+                </button>
+                , fill in any [X] with your real numbers, and check again here. Keep only what&apos;s true: you&apos;ll be asked about every line.
+              </span>
+            </li>
+          </ol>
+          <button
+            type="button"
+            onClick={() => {
+              navigator.clipboard?.writeText(tailorPrompt(A.lines, job.jd, job.title, job.company, R.issues.map((i) => i.title))).catch(() => {});
+              flash("Copied the prompt with your CV inside (no name or contact details). Paste it into Claude or Gemini.");
+            }}
+            className="cursor-pointer self-start text-[12px] font-medium text-tx3 hover:text-tx"
+          >
+            Can&apos;t attach files? Copy a version with your CV text inside instead
+          </button>
         </div>
 
         <ApplyTips company={job.company} title={job.title} degree={me.degree} uni={me.uni} skills={A.matched.filter((k) => !SOFT.has(k))} />

@@ -1,4 +1,6 @@
+import { headers } from "next/headers";
 import { notFound } from "next/navigation";
+import { InviteCard } from "@/components/invite-card";
 import { createClient } from "@/lib/supabase/server";
 import { timeAgo } from "@/lib/time";
 import { decide } from "./actions";
@@ -37,6 +39,8 @@ export default async function AdminPage(props: PageProps<"/admin">) {
   const pending = requests.filter((r) => r.status === "pending");
   const decided = requests.filter((r) => r.status !== "pending");
   const notice = typeof params.notice === "string" ? params.notice : null;
+  const h = await headers();
+  const site = `${h.get("x-forwarded-proto") ?? "https"}://${h.get("host")}`;
 
   const row = (r: AccessRequest, actions: boolean) => (
     <div key={r.id} className="flex flex-wrap items-center gap-3 border-t border-line px-5 py-4 first:border-t-0">
@@ -66,6 +70,8 @@ export default async function AdminPage(props: PageProps<"/admin">) {
       <p className="mt-3 text-[15px] text-tx2">Approve someone and they get a sign-in email straight away. Only you can see this page.</p>
 
       {notice && <p className="mt-6 rounded-xl border border-line2 bg-s1 px-4 py-3 text-sm text-tx2">{notice}</p>}
+
+      <InviteCard site={site} />
 
       <h2 className="mb-3 mt-10 text-xs font-semibold uppercase tracking-[0.08em] text-tx3">Waiting ({pending.length})</h2>
       <div className="rounded-2xl border border-line bg-s1">
