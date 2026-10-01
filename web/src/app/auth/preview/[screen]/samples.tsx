@@ -76,7 +76,10 @@ export const SAMPLES: Record<string, { path: string; render: () => React.ReactNo
     path: "/calendar",
     render: () => {
       const ev = (day: string, kind: CalendarEvent["kind"], title: string, company: string, meta: string, note = "Saved in your tracker."): CalendarEvent => ({
-        id: `${day}${title}`, applicationId: "x", day, kind, remindKind: kind, title, company, meta, note, startsAt: `${day}T09:00:00Z`, reminded: false,
+        id: `${day}${title}`, day, kind, title, company, meta, note,
+        ...(["deadline", "online_test", "interview"].includes(kind)
+          ? { reminder: { applicationId: "x", remindKind: kind as "deadline", startsAt: `${day}T09:00:00Z`, on: false } }
+          : {}),
       });
       return (
         <CalendarView
@@ -87,6 +90,10 @@ export const SAMPLES: Record<string, { path: string; render: () => React.ReactNo
             ev("2026-09-16", "deadline", "Discover: Behind the Scenes", "Rolls-Royce", "17:00"),
             ev("2026-10-01", "interview", "Interview: Industrial Placement", "Jaguar Land Rover", "10:00 · video"),
             ev("2026-10-01", "deadline", "Year in Industry: Test Engineer", "Renishaw", "23:59"),
+            ev("2026-09-15", "applied", "Industrial Placement 2027", "Jaguar Land Rover", "you applied"),
+            ev("2026-10-09", "closing", "Design Engineering 12 Month Placement Scheme", "Caterpillar", "closes · fits your radar"),
+            ev("2026-09-29", "opened", "3 roles that fit you", "Haleon", "first seen by Nimbus"),
+            ev("2026-10-01", "expected", "Applications usually open: In stages across January", "Jaguar Land Rover", "from their own site"),
           ]}
         />
       );

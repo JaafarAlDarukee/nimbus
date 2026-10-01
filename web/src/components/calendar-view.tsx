@@ -4,64 +4,58 @@ import Link from "next/link";
 import { useState } from "react";
 import { setReminder } from "@/app/(app)/calendar/actions";
 
+export type CalendarKind = "deadline" | "online_test" | "interview" | "applied" | "closing" | "opened" | "expected";
+
 export type CalendarEvent = {
   id: string;
-  applicationId: string;
   /** YYYY-MM-DD, UK time */
   day: string;
-  kind: "deadline" | "online_test" | "interview";
-  /** How its reminder is stored ("other" for a due date set in the tracker, so it doesn't share the closing date's) */
-  remindKind: "deadline" | "online_test" | "interview" | "other";
+  kind: CalendarKind;
   title: string;
   company: string;
   meta: string;
   note: string;
-  startsAt: string;
-  reminded: boolean;
+  link?: { href: string; label: string };
+  /** Only events from your tracker can have a Telegram reminder */
+  reminder?: {
+    applicationId: string;
+    /** How it's stored ("other" for a due date you set, so it doesn't share the closing date's) */
+    remindKind: "deadline" | "online_test" | "interview" | "other";
+    startsAt: string;
+    on: boolean;
+  };
 };
 
 const SERIF = "var(--font-newsreader), Georgia, serif";
 const MONO = "var(--font-geist-mono), ui-monospace, monospace";
 const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 const DOW = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+const MAX_IN_DAY = 3;
 
-const STYLE = {
-  deadline: { bg: "var(--b-dawn)", fg: "var(--t-dawn)", label: "Deadline" },
-  interview: { bg: "var(--b-sky)", fg: "var(--t-sky)", label: "Interview" },
-  online_test: { bg: "var(--b-lil)", fg: "var(--t-lil)", label: "Online test" },
-} as const;
+const STYLE: Record<CalendarKind, { bg: string; fg: string; border: string; label: string; cell: (company: string) => string }> = {
+  deadline: { bg: "var(--b-dawn)", fg: "var(--t-dawn)", border: "1px solid transparent", label: "Deadline", cell: (c) => `${c} · deadline` },
+  interview: { bg: "var(--b-sky)", fg: "var(--t-sky)", border: "1px solid transparent", label: "Interview", cell: (c) => `${c} · interview` },
+  online_test: { bg: "var(--b-lil)", fg: "var(--t-lil)", border: "1px solid transparent", label: "Online test", cell: (c) => `${c} · online test` },
+  applied: { bg: "var(--b-teal)", fg: "var(--t-teal)", border: "1px solid transparent", label: "Applied", cell: (c) => `${c} · applied` },
+  closing: { bg: "transparent", fg: "var(--t-dawn)", border: "1px dashed rgba(243,195,143,.55)", label: "Closing", cell: (c) => `${c} closes` },
+  opened: { bg: "var(--b-mint)", fg: "var(--t-mint)", border: "1px solid transparent", label: "Opened", cell: (c) => `${c} opened` },
+  expected: { bg: "transparent", fg: "var(--t-mint)", border: "1px dashed rgba(147,224,192,.6)", label: "Expected to open", cell: (c) => `${c} opens` },
+};
+const LEGEND: CalendarKind[] = ["deadline", "interview", "online_test", "applied", "closing", "opened", "expected"];
 
 /** "What do the colours mean?": the calendar explained in plain words. */
-const GUIDE: { title: string; text: string; swatch: React.CSSProperties }[] = [
+const GUIDE: { kind?: CalendarKind; title: string; text: string; swatch?: React.CSSProperties }[] = [
+  { kind: "deadline", title: "Deadline", text: "The last day to apply for a role in your tracker, or a date you set yourself. Apply before it." },
+  { kind: "interview", title: "Interview", text: "An interview or assessment centre. In the Tracker, set a role to Interview and give it a due date." },
+  { kind: "online_test", title: "Online test", text: "A test or video interview to finish by that day. In the Tracker, set the role to Online test with a date." },
+  { kind: "applied", title: "Applied", text: "The day you applied. Follow up after 14 days if you've heard nothing (Telegram reminds you)." },
+  { kind: "closing", title: "Closing (dashed)", text: "A role that fits your radar closes that day. You haven't saved it yet: save it to track it and get reminders." },
+  { kind: "opened", title: "Opened", text: "The day Nimbus first saw a company post roles that fit you. Next year, these dates predict when they'll open again." },
+  { kind: "expected", title: "Expected to open (dashed)", text: "When a company says its applications open, from its own careers site. More appear as Nimbus learns this season." },
   {
-    title: "Deadline",
-    text: "The last day to apply for a role you saved or applied to, or a date you set in the Tracker. Apply before it.",
-    swatch: { background: "var(--b-dawn)", borderColor: "var(--t-dawn)" },
-  },
-  {
-    title: "Interview",
-    text: "An interview or assessment centre. Move a role to Interview in the Tracker and give it a due date to see it here.",
-    swatch: { background: "var(--b-sky)", borderColor: "var(--t-sky)" },
-  },
-  {
-    title: "Online test",
-    text: "A test or video interview to finish by that day. Move a role to Online test in the Tracker and set the date.",
-    swatch: { background: "var(--b-lil)", borderColor: "var(--t-lil)" },
-  },
-  {
-    title: "Expected to open (dashed)",
-    text: "When a company usually opens applications, predicted from past years. These appear once Nimbus has a year of history.",
-    swatch: { background: "transparent", borderColor: "var(--t-mint)", borderStyle: "dashed" },
-  },
-  {
-    title: "Today and the day you picked",
-    text: "Today's date has a filled blue circle. Click any day to see it on the right; the day you picked has a blue outline.",
+    title: "Today, and reminders",
+    text: "Today has a filled blue circle; the day you clicked has a blue outline. Click an event from your tracker, then Remind me the day before: it comes on Telegram.",
     swatch: { background: "var(--bg)", borderColor: "var(--l-sky)", boxShadow: "inset 0 0 0 2px var(--l-sky)" },
-  },
-  {
-    title: "Reminders",
-    text: "Click an event, then Remind me the day before. The reminder comes to you on Telegram once you connect it in Profile.",
-    swatch: { background: "#8FC7FF", borderColor: "transparent" },
   },
 ];
 
@@ -70,6 +64,7 @@ const parseKey = (k: string) => {
   const [y, m, d] = k.split("-").map(Number);
   return new Date(y, m - 1, d);
 };
+const swatch = (k: CalendarKind): React.CSSProperties => ({ background: STYLE[k].bg, border: STYLE[k].border.replace("transparent", STYLE[k].fg) });
 
 export function CalendarView({ events, today }: { events: CalendarEvent[]; today: string }) {
   const todayDate = parseKey(today);
@@ -77,8 +72,8 @@ export function CalendarView({ events, today }: { events: CalendarEvent[]; today
   const [sel, setSel] = useState(today);
   const [openEvent, setOpenEvent] = useState<string | null>(null);
   const [reminders, setReminders] = useState<Record<string, boolean>>({});
-  // The guide starts open while the calendar is still empty (new users)
-  const [guide, setGuide] = useState(events.length === 0);
+  // The guide starts open while nothing of yours is on the calendar yet (new users)
+  const [guide, setGuide] = useState(!events.some((e) => e.reminder || e.kind === "applied"));
 
   // Monday-first weeks covering the whole month
   const first = new Date(month.y, month.m, 1);
@@ -90,16 +85,33 @@ export function CalendarView({ events, today }: { events: CalendarEvent[]; today
   const days: Date[] = [];
   for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) days.push(new Date(d));
 
-  const byDay = (k: string) => events.filter((e) => e.day === k);
+  // Your own things first, then your matches
+  const order: CalendarKind[] = ["interview", "online_test", "deadline", "applied", "expected", "closing", "opened"];
+  const byDay = (k: string) => events.filter((e) => e.day === k).sort((a, b) => order.indexOf(a.kind) - order.indexOf(b.kind));
   const selDate = parseKey(sel);
   const selEvents = byDay(sel);
   const shift = (n: number) => setMonth(({ y, m }) => ({ y: m + n < 0 ? y - 1 : m + n > 11 ? y + 1 : y, m: (m + n + 12) % 12 }));
+  const upcoming = events.filter((e) => e.kind === "expected" && e.day >= today).sort((a, b) => a.day.localeCompare(b.day)).slice(0, 6);
 
   const toggleReminder = async (e: CalendarEvent) => {
-    const on = !(reminders[e.id] ?? e.reminded);
+    if (!e.reminder) return;
+    const on = !(reminders[e.id] ?? e.reminder.on);
     setReminders((r) => ({ ...r, [e.id]: on }));
-    const result = await setReminder({ applicationId: e.applicationId, kind: e.remindKind, title: `${e.title} · ${e.company}`, startsAt: e.startsAt, on });
+    const result = await setReminder({
+      applicationId: e.reminder.applicationId,
+      kind: e.reminder.remindKind,
+      title: `${e.title} · ${e.company}`,
+      startsAt: e.reminder.startsAt,
+      on,
+    });
     if (!result.ok) setReminders((r) => ({ ...r, [e.id]: !on }));
+  };
+
+  const pick = (day: string, eventId: string | null = null) => {
+    setSel(day);
+    setOpenEvent(eventId);
+    const d = parseKey(day);
+    setMonth({ y: d.getFullYear(), m: d.getMonth() });
   };
 
   return (
@@ -118,11 +130,7 @@ export function CalendarView({ events, today }: { events: CalendarEvent[]; today
             <NavButton onClick={() => shift(-1)} label="Previous month" d="M8.5 3 4.5 7l4 4" />
             <button
               type="button"
-              onClick={() => {
-                setMonth({ y: todayDate.getFullYear(), m: todayDate.getMonth() });
-                setSel(today);
-                setOpenEvent(null);
-              }}
+              onClick={() => pick(today)}
               className="h-11 cursor-pointer rounded-[10px] border border-line2 bg-s1 px-3.5 text-[13px] font-medium text-tx"
             >
               Today
@@ -131,17 +139,13 @@ export function CalendarView({ events, today }: { events: CalendarEvent[]; today
           </div>
         </div>
 
-        <div className="flex flex-wrap gap-4 text-[12px] text-tx2">
-          {(["deadline", "interview", "online_test"] as const).map((k) => (
+        <div className="flex flex-wrap gap-x-4 gap-y-2 text-[12px] text-tx2">
+          {LEGEND.map((k) => (
             <span key={k} className="flex items-center gap-1.5 whitespace-nowrap">
-              <span className="size-2.5 rounded-[3px] border" style={{ background: STYLE[k].bg, borderColor: STYLE[k].fg }} />
+              <span className="size-2.5 rounded-[3px]" style={swatch(k)} />
               {STYLE[k].label}
             </span>
           ))}
-          <span className="flex items-center gap-1.5 whitespace-nowrap">
-            <span className="size-2.5 rounded-[3px] border border-dashed border-t-mint" />
-            Expected to open
-          </span>
           <button type="button" onClick={() => setGuide((g) => !g)} aria-expanded={guide} className="cursor-pointer whitespace-nowrap text-t-sky hover:text-tx">
             {guide ? "Hide the guide" : "What do the colours mean?"}
           </button>
@@ -151,7 +155,7 @@ export function CalendarView({ events, today }: { events: CalendarEvent[]; today
           <div className="animate-fade-up grid gap-x-6 gap-y-3.5 rounded-2xl border border-line bg-s1 p-5 sm:grid-cols-2">
             {GUIDE.map((g) => (
               <div key={g.title} className="flex gap-3">
-                <span className="mt-0.5 h-5 w-9 flex-none rounded-md border" style={g.swatch} />
+                <span className="mt-0.5 h-5 w-9 flex-none rounded-md border" style={g.kind ? swatch(g.kind) : g.swatch} />
                 <div className="flex flex-col gap-1">
                   <span className="text-sm font-medium text-tx">{g.title}</span>
                   <span className="text-[13px] leading-normal text-tx2">{g.text}</span>
@@ -195,7 +199,7 @@ export function CalendarView({ events, today }: { events: CalendarEvent[]; today
                 >
                   {d.getDate()}
                 </span>
-                {dayEvents.map((e) => (
+                {dayEvents.slice(0, MAX_IN_DAY).map((e) => (
                   <button
                     key={e.id}
                     type="button"
@@ -204,18 +208,21 @@ export function CalendarView({ events, today }: { events: CalendarEvent[]; today
                       setSel(k);
                       setOpenEvent(e.id);
                     }}
-                    className="hidden cursor-pointer rounded-md border border-transparent px-[7px] py-1 text-left text-[12px] font-medium leading-[1.3] sm:block"
-                    style={{ background: STYLE[e.kind].bg, color: STYLE[e.kind].fg }}
+                    className="hidden cursor-pointer rounded-md px-[7px] py-1 text-left text-[12px] font-medium leading-[1.3] sm:block"
+                    style={{ background: STYLE[e.kind].bg, color: STYLE[e.kind].fg, border: STYLE[e.kind].border }}
                   >
-                    <span className="line-clamp-2">
-                      {e.company} · {STYLE[e.kind].label.toLowerCase()}
-                    </span>
+                    <span className="line-clamp-2">{STYLE[e.kind].cell(e.company)}</span>
                   </button>
                 ))}
+                {dayEvents.length > MAX_IN_DAY && (
+                  <span className="hidden px-1 text-[11px] text-tx3 sm:block" style={{ fontFamily: MONO }}>
+                    +{dayEvents.length - MAX_IN_DAY} more
+                  </span>
+                )}
                 {dayEvents.length > 0 && (
-                  <span className="flex gap-1 sm:hidden">
-                    {dayEvents.map((e) => (
-                      <span key={e.id} className="h-1.5 flex-1 rounded-full" style={{ background: STYLE[e.kind].fg }} />
+                  <span className="flex flex-wrap gap-1 sm:hidden">
+                    {dayEvents.slice(0, 4).map((e) => (
+                      <span key={e.id} className="h-1.5 min-w-[10px] flex-1 rounded-full" style={{ background: STYLE[e.kind].fg }} />
                     ))}
                   </span>
                 )}
@@ -225,7 +232,7 @@ export function CalendarView({ events, today }: { events: CalendarEvent[]; today
         </div>
         {events.length === 0 && (
           <p className="m-0 text-sm text-tx3">
-            Closing dates of roles you save, and the tests and interviews you add in the <Link href="/tracker">Tracker</Link>, show up here.
+            Save or apply to roles in <Link href="/">Opportunities</Link>, and add tests and interviews in the <Link href="/tracker">Tracker</Link>: they show up here.
           </p>
         )}
       </main>
@@ -240,7 +247,7 @@ export function CalendarView({ events, today }: { events: CalendarEvent[]; today
         <div className="flex flex-col gap-2">
           {selEvents.map((e) => {
             const isOpen = openEvent === e.id;
-            const on = reminders[e.id] ?? e.reminded;
+            const on = reminders[e.id] ?? e.reminder?.on ?? false;
             return (
               <div
                 key={e.id}
@@ -253,7 +260,7 @@ export function CalendarView({ events, today }: { events: CalendarEvent[]; today
               >
                 <span
                   className="flex h-[22px] items-center self-start rounded-md px-2 text-[11px] font-semibold uppercase tracking-[.04em]"
-                  style={{ background: STYLE[e.kind].bg, color: STYLE[e.kind].fg }}
+                  style={{ background: STYLE[e.kind].bg, color: STYLE[e.kind].fg, border: STYLE[e.kind].border }}
                 >
                   {STYLE[e.kind].label}
                 </span>
@@ -265,21 +272,34 @@ export function CalendarView({ events, today }: { events: CalendarEvent[]; today
                 {isOpen && (
                   <div className="mt-1.5 flex flex-col gap-2.5 border-t border-line pt-2.5">
                     <span className="text-[13px] leading-normal text-tx2">{e.note}</span>
-                    <button
-                      type="button"
-                      onClick={(ev) => {
-                        ev.stopPropagation();
-                        toggleReminder(e);
-                      }}
-                      className="flex h-10 cursor-pointer items-center justify-center rounded-[10px] border text-[13px] font-semibold"
-                      style={
-                        on
-                          ? { background: "transparent", color: "var(--t-mint)", borderColor: "rgba(147,224,192,.5)" }
-                          : { background: "#8FC7FF", color: "#06111D", borderColor: "transparent" }
-                      }
-                    >
-                      {on ? "Reminder set for the day before" : "Remind me the day before"}
-                    </button>
+                    {e.reminder && (
+                      <button
+                        type="button"
+                        onClick={(ev) => {
+                          ev.stopPropagation();
+                          toggleReminder(e);
+                        }}
+                        className="flex h-10 cursor-pointer items-center justify-center rounded-[10px] border text-[13px] font-semibold"
+                        style={
+                          on
+                            ? { background: "transparent", color: "var(--t-mint)", borderColor: "rgba(147,224,192,.5)" }
+                            : { background: "#8FC7FF", color: "#06111D", borderColor: "transparent" }
+                        }
+                      >
+                        {on ? "Reminder set for the day before" : "Remind me the day before"}
+                      </button>
+                    )}
+                    {e.link && (
+                      <a
+                        href={e.link.href}
+                        target={e.link.href.startsWith("/") ? undefined : "_blank"}
+                        rel="noopener noreferrer"
+                        onClick={(ev) => ev.stopPropagation()}
+                        className="flex h-10 items-center justify-center rounded-[10px] border border-line2 text-[13px] font-semibold !text-tx hover:border-l-sky"
+                      >
+                        {e.link.label}
+                      </a>
+                    )}
                   </div>
                 )}
               </div>
@@ -289,8 +309,29 @@ export function CalendarView({ events, today }: { events: CalendarEvent[]; today
         </div>
         <div className="flex flex-col gap-2.5 border-t border-line pt-[18px]">
           <span className="text-[12px] font-semibold uppercase tracking-[.08em] text-t-mint">Expected to open soon</span>
-          <span className="text-[13px] leading-normal text-tx3">
-            Nimbus learns when each company opens from what it sees this season. Predictions appear here once there is a year of history.
+          {upcoming.map((e) => {
+            const d = parseKey(e.day);
+            return (
+              <button
+                key={e.id}
+                type="button"
+                onClick={() => pick(e.day, e.id)}
+                className="grid cursor-pointer grid-cols-[52px_minmax(0,1fr)] items-center gap-2.5 py-2 text-left text-tx"
+              >
+                <span className="text-[12px] text-t-mint" style={{ fontFamily: MONO }}>
+                  {MONTHS[d.getMonth()].slice(0, 3)}
+                </span>
+                <span className="flex min-w-0 flex-col gap-px">
+                  <span className="truncate text-sm font-medium">{e.company}</span>
+                  <span className="text-[12px] text-tx3">{e.title.replace("Applications usually open: ", "")}</span>
+                </span>
+              </button>
+            );
+          })}
+          <span className="text-[12px] leading-normal text-tx3">
+            {upcoming.length
+              ? "From each company's own careers site. Nimbus also records when companies open this season, to predict next year."
+              : "Nimbus records when each company opens this season to predict next year, and adds dates companies publish themselves."}
           </span>
         </div>
       </aside>
