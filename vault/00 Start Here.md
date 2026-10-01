@@ -13,14 +13,19 @@ Read in this order, then carry on from **Next up** below:
 5. [[08 Accounts and secrets]] (where keys live; never values) and [[10 How to run things]]
 6. [[11 Gotchas]] before running commands on this Windows machine
 
-## Next up (as of 2026-09-30)
-- [x] Gentle animation on landing + onboarding: twinkling stars, shooting stars, pulsing current star, fade-up steps, staggered cards, count-up (2026-09-30). See [[07 Design#Motion]].
-- [ ] Owner finishes onboarding; verify preferences saved ([[05 Database]] `profiles.preferences`).
-- [ ] **Opportunities page** from the design (For you feed using [[06 Website#Matching]], match rings, white detail drawer, "Open and apply" → tracker). Replace the old sidebar layout with the design's top bar.
-- [ ] **Personal Telegram alerts**: bot links `telegram_links` codes to accounts, then each user gets only their matches. See [[04 Radar#Alerts]].
-- [ ] Then Tracker → Profile → Calendar → Companies → CV studio ([[02 Roadmap and status]]).
-- [ ] Before inviting friends: connect the Nimbus Gmail as Supabase's email sender (SMTP) and switch on the custom templates. See [[11 Gotchas#Supabase email]].
-- [ ] Put the site online (Vercel + free Student Pack domain). See [[13 Ideas backlog]].
+## Next up (as of 2026-10-01, owner said "lets go")
+Done already: every design screen, personal Telegram (owner connected 1 Oct), Adzuna back, research boards, Devpost hackathons. Details in [[02 Roadmap and status]].
+
+**Owner's latest instructions (1 Oct), in order of work:**
+1. [ ] **CV template = the r/EngineeringResumes template** as the main CV: one column, name + contact line, Education, Experience, Projects, Technical skills (grouped), no summary for students, action-verb bullets with numbers, one page. Real **.docx** (npm `docx`) and PDF export. Build it into CV studio ([[06 Website]] `components/cv-studio.tsx`, `lib/cv.ts`).
+2. [ ] **ATS checker "program" inside the website** that students use to raise their score: upload CV (PDF/Word) + paste or pick a job advert → score with a breakdown (keywords learned from Nimbus's own adverts for that role type, measurable results, action verbs, sections, contact details, length/one page, readability of the file: columns/tables/reading order) and a fix-it list. Could live in CV studio as its own tab.
+3. [ ] **Gemini: owner doesn't want to deal with keys** ("u do all"). Claude must never create accounts or handle keys, so make AI optional: keep built-in ideas and add "Copy to Claude" prompts (owner has Claude Pro). Don't ask for a Gemini key again unless the owner brings it up.
+4. [ ] **Adzuna links go to third-party sites**: Adzuna blocks automated redirect-following (403), so add a "Find it on their own site" link in the drawer (search for company + title on the employer's careers site) and put Adzuna's employers (not yet watched, hiring students) at the top of the research queue.
+5. [ ] **Job alerts**: owner made accounts with the Nimbus Gmail on TARGETjobs, Bright Network, Higherin (= RateMyPlacement's new name, higherin.com) and Gradcracker, but has **no alerts/trackers switched on yet**. Guide them (simple clicks). Make sure the inbox parser knows higherin.com emails. LinkedIn: forward only job-alert emails.
+6. [ ] Keep researching big employers' boards (list in [[04 Radar#Changes 2026-10-01]]) and adding routes to `web/src/lib/company-routes.ts`.
+7. [ ] Before inviting friends: Supabase SMTP via Nimbus Gmail; put the site online (Vercel + domain).
+
+The owner says they are "kinda shit in computing": give one small step at a time, exact clicks, and do everything that doesn't need their accounts yourself.
 
 ## Map
 - [[01 Vision and plan]]
