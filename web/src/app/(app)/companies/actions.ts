@@ -14,6 +14,7 @@ export async function companyRoles(radarNames: string[]): Promise<CompanyRole[]>
     .from("opportunities")
     .select("title,kind,closes_at,rolling,apply_url")
     .eq("status", "open")
+    .eq("country", "GB")
     .in("company_name", radarNames.slice(0, 20))
     .order("first_seen_at", { ascending: false })
     .limit(30);

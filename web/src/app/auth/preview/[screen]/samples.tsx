@@ -64,11 +64,11 @@ export const SAMPLES: Record<string, { path: string; render: () => React.ReactNo
             list.map((entry) => {
               const [name, place] = entry.split("|");
               const open = [...name].reduce((h, ch) => (h * 31 + ch.charCodeAt(0)) % 997, 0) % 13;
-              return { name, place, open, radarNames: [] };
+              return { name, place, open, openAnywhere: open, radarNames: [], watching: open ? ["workday"] : null };
             }),
           ]),
         )}
-        others={[{ name: "Ocado Technology", place: "", open: 6, radarNames: [] }]}
+        others={[{ name: "Ocado Technology", place: "", open: 6, openAnywhere: 6, radarNames: [], watching: ["greenhouse"] }]}
       />
     ),
   },

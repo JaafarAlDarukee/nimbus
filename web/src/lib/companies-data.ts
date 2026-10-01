@@ -52,7 +52,7 @@ export const COMPANIES: Record<string, string[]> = {
   "Consumer products": ["Dyson|Malmesbury", "Unilever|Port Sunlight", "Procter & Gamble|Newcastle", "Reckitt|Hull", "Haleon|Weybridge", "Kärcher UK|Banbury", "Brompton Bicycle|London"],
   "Food and drink manufacturing": ["Müller UK & Ireland|Telford", "Nestlé UK|York", "Mondelez|Bournville", "PepsiCo UK|Leicester", "Kerry|UK sites", "Diageo|Scotland", "Heineken UK|Manchester", "Coca-Cola Europacific Partners|Uxbridge", "Britvic|Hemel Hempstead", "Mars|Slough"],
   "Robotics": ["Ocado Technology|Hatfield", "Shadow Robot|London", "Oxa|Oxford", "Wayve|London", "Automata|London", "Dexory|Wallingford", "ABB UK|Warrington", "Festo UK|Northampton"],
-  "Industrial automation": ["Siemens Digital Industries|Manchester", "Rockwell Automation|Milton Keynes", "Beckhoff UK|Coventry", "Renishaw|Wotton-under-Edge", "Spirax Group|Cheltenham"],
+  "Industrial automation": ["Mitsubishi Electric|Hatfield", "Siemens Digital Industries|Manchester", "Rockwell Automation|Milton Keynes", "Beckhoff UK|Coventry", "Renishaw|Wotton-under-Edge", "Spirax Group|Cheltenham"],
   "Semiconductors": ["Arm|Cambridge", "IQE|Cardiff", "Graphcore|Bristol", "Alphawave Semi|London", "Cirrus Logic UK|Edinburgh", "Infineon UK|Bristol", "Imagination Technologies|Kings Langley"],
   "Electronics and hardware": ["Raspberry Pi|Cambridge", "Sony UK TEC|Pencoed", "Oxford Instruments|Abingdon", "Plextek|Great Chesterford", "e2v Teledyne|Chelmsford"],
   "Medtech and devices": ["Smith+Nephew|Hull", "GE HealthCare|Amersham", "Siemens Healthineers|Oxford", "Medtronic UK|Watford", "Stryker UK|Newbury", "DePuy Synthes|Leeds", "Owen Mumford|Oxford", "Convatec|Deeside"],

@@ -4,9 +4,24 @@ import Link from "next/link";
 import { useEffect, useState, useTransition } from "react";
 import { companyRoles, setMuted, suggestCompany, type CompanyRole } from "@/app/(app)/companies/actions";
 import { DEGREES_BY_FIELD, FIELD_EXTRAS, FIELDS, SUGGEST } from "@/lib/onboarding-data";
+import { ROUTES } from "@/lib/company-routes";
 import { timeAgo } from "@/lib/time";
 
-export type DirectoryCompany = { name: string; place: string; open: number; radarNames: string[] };
+export type DirectoryCompany = {
+  name: string;
+  place: string;
+  /** Open roles in the UK */
+  open: number;
+  openAnywhere: number;
+  radarNames: string[];
+  /** Hiring systems Nimbus reads for this employer, or null when it isn't linked yet */
+  watching: string[] | null;
+};
+
+const SYSTEMS: Record<string, string> = {
+  workday: "Workday", greenhouse: "Greenhouse", lever: "Lever", ashby: "Ashby", workable: "Workable",
+  smartrecruiters: "SmartRecruiters", successfactors: "SuccessFactors", rss: "their jobs feed", sitemap: "their careers site",
+};
 
 type Props = {
   field: string;
@@ -109,7 +124,7 @@ export function CompaniesView(props: Props) {
             <span className="text-[36px] leading-none text-t-sky" style={{ fontFamily: SERIF }}>
               {openRoles.toLocaleString("en-GB")}
             </span>
-            <span className="text-[12px] text-tx3">open roles</span>
+            <span className="text-[12px] text-tx3">open in the UK</span>
           </div>
         </div>
       </div>
@@ -214,7 +229,11 @@ export function CompaniesView(props: Props) {
                         <span className="truncate text-sm font-medium">{c.name}</span>
                         <span className="text-[12px] text-tx3">
                           {c.place && `${c.place} · `}
-                          <span style={{ fontFamily: MONO, color: c.open ? "var(--t-sky)" : "var(--tx3)" }}>{c.open} open</span>
+                          {c.watching || c.open ? (
+                            <span style={{ fontFamily: MONO, color: c.open ? "var(--t-sky)" : "var(--tx3)" }}>{c.open} open</span>
+                          ) : (
+                            <span>not linked yet</span>
+                          )}
                         </span>
                       </div>
                       <button
@@ -313,6 +332,8 @@ function CompanyDrawer({
   }, [onClose]);
 
   const found = company.open > 0;
+  const route = ROUTES[company.name];
+  const systems = (company.watching ?? []).map((k) => SYSTEMS[k] ?? k);
   const programmes = PROGRAMMES.filter((p) => roles?.some((r) => p.kinds.includes(r.kind)));
   const label = "text-[11px] font-semibold uppercase tracking-[.06em] text-[#626C7C]";
   const section = "text-[12px] font-semibold uppercase tracking-[.08em] text-[#626C7C]";
@@ -345,9 +366,9 @@ function CompanyDrawer({
             </button>
           </div>
           <div className="grid grid-cols-3 rounded-xl border border-[#E3E8EE] bg-white">
-            <Fact label="Open now" value={String(company.open)} colour="#1D5C9C" className={label} />
-            <Fact label="Usually opens" value="Learning" className={label} border />
-            <Fact label="Checked" value={found && lastChecked ? timeAgo(lastChecked) : "Not yet"} className={label} border />
+            <Fact label="Open in UK" value={String(company.open)} colour="#1D5C9C" className={label} />
+            <Fact label="Usually opens" value={route?.opens ?? "Learning"} className={label} border />
+            <Fact label="Checked" value={company.watching && lastChecked ? timeAgo(lastChecked) : "Not linked"} className={label} border />
           </div>
           <div className="grid grid-cols-[1fr_auto] gap-2">
             <Link
@@ -393,16 +414,79 @@ function CompanyDrawer({
                 </a>
               ))}
               {(!found || roles?.length === 0) && (
-                <div className="p-3.5 text-sm text-[#626C7C]">Nothing open right now. We will message you when something appears.</div>
+                <div className="p-3.5 text-sm text-[#626C7C]">
+                  Nothing open in the UK right now
+                  {company.openAnywhere > 0 ? ` (${company.openAnywhere} abroad)` : ""}.{" "}
+                  {company.watching ? "We'll message you when something appears." : "See How to get in below."}
+                </div>
+              )}
+            </div>
+          </div>
+          <div className="flex flex-col gap-2">
+            <span className={section}>How to get in</span>
+            <div className="flex flex-col gap-2.5 rounded-xl border border-[#E3E8EE] p-3.5">
+              {route ? (
+                <>
+                  <span className="text-sm leading-normal text-[#1F2733]">{route.how}</span>
+                  {route.contact && (
+                    <span className="text-sm">
+                      <span className="text-[#626C7C]">Published contact: </span>
+                      <a href={`mailto:${route.contact}`} className="font-medium !text-[#1D5C9C]">
+                        {route.contact}
+                      </a>
+                    </span>
+                  )}
+                  <div className="flex flex-wrap gap-2">
+                    <a href={route.careers} target="_blank" rel="noopener noreferrer" className="flex h-9 items-center rounded-[10px] bg-[#0E131A] px-3.5 text-[13px] font-semibold !text-white">
+                      Their careers page
+                    </a>
+                    <a
+                      href={`https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(`${company.name} early careers`)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex h-9 items-center rounded-[10px] border border-[#CFD6DF] px-3.5 text-[13px] font-medium !text-[#0E131A]"
+                    >
+                      Their early-careers team on LinkedIn
+                    </a>
+                  </div>
+                  <span className="text-[12px] text-[#626C7C]">
+                    From <a href={route.source} target="_blank" rel="noopener noreferrer" className="!text-[#626C7C] underline">their own site</a>, checked{" "}
+                    {new Date(route.checked).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}. Nimbus never contacts employers for you.
+                  </span>
+                </>
+              ) : (
+                <>
+                  <span className="text-sm leading-normal text-[#1F2733]">
+                    We haven&apos;t checked {company.name}&apos;s route yet. Look for an early-careers or students page on their site, and for a published recruitment email if they don&apos;t advertise placements.
+                  </span>
+                  <div className="flex flex-wrap gap-2">
+                    <a
+                      href={`https://www.google.com/search?q=${encodeURIComponent(`${company.name} early careers placement`)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex h-9 items-center rounded-[10px] bg-[#0E131A] px-3.5 text-[13px] font-semibold !text-white"
+                    >
+                      Find their careers page
+                    </a>
+                    <a
+                      href={`https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(`${company.name} early careers`)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex h-9 items-center rounded-[10px] border border-[#CFD6DF] px-3.5 text-[13px] font-medium !text-[#0E131A]"
+                    >
+                      Their early-careers team on LinkedIn
+                    </a>
+                  </div>
+                </>
               )}
             </div>
           </div>
           <div className="flex flex-col gap-1.5">
             <span className={section}>Where we look</span>
             <span className="text-sm leading-normal text-[#1F2733]">
-              {found
-                ? "Their own careers page and early-careers portal, every 30 minutes. Never a job board copy."
-                : "We haven't matched their careers page yet. It's on our list, and you can nudge it with Suggest."}
+              {company.watching
+                ? `Their own careers site (${systems.join(", ")}), every 30 minutes. Never a job board copy.`
+                : "Not linked yet: Nimbus can't read their careers site yet, or the site asks tools not to. Their roles still reach you through job-alert emails sent to the Nimbus inbox and through Adzuna."}
             </span>
           </div>
         </div>

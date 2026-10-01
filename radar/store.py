@@ -72,10 +72,10 @@ def _record_boards(db: httpx.Client, board_results: list, now: str) -> tuple[dic
     """Save each board's health to `sources`. Returns (board key -> source id, keys of boards
     seen for the very first time). A new board's existing jobs aren't news, so they don't alert."""
     known = {f"{r['kind']}|{r['url']}" for r in _fetch_all(db, "/sources", {"select": "kind,url"})}
-    ok = [{"kind": b.kind, "url": b.ref, "check_every_minutes": 30, "last_checked_at": now,
+    ok = [{"kind": b.kind, "url": b.ref, "company_name": b.company, "check_every_minutes": 30, "last_checked_at": now,
            "last_success_at": now, "last_error": None, "consecutive_failures": 0}
           for b, error in board_results if not error]
-    failed = [{"kind": b.kind, "url": b.ref, "check_every_minutes": 30, "last_checked_at": now,
+    failed = [{"kind": b.kind, "url": b.ref, "company_name": b.company, "check_every_minutes": 30, "last_checked_at": now,
                "last_error": error[:500]}
               for b, error in board_results if error]
     ids: dict[str, str] = {}
