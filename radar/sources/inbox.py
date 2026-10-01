@@ -203,15 +203,29 @@ async def fetch(board: Board, http: Fetcher, tier: str) -> list[RawJob]:
     emails = await asyncio.to_thread(read_emails)
     jobs: list[RawJob] = []
     per_sender: dict[str, list[int]] = {}
+    link_hosts: dict[str, dict[str, int]] = {}
     for sender, _, date, html in emails:
         found = jobs_from_email(sender, date, html)
         jobs.extend(found)
-        counts = per_sender.setdefault(sender.rsplit("@", 1)[-1].lower(), [0, 0])
+        domain = sender.rsplit("@", 1)[-1].lower()
+        counts = per_sender.setdefault(domain, [0, 0])
         counts[0] += 1
         counts[1] += len(found)
-    # Safe for public logs: sender domains and counts only, never email content
+        if not found:  # a job site's email that gave nothing: which hosts do its links point at?
+            parser = _Links()
+            parser.feed(html)
+            if _site_for(sender, parser.links):
+                hosts = link_hosts.setdefault(domain, {})
+                for href, _ in parser.links:
+                    host = urlsplit(href).netloc.lower()
+                    if host:
+                        hosts[host] = hosts.get(host, 0) + 1
+    # Safe for public logs: sender domains, link hosts and counts only, never email content
     for domain, (email_count, job_count) in sorted(per_sender.items()):
         print(f"  inbox: {domain}: {email_count} emails -> {job_count} jobs")
+        if job_count == 0 and link_hosts.get(domain):
+            top = sorted(link_hosts[domain].items(), key=lambda kv: -kv[1])[:4]
+            print(f"    link hosts: {', '.join(f'{h} ({n})' for h, n in top)}")
     return jobs
 
 
