@@ -21,6 +21,7 @@ Back to [[00 Start Here]] · newest last. Don't re-open these without the owner 
 No Airbus, BAE Systems, Boeing, or any nuclear / weapons / defence company or role. Enforced in `radar/pipeline/exclusions.py` (companies, title words, repeated description words) and in onboarding options (`web/src/lib/onboarding-data.ts`). Rolls-Royce: civil roles only. See [[04 Radar#Exclusions]].
 
 ## 2026-10-01
+- CV studio's ATS score weights: keywords 40%, impact 25%, layout 20%, sections 15%. A summary section is marked as "improve" (r/EngineeringResumes drops it for students). One page is the rule.
 - **Shared Telegram channel stays** for anyone interested; everyone also gets private alerts (owner's choice).
 - **Adzuna is back**, labelled "via Adzuna" (it's ~5 days behind and links to job boards). Owner: coverage matters more than the delay.
 - **CV template**: the r/EngineeringResumes template is the main CV format (owner's choice).

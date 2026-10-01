@@ -17,7 +17,7 @@ Back to [[00 Start Here]] · code in `web/` (Next.js 16.3, React 19, Tailwind 4,
 | `/profile` | `(app)/profile/` + `components/profile-view.tsx` | ✅ edits preferences (autosave), Telegram connect/disconnect, log out |
 | `/companies` | `(app)/companies/` + `components/companies-view.tsx`, `lib/companies-data.ts` (directory from the design minus exclusions), `lib/company-match.ts` | ✅ open counts via `open_roles_by_company()`, mute (hidden from For you), suggest |
 | `/calendar` | `(app)/calendar/` + `components/calendar-view.tsx` | ✅ closing dates of saved/applied roles + tracker due dates; reminders stored in `calendar_events` |
-| `/cv-studio` | `(app)/cv-studio/` + `components/cv-studio.tsx`, `lib/cv.ts` | ✅ `cv_jobs` table, PDF/Word read on the server (unpdf, mammoth), ATS check, downloads |
+| `/cv-studio` | `(app)/cv-studio/` + `components/cv-studio.tsx`, `lib/cv.ts` | ✅ `cv_jobs` table (+ `cv_meta` pages/columns), PDF/Word read on the server (unpdf, mammoth), r/EngineeringResumes template, ATS checker, downloads |
 | `/auth/preview/<screen>` | `src/app/auth/preview/[screen]/` | 🛠 development only (404 in production): each screen with the design's sample data, for side-by-side design checks |
 
 - `src/proxy.ts`: refreshes the session; signed-out visitors → `/login` (except `/login`, `/auth/*`).
@@ -42,3 +42,11 @@ Back to [[00 Start Here]] · code in `web/` (Next.js 16.3, React 19, Tailwind 4,
 
 ## Local dev
 `.claude/launch.json` has `web` (npm --prefix web run dev, port 3000) and `design` (serves the handoff on port 8765).
+
+## CV studio (2026-10-01)
+- **Template** (`lib/cv.ts` `cvLines`): r/EngineeringResumes style. Name; contact line `phone | email | linkedin | town`; Education (uni, dates on the right; degree + grade; optional Relevant modules); Experience (role, dates right; company, place right; bullets); Projects (`name | team`, dates right; bullets); Technical Skills split into `Software:` (the `SOFTWARE` set in `lib/keywords.ts`) and `Technical:`. No summary. Each entry has `kind: "work" | "project"`.
+- **ATS checker** (`lib/ats.ts` `atsReport`): pure function, same for uploads and built CVs. Areas and weights: keywords for this role 40%, measurable impact 25%, parsing and layout 20%, sections and length 15%. Issues have `severity` fix/improve, an area colour (`AREA_COLOUR` in `lib/cv.ts`) and example lines. Uploaded PDFs give page count and a two-column guess (`textOf` in `cv-studio/actions.ts`), stored in `cv_jobs.cv_meta`.
+- **Check page** (`AtsCheck` in `components/cv-studio.tsx`): the CV as printed, with bullets marked "Add a result" / "Start with a verb" and the first skills line marked with missing keywords; score ring, four area bars, "How the score works", fix list, Edit this CV. Students fix, check, repeat.
+- **Downloads**: PDF (print window from `cvHtml`), Word (real .docx from `cvDocx`, npm `docx`, right tab stop for dates), Google Doc (copies text, opens a new doc).
+- **AI**: no key. "Give me ideas" uses built-in templates (`fallbackIdeas`); "Copy a prompt for Claude" copies `ideasPrompt` (no personal details beyond what the student typed for that entry).
+- Next: keywords learned from Nimbus's own adverts per role type; tables/images checks for Word uploads.
