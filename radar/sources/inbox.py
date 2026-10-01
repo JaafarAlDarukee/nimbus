@@ -87,8 +87,15 @@ class _Links(HTMLParser):
 def _embedded_urls(href: str) -> list[str]:
     """Tracking links often carry the real address inside a parameter (?url=https%3A...)."""
     candidates = [href]
-    for values in parse_qs(urlsplit(href).query).values():
+    parts = urlsplit(href)
+    for values in parse_qs(parts.query).values():
         candidates += [unquote(v) for v in values if "http" in unquote(v)]
+    # Others (Amazon SES's awstrack.me, used by Higherin) put it in the path, encoded:
+    # /L0/https:%2F%2Fhigherin.com%2Fjobs%2F.../1/...
+    for segment in parts.path.split("/"):
+        decoded = unquote(segment)
+        if decoded.startswith(("http://", "https://")):
+            candidates.append(decoded)
     return candidates
 
 
