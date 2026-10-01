@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { track } from "@/app/(app)/actions";
 import { telegramLinkCode } from "@/app/(app)/profile/actions";
+import { peopleToFind } from "@/components/apply-tips";
 import { SPARKLE, StarField, TELEGRAM_BOT_URL, TelegramFab } from "@/components/brand";
 import { TYPE_CHIPS, type OpportunityView } from "@/lib/opportunity-types";
 
@@ -451,6 +452,34 @@ export function OpportunityFeed(props: Props) {
                   <span className="text-sm font-medium">{selected.company}</span>
                   <span className="text-[12px] text-[#1D5C9C]">Open company page</span>
                 </a>
+              </div>
+
+              <div className="flex flex-col gap-2.5">
+                <div className="flex items-baseline justify-between">
+                  <span className={EYEBROW}>Before you apply · LinkedIn</span>
+                  <span className="text-[12px] text-[#626C7C]">you send, never Nimbus</span>
+                </div>
+                <div className="flex flex-col rounded-xl border border-[#E3E8EE]">
+                  {peopleToFind(selected.company, selected.title).map((p, i) => (
+                    <a
+                      key={p.label}
+                      href={p.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={`flex flex-col gap-0.5 px-3.5 py-2.5 !text-[#0E131A] hover:bg-[#F6F8FA] ${i ? "border-t border-[#E3E8EE]" : ""}`}
+                    >
+                      <span className="text-sm font-medium text-[#1D5C9C]">{p.label} ↗</span>
+                      <span className="text-[12px] leading-[1.4] text-[#626C7C]">{p.why}</span>
+                    </a>
+                  ))}
+                </div>
+                <span className="text-[12px] leading-[1.45] text-[#626C7C]">
+                  Send a short note with the request: who you are, the role, one question. Ready-made notes and a profile checklist are on the last step of{" "}
+                  <Link href={`/cv-studio?job=${selected.id}`} className="font-medium !text-[#1D5C9C]">
+                    CV studio
+                  </Link>
+                  .
+                </span>
               </div>
 
               <div className="flex flex-col gap-2.5">

@@ -4,7 +4,7 @@
  * keywords for this role, parsing and layout, measurable impact, sections and length.
  * Pure functions: the same report for an uploaded file or a CV built in CV studio.
  */
-import { keywordsIn } from "@/lib/keywords";
+import { evidenceFor, keywordsIn } from "@/lib/keywords";
 
 export type CvFacts = {
   /** The CV as text, one line per line */
@@ -71,12 +71,24 @@ export function atsReport(cv: CvFacts, advert: string, jobTitle = ""): AtsReport
       detail: "Paste the full advert, including the requirements or \u201cwhat you\u2019ll need\u201d part. The check looks for skills like CAD, MATLAB, Python, Lean or lab techniques; without them it can\u2019t score keywords.",
     });
   } else if (missing.length) {
-    issues.push({
-      area: "keywords",
-      severity: missing.length > 3 ? "fix" : "improve",
-      title: `${missing.length} keyword${missing.length > 1 ? "s" : ""} from the advert missing`,
-      detail: `Add ${missing.slice(0, 6).join(", ")} where you genuinely used them: in a bullet that shows how, and in Technical Skills.`,
-    });
+    // Skills the CV already shows in other words: the quickest wins, since the student did them
+    const shown = missing.map((k) => ({ k, line: evidenceFor(k, lines) })).filter((x): x is { k: string; line: string } => !!x.line);
+    const absent = missing.filter((k) => !shown.some((x) => x.k === k));
+    if (shown.length)
+      issues.push({
+        area: "keywords",
+        severity: "fix",
+        title: `You show ${shown.length} of the missing skill${shown.length > 1 ? "s" : ""}, in other words`,
+        detail: `Screening software looks for the advert's exact words. Use ${shown.map((x) => `“${x.k}”`).slice(0, 5).join(", ")} in these lines and in Technical Skills.`,
+        lines: shown.slice(0, 4).map((x) => `${x.k}: ${x.line.replace(/^[•●▪◦\-*–]\s*/, "")}`),
+      });
+    if (absent.length)
+      issues.push({
+        area: "keywords",
+        severity: absent.length > 3 ? "fix" : "improve",
+        title: `${absent.length} keyword${absent.length > 1 ? "s" : ""} from the advert missing`,
+        detail: `Add ${absent.slice(0, 6).join(", ")} where you genuinely used them: in a bullet that shows how, and in Technical Skills. Never add one you can't talk about in an interview.`,
+      });
   }
   if (wanted.length && !titleHit) {
     issues.push({ area: "keywords", severity: "improve", title: "The role's own words don't appear", detail: `Use words from the job title ("${jobTitle}") where they're true, for example in a project or experience line.` });

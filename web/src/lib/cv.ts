@@ -66,7 +66,7 @@ const ENTRY = /\s[—–|]\s|\s-\s|\b(19|20)\d{2}\b/;
 
 /** An uploaded CV as lines. PDFs break long bullets over several lines: join them back up, and
  *  recognise the name and contact line at the top. */
-function uploadedLines(text: string): Line[] {
+export function uploadedLines(text: string): Line[] {
   const lines: Line[] = [];
   for (const raw of text.split(/\r?\n/)) {
     const t = raw.replace(/\s+/g, " ").trim();
@@ -80,7 +80,9 @@ function uploadedLines(text: string): Line[] {
       continue;
     }
     const prev = lines[lines.length - 1];
-    const carriesOn = prev && (prev.kind === "b" || prev.kind === "p") && (/^[a-z(£$%&]/.test(t) || (!/[.!?:;)]$/.test(prev.t) && !ENTRY.test(t)));
+    // Bullets wrap onto the next line; header and list lines (skills) almost never do
+    const lower = /^[a-z(£$%&]/.test(t);
+    const carriesOn = prev && ((prev.kind === "b" && (lower || (!/[.!?:;)]$/.test(prev.t) && !ENTRY.test(t) && !t.includes(",")))) || (prev.kind === "p" && lower));
     if (carriesOn) {
       prev.t = `${prev.t} ${t}`;
       continue;
@@ -253,4 +255,37 @@ What I did (my own notes): ${x.bullets || "(none yet)"}
 Target job: ${title} at ${company}.
 Job advert keywords to use where true: ${keywordsIn(jd).join(", ") || "(none found)"}.
 Don't invent anything I didn't do; use X or Y where I need to fill in the real number.`;
+}
+
+/**
+ * "Tailor with Claude": the whole CV (name and contact details left out), the advert and the
+ * r/EngineeringResumes rules in one prompt, so Claude rewrites it for this job without inventing.
+ */
+export function tailorPrompt(lines: Line[], jd: string, title: string, company: string, fixes: string[]): string {
+  const cv = lines
+    .filter((l) => l.kind !== "name" && l.kind !== "contact")
+    .map((l) => (l.kind === "h" ? `\n${l.t.toUpperCase()}` : l.right ? `${l.t} | ${l.right}` : l.t))
+    .join("\n")
+    .trim();
+  return `You are an expert UK engineering recruiter and CV writer. Rewrite my CV for this job so it passes applicant tracking systems and impresses a hiring manager.
+
+Rules (r/EngineeringResumes style):
+- One page, one column. Sections: Education, Experience, Projects, Technical Skills. No summary.
+- Every bullet starts with a past-tense action verb and shows a result with a number (%, time, money, quantity, tolerance). Shape: did X, measured by Y, by doing Z.
+- Use the advert's exact words for skills I genuinely have. Put the most relevant bullet first in each entry.
+- NEVER invent experience, tools or numbers. Where a number is missing, write [X] and tell me what to measure.
+- British English.
+
+The job: ${title || "(title not given)"} at ${company || "(company not given)"}
+The advert:
+"""
+${jd.trim().slice(0, 6000) || "(no advert given)"}
+"""
+
+My CV (name and contact details removed):
+"""
+${cv.slice(0, 8000)}
+"""
+${fixes.length ? `\nA checker flagged these: ${fixes.join("; ")}.\n` : ""}
+Give me: 1) the rewritten CV, ready to paste, 2) the [X] numbers I need to fill in and how to estimate them, 3) up to 5 skills from the advert I'm missing and a quick way to show each (a small project or course).`;
 }

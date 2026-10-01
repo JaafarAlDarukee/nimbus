@@ -2,7 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { fallbackIdeas, type BuiltCv, type CvJob, type Experience } from "@/lib/cv";
-import { withDefaults } from "@/lib/preferences";
+import { SOFT, keywordsIn } from "@/lib/keywords";
+import { matchFilters, withDefaults } from "@/lib/preferences";
 import { createClient } from "@/lib/supabase/server";
 
 const COLUMNS: Record<string, string> = {
@@ -294,4 +295,38 @@ export async function readJobLink(link: string): Promise<{ title: string; compan
     return { error: "This page loads the advert with JavaScript, so Nimbus can't read it from the link. Copy the advert from the page and paste it below." };
   }
   return { title: decode(posting?.title ?? "").trim(), company: decode(company).trim(), text: text.slice(0, 20000) };
+}
+
+/**
+ * Skills that come up most in real adverts for this student's degree: counted across the student
+ * roles Nimbus has saved (placements, internships, graduate and research roles), most common first.
+ */
+export async function popularSkills(): Promise<{ degree: string; adverts: number; skills: { name: string; share: number }[] }> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const empty = { degree: "", adverts: 0, skills: [] };
+  if (!user) return empty;
+  const { data: profile } = await supabase.from("profiles").select("preferences").eq("id", user.id).maybeSingle();
+  const prefs = withDefaults(profile?.preferences);
+  const { disciplines } = matchFilters(prefs);
+  let query = supabase
+    .from("opportunities")
+    .select("description")
+    .eq("status", "open")
+    .in("kind", ["placement", "internship", "grad_scheme", "graduate_job", "research", "insight"])
+    .not("description", "is", null)
+    .order("first_seen_at", { ascending: false })
+    .limit(400);
+  if (disciplines.length) query = query.overlaps("disciplines", disciplines);
+  const { data } = await query;
+  const adverts = (data ?? []).map((r) => r.description as string).filter((d) => d.length > 200);
+  const counts = new Map<string, number>();
+  for (const text of adverts) for (const k of keywordsIn(text)) if (!SOFT.has(k)) counts.set(k, (counts.get(k) ?? 0) + 1);
+  const skills = [...counts.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 24)
+    .map(([name, n]) => ({ name, share: Math.round((n / adverts.length) * 100) }));
+  return { degree: prefs.degrees[0] ?? prefs.field, adverts: adverts.length, skills };
 }
