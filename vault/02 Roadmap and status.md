@@ -15,17 +15,21 @@ Back to [[00 Start Here]] · updated 2026-09-30
 - **All design screens (2026-09-30)**: Tracker, Profile, Companies, Calendar, CV studio and the phone layout, each checked side by side with its design file. See [[06 Website]] and [[07 Design]].
 - **Location fix**: `radar/geo.py` now puts US states / Canadian provinces / Australian states before UK town names ("Cambridge, MA" is US); multi-city lists count as UK if any city is. 93 saved rows corrected.
 
+- **1 Oct**: Tracker stage picker + row editor; Calendar applied / closing / opened / expected-to-open; Companies UK counts, linked status, "How to get in"; Telegram welcome matches; Adzuna back; Devpost hackathons; events skip degree/country filters.
+
 ## In progress 🔄
 - Owner is going through onboarding (animation added 2026-09-30).
 
-## Next ⏭️ (in order)
-1. ~~Animation pass on landing + onboarding~~ ✅ done 2026-09-30.
-2. ~~**Opportunities** page from design~~ ✅ done 2026-09-30 (owner hasn't seen it signed in yet: ask for feedback).
-3. **Personal Telegram alerts** ✅ live 2026-09-30: token set as a Supabase Edge Function secret, webhook set (`telegram-webhook` workflow, no errors). Owner still to press Connect and confirm the tutorial arrives. The shared "Nimbus Alerts" channel stays for anyone interested (owner's choice); everyone also gets private alerts. Bot = `supabase/functions/telegram` (link, tutorial, buttons); radar `notify/personal.py` (matches, reminders, closing soon, follow-ups); matching mirrored in `radar/match.py`. The shared channel still posts engineering roles; decide later whether to keep it.
-4. ~~Tracker, Profile, Calendar, Companies, CV studio, Mobile~~ ✅ built 2026-09-30. Still to come inside them: Telegram reminders for Calendar "Remind me", "expected to open" predictions (need a year of history), morning digest email, Discord/WhatsApp (shown as Soon), Gemini key for "Give me ideas" (optional, `GEMINI_API_KEY` in `web/.env.local` / Vercel).
-5. Telegram alert message in the design's format ("Strong match for you" + Open and apply / Save / Applied / Not for me buttons) as part of personal alerts.
-6. Go online: Vercel + domain; Supabase SMTP via Nimbus Gmail; invite friends.
-7. Hidden opportunities (speculative routes, opening predictions), hiring posts, company news. See [[13 Ideas backlog]].
+## Next ⏭️ (in order) — plan agreed 2026-10-01
+**The big problem is coverage**: on 1 Oct only 34 of the 323 directory companies were watched (Common Crawl discovery found mostly US tech/finance). Fix in three ways:
+1. **Owner: job-alert emails to the Nimbus Gmail** (Gradcracker, RateMyPlacement, Bright Network, TARGETjobs, LinkedIn job alerts). Covers mainstream UK employers whose sites block tools (McLaren, National Grid…). Inbox reader works; no alert emails yet.
+2. **Claude: research the directory's top employers** (motorsport, automotive, aerospace, rail, energy, pharma, medtech): find their hiring system; add readable boards to `data/discovered/research.csv` (test-read with `python -m radar.run --tier full --only "<name>" --dry-run`); add a route (careers page, how, published contact, opening window) to `web/src/lib/company-routes.ts`. Done so far: AstraZeneca, Dyson, Mercedes F1, Smith+Nephew, GE Aerospace, Renishaw, GE HealthCare, P&G, Siemens Gamesa/Healthineers, Mitsubishi Electric; routes for JLR, Toyota, McLaren, National Grid, Network Rail…
+3. **Adzuna** is back (labelled "via Adzuna", ~5 days late, closes after 30 days or when the employer's own copy exists).
+Then:
+4. More readers: Recruitee, Pinpoint, Teamtailor (UK SMEs); events: MLH UK hackathons, engineering competitions and conferences (curated list).
+5. **CV studio v2**: keywords learned from Nimbus's own adverts per role type; real ATS file checks (reading order, columns, tables, headers, images, length); AI suggestions (Gemini key or Copy to Claude); 3 ATS-safe templates exported as real .docx and PDF, one CV per job. Needs from the owner: a CV design they like (or "pick for me"), optional Gemini key.
+6. Go online: Vercel + domain; Supabase SMTP via Nimbus Gmail; invite friends (each gets their own For you and Telegram).
+7. Hidden opportunities (speculative routes), hiring posts, company news. See [[13 Ideas backlog]].
 
 ## Numbers to remember
 - Radar priority run ≈ 9 min for ~2,900 boards (public repo, unlimited Actions minutes).

@@ -43,3 +43,11 @@ Back to [[00 Start Here]] · code in `radar/`
 - **Names**: `names.py` strips short number codes ("02 Reed…") and keeps ordinals ("20th Century"). `reclassify` renames old-name rows or closes them if the tidy copy exists (first run: 63 renamed, 148 duplicates closed). The radar's "seen again" update doesn't touch names, so name fixes need `reclassify`.
 - Feed shows one card per company+title ("Leeds +3 more").
 
+## Changes 2026-10-01
+- Adzuna back (`data/seed/boards.csv`), labelled via Adzuna everywhere; Adzuna blocks automated redirect-following (403), so it can't be used to discover employer boards.
+- `sources.company_name` (radar records each board's employer) → `watched_companies()` for the Companies page.
+- `radar/discover/probe.py`: checks Greenhouse/Workable/Lever/Ashby by company name (name must be confirmed, ≥5 letters, has jobs). Low yield for big UK employers; research works better.
+- `data/discovered/research.csv`: hand-researched boards (Workday mostly). Find a Workday board by searching the company on `myworkdayjobs.com` (WebSearch with allowed_domains). Respect robots.txt / 403s (McLaren, National Grid, Dyson site block tools → routes only).
+- `radar/sources/devpost.py`: hackathons (hint "hackathon" → kind event). Events bypass the discipline filter; online events bypass the country filter (web `applyMatch`, radar `is_match`).
+- Telegram `send_welcome()`: 3 best open matches for someone who just connected.
+
