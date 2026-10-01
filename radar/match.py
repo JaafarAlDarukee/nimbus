@@ -8,28 +8,28 @@ import re
 import unicodedata
 from pathlib import Path
 
+from .pipeline.classify import DISCIPLINES
+
 DEFAULT_TYPES = ["Placement", "Summer internship", "Spring week", "Hackathon", "Competition", "Conference"]
 
-DEGREE_DISCIPLINES = {
-    "Mechanical Engineering": ["mechanical", "manufacturing", "robotics", "aerospace", "automotive", "materials"],
-    "Electrical Engineering": ["electrical", "robotics"],
-    "Chemical Engineering": ["chemical", "manufacturing", "materials"],
-    "Biomedical Engineering": ["mechanical", "electrical", "materials"],
-    "Materials Science": ["materials"],
-    "Chemistry": ["chemical"],
-    "Physics": ["electrical", "materials"],
-    "Mathematics": ["software"],
-}
+_PREFERENCES_TS = Path(__file__).resolve().parent.parent / "web" / "src" / "lib" / "preferences.ts"
 
-TYPE_KINDS = {
-    "Placement": ["placement"], "Summer internship": ["internship"], "Spring week": ["spring_week"],
-    "Insight day": ["insight"], "Work experience week": ["insight"], "Virtual work experience": ["insight"],
-    "Graduate scheme": ["grad_scheme", "graduate_job"], "Degree apprenticeship": ["apprenticeship"],
-    "Apprenticeship": ["apprenticeship"], "Research internship": ["research"], "Lab placement": ["research", "placement"],
-    "Funded PhD or Masters": ["research"], "Scholarship or bursary": ["scholarship"], "Hackathon": ["event"],
-    "Competition": ["event"], "Conference": ["event"], "Networking event": ["event"], "Summer school": ["event"],
-    "Mentoring programme": ["event"],
-}
+
+def _ts_record(name: str) -> dict[str, list[str]]:
+    """A `Record<string, string[]>` from the website's preferences.ts, so both sides use one list."""
+    text = _PREFERENCES_TS.read_text(encoding="utf-8")
+    start = text.index(f"{name}: Record<string, string[]> = {{")
+    body = text[start: text.index("\n};", start)]
+    pairs = re.findall(r'^\s*(?:"([^"]+)"|([A-Za-z]\w*))\s*:\s*\[([^\]]*)\]', body, re.M)
+    record = {quoted or bare: re.findall(r'"([^"]+)"', values) for quoted, bare, values in pairs}
+    if not record:
+        raise ValueError(f"couldn't read {name} from {_PREFERENCES_TS}")
+    return record
+
+
+DEGREE_DISCIPLINES = _ts_record("DEGREE_DISCIPLINES")
+FIELD_DISCIPLINES = _ts_record("FIELD_DISCIPLINES")
+TYPE_KINDS = _ts_record("TYPE_KINDS")
 
 COUNTRY_CODES = {
     "Ireland": "IE", "Germany": "DE", "Netherlands": "NL", "Belgium": "BE", "Luxembourg": "LU", "France": "FR",
@@ -51,20 +51,12 @@ KIND_WORDS = {
 DISCIPLINE_WORDS = {
     "mechanical": "Mechanical engineering", "manufacturing": "Manufacturing", "robotics": "Robotics",
     "electrical": "Electrical engineering", "aerospace": "Aerospace", "automotive": "Automotive", "materials": "Materials",
-    "civil": "Civil engineering", "chemical": "Chemical engineering", "software": "Software",
+    "civil": "Civil engineering", "chemical": "Chemical engineering", "software": "Software", "business": "Business",
+    "biomedical": "Biomedical", "life_sciences": "Life sciences", "healthcare": "Healthcare",
+    "environmental": "Environmental science",
 }
-TITLE_DISCIPLINE = {
-    "mechanical": r"\b(mechanical|mech|design engineer|stress|thermo|fluids?)\b",
-    "manufacturing": r"\b(manufactur\w*|production|industrial engineer\w*|process engineer\w*|lean|quality engineer\w*|operations engineer\w*)\b",
-    "robotics": r"\b(robot\w*|automation|mechatronic\w*|controls? (systems?|engineer)|autonom\w*)\b",
-    "electrical": r"\b(electrical|electronic\w*|power systems|embedded|firmware|hardware)\b",
-    "aerospace": r"\b(aerospace|aeronautic\w*|aircraft|propulsion|gas turbines?|avionic\w*)\b",
-    "automotive": r"\b(automotive|vehicles?|powertrain|chassis|motorsport)\b",
-    "materials": r"\b(materials?|metallurg\w*|composites?)\b",
-    "civil": r"\b(civil|structural)\b",
-    "chemical": r"\b(chemical|chemistry)\b",
-    "software": r"\b(software|data|computer science|developer|cyber)\b",
-}
+# A discipline named in the title itself: the classifier's own title patterns
+TITLE_DISCIPLINE = DISCIPLINES
 
 INDUSTRY_WORDS = {
     "Motorsport": r"\b(formula ?(1|one|e)|f1|motorsport|racing)\b",
@@ -135,7 +127,10 @@ def with_defaults(stored: dict | None) -> dict:
 
 def filters_for(prefs: dict) -> tuple[set[str], set[str], set[str] | None]:
     kinds = {k for t in prefs.get("types", []) for k in TYPE_KINDS.get(t, [])}
-    disciplines = {d for deg in prefs.get("degrees", []) for d in DEGREE_DISCIPLINES.get(deg, [])}
+    degrees = prefs.get("degrees", [])
+    disciplines = {d for deg in degrees for d in DEGREE_DISCIPLINES.get(deg, [])}
+    if not degrees or any(deg not in DEGREE_DISCIPLINES for deg in degrees):  # typed by hand: go by the field
+        disciplines.update(FIELD_DISCIPLINES.get(prefs.get("field", ""), []))
     abroad = prefs.get("abroad", [])
     if "Worldwide" in abroad:
         return kinds, disciplines, None
@@ -164,8 +159,10 @@ def is_match(row: dict, prefs: dict, filters: tuple) -> bool:
     if kinds and row.get("kind") not in kinds:
         return False
     event = row.get("kind") == "event"
-    # Hackathons and other events aren't tied to a degree, and online ones aren't tied to a country
-    if disciplines and not event and not disciplines & set(row.get("disciplines") or []):
+    tags = set(row.get("disciplines") or [])
+    # Events with no subject (most hackathons) are for everyone; a lab expo or a medtech conference
+    # only for the degrees it fits. Online events aren't tied to a country.
+    if disciplines and not disciplines & tags and not (event and not tags):
         return False
     if countries is not None and row.get("country") not in countries and not (event and row.get("remote")):
         return False
@@ -182,7 +179,7 @@ def score(row: dict, prefs: dict, filters: tuple, cv_skills: list[str]) -> tuple
         points += 14
         why.append(f"{KIND_WORDS[row['kind']]} one of the types you picked")
     overlap = [d for d in row.get("disciplines") or [] if d in disciplines]
-    in_title = next((d for d in overlap if re.search(TITLE_DISCIPLINE.get(d, "$^"), row.get("title") or "", re.I)), None)
+    in_title = next((d for d in overlap if d in TITLE_DISCIPLINE and TITLE_DISCIPLINE[d].search(row.get("title") or "")), None)
     if in_title:
         points += 20
         why.append(f"{DISCIPLINE_WORDS.get(in_title, in_title)} fits your {degree}")

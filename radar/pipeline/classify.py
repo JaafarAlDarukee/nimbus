@@ -58,23 +58,61 @@ HINT_KINDS = {"intern": "internship", "internship": "internship", "apprentice": 
               "hackathon": "event"}
 
 DISCIPLINES: dict[str, re.Pattern] = {
-    "mechanical": _rx(r"\bmechanical\b", r"\bmech\b", r"\bdesign engineer", r"\bstress\b", r"\bthermo", r"\bfluids?\b"),
+    "mechanical": _rx(
+        r"\bmechanical\b", r"\bmech\b", r"\bdesign engineer", r"\bstress\b", r"\bthermo", r"\bfluids?\b", r"\bhvac\b",
+        r"\bcfd\b",
+    ),
     "manufacturing": _rx(
         r"\bmanufactur", r"\bproduction\b", r"\bindustrial engineer", r"\bprocess engineer", r"\blean\b",
-        r"\bquality engineer", r"\boperations engineer",
+        r"\bquality engineer", r"\boperations engineer", r"\bcalibration\b", r"\bmetrolog", r"\bmaintenance engineer",
+        r"\bcontinuous improvement\b", r"\boperational excellence\b",
     ),
     "robotics": _rx(
         r"\brobot", r"\bautomation\b", r"\bmechatronic", r"\bcontrol (systems?|engineer)", r"\bcontrols engineer",
         r"\bautonom", r"\bgnc\b",
     ),
-    "electrical": _rx(r"\belectrical\b", r"\belectronic", r"\bpower systems\b", r"\bembedded\b", r"\bfirmware\b", r"\bhardware\b"),
+    "electrical": _rx(
+        r"\belectrical\b", r"\belectronic", r"\bpower systems\b", r"\bembedded\b", r"\bfirmware\b", r"\bhardware\b",
+        r"\bhigh voltage\b", r"\bprotection (and|&) control\b", r"\bfpga\b", r"\bsemiconductor", r"\bpcb\b", r"\brf engineer",
+        r"\bsignal processing\b",
+    ),
     "aerospace": _rx(r"\baerospace\b", r"\baeronautic", r"\baircraft\b", r"\bpropulsion\b", r"\bgas turbine", r"\bavionic"),
     "automotive": _rx(r"\bautomotive\b", r"\bvehicle\b", r"\bpowertrain\b", r"\bchassis\b", r"\bmotorsport\b"),
-    "materials": _rx(r"\bmaterials?\b", r"\bmetallurg", r"\bcomposites?\b"),
-    "civil": _rx(r"\bcivil\b", r"\bstructural\b"),
+    "materials": _rx(
+        r"\bmaterials?\b", r"\bmetallurg", r"\bcomposites?\b", r"\bndt\b", r"\bnon-destructive\b", r"\bpolymer",
+        r"\bcorrosion\b", r"\bwelding\b",
+    ),
+    "civil": _rx(r"\bcivil\b", r"\bstructural\b", r"\bgeotechnic", r"\bdams?\b", r"\binfrastructure engineer", r"\bwater engineer"),
     "chemical": _rx(r"\bchemical\b", r"\bchemistry\b"),
     "nuclear": _rx(r"\bnuclear\b", r"\bfusion\b"),
-    "software": _rx(r"\bsoftware\b", r"\bdata\b", r"\bcomputer science\b", r"\bdeveloper\b", r"\bcyber\b"),
+    "software": _rx(
+        r"\bsoftware\b", r"\bdata\b", r"\bcomputer science\b", r"\bdeveloper\b", r"\bcyber\b", r"\bmachine learning\b",
+        r"\b(ai|ml)\b",
+    ),
+    # Science and health, for students outside engineering (Biomedical Science, Medicine, Marine Biology...)
+    "biomedical": _rx(
+        r"\bbiomedical\b", r"\bmedical (device|technolog|engineer|physics|imaging)", r"\bmedtech\b", r"\bclinical engineer",
+        r"\bhealthcare science\b", r"\bprosthet", r"\borthot", r"\bdiagnostic", r"\bbioengineer", r"\bbiomaterial",
+    ),
+    "life_sciences": _rx(
+        r"\bbio(logy|logical|logist|logics|chem\w*|tech\w*|pharma\w*|process\w*|informatic\w*|science\w*)\b", r"\bmicrobio",
+        r"\bgenetic", r"\bgenomic", r"\bmolecular\b", r"\bcell (biology|culture|therapy|line)", r"\bimmuno", r"\bpharmacolog",
+        r"\bpharmaceutical", r"\bdrug (discovery|development|safety|substance|product)", r"\bneuroscien", r"\btoxicolog",
+        r"\bvirolog", r"\bproteins?\b", r"\bvaccines?\b", r"\blife sciences?\b", r"\blab(oratory)? (scientist|technician|analyst)",
+        r"\bformulation\b", r"\bforensic", r"\bfood scien",
+    ),
+    "healthcare": _rx(
+        r"\bclinical\b", r"\bpharmac(y|ist)\b", r"\bnurs(e|es|ing)\b", r"\bmedic(al|ine)\b(?! (device|technolog|engineer|physics|imaging))", r"\bnhs\b", r"\bhealth ?care\b",
+        r"\bpatients?\b", r"\bphysiotherap", r"\bradiograph", r"\bdental\b", r"\bdentist", r"\bveterinar", r"\bmidwi",
+        r"\boptometr", r"\bparamedic", r"\bpsycholog", r"\bpublic health\b", r"\bdigital health\b", r"\boccupational therap",
+        r"\bdietit", r"\bnutrition", r"\bspeech and language\b", r"\bsports? scien", r"\bexercise scien",
+    ),
+    "environmental": _rx(
+        r"\benvironment(al)?\b", r"\becolog", r"\bmarine (biolog|scien|conservation|environment|survey)", r"\bconservation\b",
+        r"\bsustainab", r"\bclimate\b", r"\bwildlife\b", r"\bocean", r"\bgeolog", r"\bgeoscien", r"\bearth scien",
+        r"\bhydrolog", r"\bwater (science|quality|resources)\b", r"\bfisheries\b", r"\baquacult", r"\bbiodiversity\b",
+        r"\bzoolog", r"\bnet zero\b",
+    ),
     "business": _rx(
         r"\bfinance\b", r"\bcommercial\b", r"\bprocurement\b", r"\bsupply chain\b", r"\bhuman resources\b",
         r"\bhr\b", r"\bmarketing\b", r"\bsales\b", r"\bbusiness (development|support|analyst|management)\b",
@@ -105,6 +143,13 @@ DESCRIPTION_DISCIPLINES: dict[str, re.Pattern] = {
     "civil": _rx(r"\bcivil engineering\b", r"\bstructural engineering\b"),
     "chemical": _rx(r"\bchemical engineering\b", r"\bprocess chemistry\b"),
     "software": _rx(r"\bsoftware engineering\b", r"\bsoftware developer\b", r"\bcomputer science\b"),
+    "biomedical": _rx(r"\bbiomedical (engineering|science)\b", r"\bmedical devices?\b"),
+    "life_sciences": _rx(
+        r"\b(biology|biochemistry|biotechnology|microbiology|molecular biology|cell biology|pharmacology|life sciences|"
+        r"biological sciences|bioprocessing|genomics)\b",
+    ),
+    "healthcare": _rx(r"\bclinical (research|trials?|practice|setting)\b", r"\bnhs\b"),
+    "environmental": _rx(r"\benvironmental (science|engineering|consultancy|management|monitoring)\b", r"\becology\b"),
 }
 TECHNICAL_TITLE = _rx(
     r"\bengineer", r"\btechnical\b", r"\btechnician\b", r"\bscientist\b", r"\bresearch\b", r"\br&d\b", r"\blab\b",

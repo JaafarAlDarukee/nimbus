@@ -39,18 +39,66 @@ export function withDefaults(stored: unknown): Preferences {
   return { ...DEFAULT_PREFERENCES, ...value, extra: { ...DEFAULT_PREFERENCES.extra, ...(value.extra ?? {}) } };
 }
 
-/** Which of the radar's discipline tags each degree cares about. Degrees without tags yet
- *  (most science and medical courses) don't narrow by discipline. */
-const DEGREE_DISCIPLINES: Record<string, string[]> = {
+/** Which of the radar's discipline tags (radar/pipeline/classify.py) each degree cares about.
+ *  radar/match.py reads this object and FIELD_DISCIPLINES straight from this file, so the
+ *  Telegram alerts follow the same rules: keep every key quoted and every value on one line. */
+export const DEGREE_DISCIPLINES: Record<string, string[]> = {
   "Mechanical Engineering": ["mechanical", "manufacturing", "robotics", "aerospace", "automotive", "materials"],
   "Electrical Engineering": ["electrical", "robotics"],
   "Chemical Engineering": ["chemical", "manufacturing", "materials"],
-  "Biomedical Engineering": ["mechanical", "electrical", "materials"],
+  "Biomedical Engineering": ["biomedical", "mechanical", "electrical", "materials"],
+  "Biomedical Science": ["biomedical", "life_sciences", "healthcare"],
+  "Biochemistry": ["life_sciences", "chemical"],
+  "Marine Biology": ["environmental", "life_sciences"],
+  "Biology": ["life_sciences", "environmental"],
+  "Chemistry": ["chemical", "materials", "life_sciences"],
+  "Physics": ["electrical", "materials", "software"],
+  "Microbiology": ["life_sciences"],
+  "Genetics": ["life_sciences"],
+  "Neuroscience": ["life_sciences", "healthcare"],
+  "Pharmacology": ["life_sciences", "healthcare"],
+  "Biotechnology": ["life_sciences", "chemical"],
+  "Zoology": ["life_sciences", "environmental"],
+  "Ecology and Conservation": ["environmental"],
+  "Environmental Science": ["environmental"],
+  "Oceanography": ["environmental"],
+  "Geology and Earth Sciences": ["environmental", "civil"],
+  "Forensic Science": ["life_sciences", "chemical"],
+  "Food Science and Nutrition": ["life_sciences", "healthcare"],
   "Materials Science": ["materials"],
-  Chemistry: ["chemical"],
-  Physics: ["electrical", "materials"],
-  Mathematics: ["software"],
+  "Mathematics": ["software", "business"],
+  "Sport and Exercise Science": ["healthcare", "life_sciences"],
+  "Psychology": ["healthcare"],
+  "Medicine": ["healthcare", "life_sciences"],
+  "Pharmacy": ["healthcare", "life_sciences"],
+  "Nursing": ["healthcare"],
+  "Midwifery": ["healthcare"],
+  "Dentistry": ["healthcare"],
+  "Physiotherapy": ["healthcare"],
+  "Paramedic Science": ["healthcare"],
+  "Radiography": ["healthcare", "biomedical"],
+  "Occupational Therapy": ["healthcare"],
+  "Optometry": ["healthcare"],
+  "Nutrition and Dietetics": ["healthcare"],
+  "Speech and Language Therapy": ["healthcare"],
+  "Healthcare Science": ["healthcare", "biomedical"],
+  "Operating Department Practice": ["healthcare"],
+  "Veterinary Medicine": ["healthcare", "life_sciences"],
+  "Biomedical Science (IBMS accredited)": ["biomedical", "life_sciences", "healthcare"],
 };
+
+/** For a degree typed in by hand (not in the lists): go by the field instead. */
+export const FIELD_DISCIPLINES: Record<string, string[]> = {
+  "Engineering": ["mechanical", "manufacturing", "robotics", "aerospace", "automotive", "materials", "electrical", "chemical", "civil"],
+  "Science": ["life_sciences", "environmental", "chemical", "biomedical"],
+  "Medical and health": ["healthcare", "biomedical", "life_sciences"],
+};
+
+function disciplinesFor(p: Pick<Preferences, "degrees" | "field">): string[] {
+  const known = p.degrees.flatMap((d) => DEGREE_DISCIPLINES[d] ?? []);
+  const unknown = p.degrees.some((d) => !DEGREE_DISCIPLINES[d]);
+  return [...new Set([...known, ...(unknown || !p.degrees.length ? (FIELD_DISCIPLINES[p.field] ?? []) : [])])];
+}
 
 /** Opportunity types (as the user sees them) to the radar's kinds. */
 const TYPE_KINDS: Record<string, string[]> = {
@@ -95,7 +143,7 @@ export type MatchFilters = {
 
 export function matchFilters(p: Preferences): MatchFilters {
   const kinds = [...new Set(p.types.flatMap((t) => TYPE_KINDS[t] ?? []))];
-  const disciplines = [...new Set(p.degrees.flatMap((d) => DEGREE_DISCIPLINES[d] ?? []))];
+  const disciplines = disciplinesFor(p);
 
   let countries: string[] | null = [];
   if (p.abroad.includes("Worldwide")) {
@@ -116,8 +164,10 @@ export function applyMatch<Q extends { in: (c: string, v: string[]) => Q; or: (f
 ): Q {
   let q = query;
   if (filters.kinds.length) q = q.in("kind", filters.kinds);
-  // Hackathons and other events aren't tied to a degree, and online ones aren't tied to a country
-  if (filters.disciplines.length) q = q.or(`disciplines.ov.{${filters.disciplines.join(",")}},kind.eq.event`);
+  // Events with no subject (most hackathons) are for everyone; a lab expo or a medtech
+  // conference only for the degrees it fits. Online events aren't tied to a country.
+  if (filters.disciplines.length)
+    q = q.or(`disciplines.ov.{${filters.disciplines.join(",")}},and(kind.eq.event,disciplines.eq.{})`);
   if (filters.countries) q = q.or(`country.in.(${filters.countries.join(",")}),and(kind.eq.event,remote.is.true)`);
   return q;
 }

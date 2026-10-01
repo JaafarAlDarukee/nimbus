@@ -51,6 +51,11 @@ const DISCIPLINE_WORD: Record<string, string> = {
   civil: "Civil engineering",
   chemical: "Chemical engineering",
   software: "Software",
+  business: "Business",
+  biomedical: "Biomedical",
+  life_sciences: "Life sciences",
+  healthcare: "Healthcare",
+  environmental: "Environmental science",
 };
 
 /** Hosts that belong to hiring systems or job boards rather than the employer: no useful logo there. */
@@ -83,18 +88,23 @@ export function kindView(row: { kind: string; title: string }) {
 
 const HOUR = 3_600_000;
 
-/** A discipline named in the title itself is a much stronger match than one found in the advert. */
+/** A discipline named in the title itself is a much stronger match than one found in the advert.
+ *  The same title words the radar tags with (radar/pipeline/classify.py DISCIPLINES). */
 const TITLE_DISCIPLINE: Record<string, RegExp> = {
-  mechanical: /\b(mechanical|mech|design engineer|stress|thermo|fluids?)\b/i,
-  manufacturing: /\b(manufactur\w*|production|industrial engineer\w*|process engineer\w*|lean|quality engineer\w*|operations engineer\w*)\b/i,
-  robotics: /\b(robot\w*|automation|mechatronic\w*|controls? (systems?|engineer)|autonom\w*)\b/i,
-  electrical: /\b(electrical|electronic\w*|power systems|embedded|firmware|hardware)\b/i,
+  mechanical: /\b(mechanical|mech|design engineer\w*|stress|thermo\w*|fluids?|hvac|cfd)\b/i,
+  manufacturing: /\b(manufactur\w*|production|industrial engineer\w*|process engineer\w*|lean|quality engineer\w*|operations engineer\w*|calibration|metrolog\w*|maintenance engineer\w*|continuous improvement|operational excellence)\b/i,
+  robotics: /\b(robot\w*|automation|mechatronic\w*|controls? (systems?|engineer)|autonom\w*|gnc)\b/i,
+  electrical: /\b(electrical|electronic\w*|power systems|embedded|firmware|hardware|high voltage|protection (and|&) control|fpga|semiconductor\w*|pcb|rf engineer\w*|signal processing)\b/i,
   aerospace: /\b(aerospace|aeronautic\w*|aircraft|propulsion|gas turbines?|avionic\w*)\b/i,
   automotive: /\b(automotive|vehicles?|powertrain|chassis|motorsport)\b/i,
-  materials: /\b(materials?|metallurg\w*|composites?)\b/i,
-  civil: /\b(civil|structural)\b/i,
+  materials: /\b(materials?|metallurg\w*|composites?|ndt|non-destructive|polymer\w*|corrosion|welding)\b/i,
+  civil: /\b(civil|structural|geotechnic\w*|dams?|infrastructure engineer\w*|water engineer\w*)\b/i,
   chemical: /\b(chemical|chemistry)\b/i,
-  software: /\b(software|data|computer science|developer|cyber)\b/i,
+  software: /\b(software|data|computer science|developer|cyber|machine learning|ai|ml)\b/i,
+  biomedical: /\b(biomedical|medical (device|technolog|engineer|physics|imaging)\w*|medtech|clinical engineer\w*|healthcare science|prosthet\w*|orthot\w*|diagnostic\w*|bioengineer\w*|biomaterial\w*)\b/i,
+  life_sciences: /\b(bio(logy|logical|logist|logics|chem\w*|tech\w*|pharma\w*|process\w*|informatic\w*|science\w*)|microbio\w*|genetic\w*|genomic\w*|molecular|cell (biology|culture|therapy|line)|immuno\w*|pharmacolog\w*|pharmaceutical\w*|drug (discovery|development|safety|substance|product)|neuroscien\w*|toxicolog\w*|virolog\w*|proteins?|vaccines?|life sciences?|lab(oratory)? (scientist|technician|analyst)|formulation|forensic\w*|food scien\w*)\b/i,
+  healthcare: /\b(clinical|pharmac(y|ist)|nurs(e|es|ing)|medic(al|ine)(?! (device|technolog|engineer|physics|imaging))|nhs|health ?care|patients?|physiotherap\w*|radiograph\w*|dental|dentist\w*|veterinar\w*|midwi\w*|optometr\w*|paramedic\w*|psycholog\w*|public health|digital health|occupational therap\w*|dietit\w*|nutrition\w*|speech and language|sports? scien\w*|exercise scien\w*)\b/i,
+  environmental: /\b(environment(al)?|ecolog\w*|marine (biolog|scien|conservation|environment|survey)\w*|conservation|sustainab\w*|climate|wildlife|ocean\w*|geolog\w*|geoscien\w*|earth scien\w*|hydrolog\w*|water (science|quality|resources)|fisheries|aquacult\w*|biodiversity|zoolog\w*|net zero)\b/i,
 };
 
 export type MatchExtras = { cvSkills?: string[] };
