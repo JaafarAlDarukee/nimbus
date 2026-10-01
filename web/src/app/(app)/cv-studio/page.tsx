@@ -14,6 +14,7 @@ type Row = {
   mode: "upload" | "build" | null;
   cv_name: string | null;
   cv_text: string | null;
+  cv_meta: { pages?: number; columns?: boolean } | null;
   cv: BuiltCv | null;
   step: number;
 };
@@ -47,7 +48,7 @@ export default async function CvStudioPage(props: PageProps<"/cv-studio">) {
   }
 
   const [{ data: rows }, { data: profile }] = await Promise.all([
-    supabase.from("cv_jobs").select("id,title,company,link,jd,jd_name,mode,cv_name,cv_text,cv,step").order("created_at", { ascending: true }),
+    supabase.from("cv_jobs").select("id,title,company,link,jd,jd_name,mode,cv_name,cv_text,cv_meta,cv,step").order("created_at", { ascending: true }),
     supabase.from("profiles").select("first_name,last_name,cv_details,preferences").eq("id", user!.id).maybeSingle(),
   ]);
 
@@ -61,6 +62,7 @@ export default async function CvStudioPage(props: PageProps<"/cv-studio">) {
     mode: r.mode,
     cvName: r.cv_name,
     cvText: r.cv_text,
+    cvMeta: r.cv_meta,
     cv: r.cv,
     step: r.step,
   }));

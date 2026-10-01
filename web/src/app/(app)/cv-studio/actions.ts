@@ -14,6 +14,7 @@ const COLUMNS: Record<string, string> = {
   mode: "mode",
   cvName: "cv_name",
   cvText: "cv_text",
+  cvMeta: "cv_meta",
   cv: "cv",
   step: "step",
 };
@@ -47,47 +48,76 @@ export async function saveDetails(cv: BuiltCv): Promise<{ ok: boolean }> {
   return { ok: !error };
 }
 
-async function textOf(name: string, bytes: Uint8Array): Promise<string> {
+type FileText = { text: string; pages?: number; columns?: boolean };
+
+/** Text in reading order, plus (for PDFs) the page count and whether lines sit in side-by-side columns. */
+async function textOf(name: string, bytes: Uint8Array): Promise<FileText> {
   const lower = name.toLowerCase();
   if (lower.endsWith(".pdf")) {
     const { getDocumentProxy } = await import("unpdf");
     const pdf = await getDocumentProxy(bytes);
     let text = "";
+    let rows = 0;
+    let splitRows = 0;
     for (let i = 1; i <= Math.min(pdf.numPages, 6); i++) {
       const page = await pdf.getPage(i);
+      const width = page.getViewport({ scale: 1 }).width;
       const content = await page.getTextContent();
+      const byRow = new Map<number, { x: number; end: number }[]>();
       for (const item of content.items) {
-        if ("str" in item) text += item.str + (item.hasEOL ? "\n" : "");
+        if (!("str" in item)) continue;
+        text += item.str + (item.hasEOL ? "\n" : "");
+        if (!item.str.trim()) continue;
+        const y = Math.round(item.transform[5] / 3);
+        const x = item.transform[4];
+        byRow.set(y, [...(byRow.get(y) ?? []), { x, end: x + item.width }]);
+      }
+      // A two-column CV has many rows with text on both halves and a wide empty gap between them.
+      // Right-aligned dates are fine: they're short and at the far right edge.
+      for (const runs of byRow.values()) {
+        if (runs.length < 2) continue;
+        rows += 1;
+        runs.sort((a, b) => a.x - b.x);
+        for (let r = 1; r < runs.length; r++) {
+          const gap = runs[r].x - runs[r - 1].end;
+          const rightRun = runs.slice(r);
+          const rightWidth = Math.max(...rightRun.map((q) => q.end)) - runs[r].x;
+          if (gap > width * 0.08 && runs[r].x > width * 0.3 && runs[r].x < width * 0.7 && rightWidth > width * 0.2) {
+            splitRows += 1;
+            break;
+          }
+        }
       }
       text += "\n";
     }
-    return text;
+    return { text, pages: pdf.numPages, columns: rows >= 6 && splitRows / rows > 0.3 };
   }
   if (lower.endsWith(".docx")) {
     const mammoth = await import("mammoth");
     const { value } = await mammoth.extractRawText({ buffer: Buffer.from(bytes) });
-    return value;
+    return { text: value };
   }
-  if (lower.endsWith(".txt")) return new TextDecoder().decode(bytes);
+  if (lower.endsWith(".txt")) return { text: new TextDecoder().decode(bytes) };
   throw new Error("unsupported");
 }
 
 /** Read an uploaded CV or job description. Only the text is kept, never the file. */
-export async function readFile(form: FormData): Promise<{ name: string; text: string } | { error: string }> {
+export async function readFile(form: FormData): Promise<({ name: string } & FileText) | { error: string }> {
   const file = form.get("file");
   if (!(file instanceof File) || !file.size) return { error: "Choose a file first." };
   if (file.size > 5 * 1024 * 1024) return { error: "That file is over 5 MB. Try a smaller PDF." };
   try {
-    const text = (await textOf(file.name, new Uint8Array(await file.arrayBuffer()))).trim();
-    if (!text) return { error: "We couldn't find any text in that file. If it's a scan, paste the text instead." };
-    return { name: file.name, text };
+    const read = await textOf(file.name, new Uint8Array(await file.arrayBuffer()));
+    const text = read.text.trim();
+    if (!text) return { error: "We couldn't find any text in that file. If it's a scan or a picture, export it from Word or Google Docs as a PDF." };
+    return { name: file.name, ...read, text };
   } catch {
     return { error: file.name.toLowerCase().endsWith(".doc") ? "Save it as .docx or PDF and try again." : "We can read PDF, Word (.docx) and text files." };
   }
 }
 
 /** The CV uploaded during onboarding, read the same way. */
-export async function readSignupCv(): Promise<{ name: string; text: string } | { error: string }> {
+export async function readSignupCv(): Promise<({ name: string } & FileText) | { error: string }> {
   const supabase = await createClient();
   const {
     data: { user },
@@ -100,7 +130,8 @@ export async function readSignupCv(): Promise<{ name: string; text: string } | {
   if (!blob) return { error: "Couldn't open your saved CV." };
   try {
     const name = prefs.cvName ?? prefs.cvPath.split("/").pop() ?? "CV";
-    return { name, text: (await textOf(prefs.cvPath, new Uint8Array(await blob.arrayBuffer()))).trim() };
+    const read = await textOf(prefs.cvPath, new Uint8Array(await blob.arrayBuffer()));
+    return { name, ...read, text: read.text.trim() };
   } catch {
     return { error: "Couldn't read your saved CV. Upload it again as PDF or Word." };
   }

@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useTransition } from "react";
 import { createJob, ideas as getIdeas, readFile, readSignupCv, saveDetails, saveJob } from "@/app/(app)/cv-studio/actions";
-import { analyse, blankCv, cvHtml, scoreColour, type BuiltCv, type CvJob, type Experience } from "@/lib/cv";
+import { AREA_COLOUR, analyse, blankCv, cvDocx, cvHtml, ideasPrompt, scoreColour, type BuiltCv, type CvJob, type Experience } from "@/lib/cv";
 
 type Props = { jobs: CvJob[]; selectedId: string | null; saved: BuiltCv; hasSaved: boolean; signupCv: string | null };
 
@@ -76,11 +76,11 @@ export function CvStudio(props: Props) {
     startCreating(async () => {
       const id = await createJob();
       if (!id) return;
-      setJobs((list) => [...list, { id, title: "", company: "", link: "", jd: "", jdName: null, mode: null, cvName: null, cvText: null, cv: null, step: 1 }]);
+      setJobs((list) => [...list, { id, title: "", company: "", link: "", jd: "", jdName: null, mode: null, cvName: null, cvText: null, cvMeta: null, cv: null, step: 1 }]);
       select(id);
     });
 
-  const upload = (file: File | undefined, apply: (name: string, text: string) => void) => {
+  const upload = (file: File | undefined, apply: (name: string, text: string, meta: { pages?: number; columns?: boolean }) => void) => {
     if (!file) return;
     setFileError(null);
     const form = new FormData();
@@ -88,7 +88,7 @@ export function CvStudio(props: Props) {
     startReading(async () => {
       const result = await readFile(form);
       if ("error" in result) setFileError(result.error);
-      else apply(result.name, result.text);
+      else apply(result.name, result.text, { pages: result.pages, columns: result.columns });
     });
   };
 
@@ -238,7 +238,7 @@ export function CvStudio(props: Props) {
                   type="file"
                   accept=".pdf,.docx,.txt"
                   className="hidden"
-                  onChange={(e) => upload(e.target.files?.[0], (name, text) => update({ mode: "upload", cvName: name, cvText: text }))}
+                  onChange={(e) => upload(e.target.files?.[0], (name, text, meta) => update({ mode: "upload", cvName: name, cvText: text, cvMeta: meta }))}
                 />
                 <span className="text-[26px] tracking-[-.02em]" style={{ fontFamily: SERIF }}>
                   Upload a CV
@@ -268,7 +268,7 @@ export function CvStudio(props: Props) {
                   startReading(async () => {
                     const result = await readSignupCv();
                     if ("error" in result) setFileError(result.error);
-                    else update({ mode: "upload", cvName: result.name, cvText: result.text });
+                    else update({ mode: "upload", cvName: result.name, cvText: result.text, cvMeta: { pages: result.pages, columns: result.columns } });
                   })
                 }
                 className="cursor-pointer self-start text-[13px] text-t-sky hover:text-tx"
@@ -308,15 +308,22 @@ export function CvStudio(props: Props) {
                 <input value={cv.name} onChange={(e) => setCv({ name: e.target.value })} placeholder="Full name" className={INPUT} />
                 <input value={cv.email} onChange={(e) => setCv({ email: e.target.value })} placeholder="Email" className={INPUT} />
                 <input value={cv.phone} onChange={(e) => setCv({ phone: e.target.value })} placeholder="Phone" className={INPUT} />
-                <input value={cv.address} onChange={(e) => setCv({ address: e.target.value })} placeholder="Town or city" className={INPUT} />
+                <input value={cv.linkedin ?? ""} onChange={(e) => setCv({ linkedin: e.target.value })} placeholder="linkedin.com/in/your-name" className={INPUT} />
+                <input value={cv.address} onChange={(e) => setCv({ address: e.target.value })} placeholder="Town or city (optional)" className={INPUT} />
               </div>
               <span className="text-[13px] text-tx2">Education</span>
               <div className="grid gap-2.5 sm:grid-cols-[1.3fr_1.3fr_1fr_.8fr]">
                 <input value={cv.uni} onChange={(e) => setCv({ uni: e.target.value })} placeholder="University" className={INPUT} />
                 <input value={cv.degree} onChange={(e) => setCv({ degree: e.target.value })} placeholder="Degree" className={INPUT} />
                 <input value={cv.dates} onChange={(e) => setCv({ dates: e.target.value })} placeholder="2024 – 2028" className={INPUT} />
-                <input value={cv.grade} onChange={(e) => setCv({ grade: e.target.value })} placeholder="Grade" className={INPUT} />
+                <input value={cv.grade} onChange={(e) => setCv({ grade: e.target.value })} placeholder="On track for a 2:1" className={INPUT} />
               </div>
+              <input
+                value={cv.modules ?? ""}
+                onChange={(e) => setCv({ modules: e.target.value })}
+                placeholder="Relevant modules (optional): Thermodynamics, Stress Analysis, Control"
+                className={INPUT}
+              />
               <button type="button" onClick={() => setSaveMine((s) => !s)} className="flex h-9 cursor-pointer items-center gap-2.5 self-start text-[13px] text-tx2">
                 <span
                   className="grid size-[18px] place-items-center rounded-[5px] border"
@@ -337,18 +344,27 @@ export function CvStudio(props: Props) {
                 <span className="text-2xl" style={{ fontFamily: SERIF }}>
                   Experience and projects
                 </span>
-                <span className="text-[12px] text-tx3">Untick anything not relevant to this job</span>
+                <span className="text-[12px] text-tx3">Untick anything not relevant to this job. Projects count as much as jobs.</span>
               </div>
               {cv.exp.map((x, i) => (
                 <ExperienceCard key={i} x={x} job={job} onChange={(patch) => setExp(i, patch)} />
               ))}
-              <button
-                type="button"
-                onClick={() => setCv({ exp: [...cv.exp, { role: "", org: "", dates: "", bullets: "", on: true }] })}
-                className="h-10 cursor-pointer self-start rounded-[10px] border border-dashed border-line2 px-3.5 text-[13px] font-medium text-t-sky"
-              >
-                Anything else to add?
-              </button>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => setCv({ exp: [...cv.exp, { role: "", org: "", dates: "", bullets: "", on: true, kind: "work" }] })}
+                  className="h-10 cursor-pointer rounded-[10px] border border-dashed border-line2 px-3.5 text-[13px] font-medium text-t-sky"
+                >
+                  Add a job or placement
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCv({ exp: [...cv.exp, { role: "", org: "", dates: "", bullets: "", on: true, kind: "project" }] })}
+                  className="h-10 cursor-pointer rounded-[10px] border border-dashed border-line2 px-3.5 text-[13px] font-medium text-t-sky"
+                >
+                  Add a project
+                </button>
+              </div>
             </div>
           </div>
         )}
@@ -465,14 +481,16 @@ function Skills({ cv, req, onChange }: { cv: BuiltCv; req: string[]; onChange: (
 
 function ExperienceCard({ x, job, onChange }: { x: Experience; job: CvJob; onChange: (patch: Partial<Experience>) => void }) {
   const [list, setList] = useState<string[]>([]);
+  const [copied, setCopied] = useState(false);
   const [thinking, startThinking] = useTransition();
+  const project = (x.kind ?? "work") === "project";
   const input = "h-10 min-w-0 rounded-[9px] border border-line2 bg-s1 px-2.5 text-sm text-tx outline-none focus:border-l-sky";
   return (
     <div
       className="flex flex-col gap-2.5 rounded-xl border bg-bg p-3.5"
       style={{ borderColor: x.on ? "var(--l-sky)" : "var(--line2)", opacity: x.on ? 1 : 0.55 }}
     >
-      <div className="grid grid-cols-[24px_minmax(0,1fr)] items-center gap-2.5 sm:grid-cols-[24px_1.4fr_1.2fr_.8fr]">
+      <div className="flex flex-wrap items-center gap-2">
         <button
           type="button"
           onClick={() => onChange({ on: !x.on })}
@@ -480,17 +498,35 @@ function ExperienceCard({ x, job, onChange }: { x: Experience; job: CvJob; onCha
           className="size-5 cursor-pointer rounded-md border p-0"
           style={{ borderColor: x.on ? "var(--l-sky)" : "var(--line2)", background: x.on ? "#8FC7FF" : "transparent" }}
         />
-        <input value={x.role} onChange={(e) => onChange({ role: e.target.value })} placeholder="Role or project" className={`${input} font-medium`} />
-        <input value={x.org} onChange={(e) => onChange({ org: e.target.value })} placeholder="Organisation" className={`${input} max-sm:col-start-2`} />
-        <input value={x.dates} onChange={(e) => onChange({ dates: e.target.value })} placeholder="Dates" className={`${input} text-[13px] max-sm:col-start-2`} style={{ fontFamily: MONO }} />
+        <div className="flex rounded-lg border border-line2 p-0.5 text-[12px] font-medium">
+          {(["work", "project"] as const).map((k) => (
+            <button
+              key={k}
+              type="button"
+              onClick={() => onChange({ kind: k })}
+              className="h-7 cursor-pointer rounded-md px-2.5"
+              style={{ background: (x.kind ?? "work") === k ? "var(--s2)" : "transparent", color: (x.kind ?? "work") === k ? "var(--tx)" : "var(--tx3)" }}
+            >
+              {k === "work" ? "Experience" : "Project"}
+            </button>
+          ))}
+        </div>
       </div>
+      <div className="grid gap-2.5 sm:grid-cols-[1.4fr_1.2fr_.8fr]">
+        <input value={x.role} onChange={(e) => onChange({ role: e.target.value })} placeholder={project ? "Project name" : "Job title"} className={`${input} font-medium`} />
+        <input value={x.org} onChange={(e) => onChange({ org: e.target.value })} placeholder={project ? "Team or module (optional)" : "Company"} className={input} />
+        <input value={x.dates} onChange={(e) => onChange({ dates: e.target.value })} placeholder="Jun 2025 – Sep 2025" className={`${input} text-[13px]`} style={{ fontFamily: MONO }} />
+      </div>
+      {!project && (
+        <input value={x.place ?? ""} onChange={(e) => onChange({ place: e.target.value })} placeholder="Town (optional)" className={`${input} sm:max-w-[260px]`} />
+      )}
       <textarea
         value={x.bullets}
         onChange={(e) => onChange({ bullets: e.target.value })}
-        placeholder="One point per line. What did you do, with what, and what changed?"
+        placeholder="One point per line. Start with a verb and add a number: Designed a bracket in SolidWorks, cutting its mass by 18%."
         className="min-h-[76px] resize-y rounded-[9px] border border-line2 bg-s1 p-2.5 text-sm leading-normal text-tx outline-none focus:border-l-sky"
       />
-      <div className="flex flex-wrap items-center gap-2.5">
+      <div className="flex flex-wrap items-center gap-2">
         <button
           type="button"
           onClick={() => startThinking(async () => setList(await getIdeas({ exp: x, title: job.title, company: job.company, jd: job.jd })))}
@@ -502,7 +538,18 @@ function ExperienceCard({ x, job, onChange }: { x: Experience; job: CvJob; onCha
           </svg>
           {thinking ? "Thinking…" : "Give me ideas"}
         </button>
-        <span className="text-[12px] text-tx3">Ideas to rewrite in your own words. Never add something you did not do.</span>
+        <button
+          type="button"
+          onClick={() => {
+            navigator.clipboard?.writeText(ideasPrompt(x, job.title, job.company, job.jd)).catch(() => {});
+            setCopied(true);
+            setTimeout(() => setCopied(false), 1800);
+          }}
+          className="h-[34px] cursor-pointer rounded-[9px] border border-line2 px-3 text-[13px] font-medium text-tx2 hover:text-tx"
+        >
+          {copied ? "Copied: paste it into Claude" : "Copy a prompt for Claude"}
+        </button>
+        <span className="text-[12px] text-tx3">Rewrite ideas in your own words. Never add something you didn&apos;t do.</span>
       </div>
       {list.length > 0 && (
         <div className="flex flex-col gap-1.5">
@@ -523,15 +570,21 @@ function ExperienceCard({ x, job, onChange }: { x: Experience; job: CvJob; onCha
   );
 }
 
+const PAPER = '"Times New Roman", Times, serif';
+
+/** The ATS check: the CV as the template prints it, problems marked in place, the score and how to raise it. */
 function AtsCheck({ job, onEdit }: { job: CvJob; onEdit: () => void }) {
   const A = analyse(job);
+  const R = A.report;
   const [note, setNote] = useState<string | null>(null);
+  const [howOpen, setHowOpen] = useState(false);
   const colour = scoreColour(A.score);
-  const weak = new Set(A.weak.map((w) => w.t));
-  const titleIssue = A.issues.some((i) => i.key === "title");
-  const fname = `${(job.cv?.name || "CV").trim()} ${job.company}`.trim().replace(/\s+/g, "_");
+  const noNumber = new Set(R.bullets.filter((b) => !b.hasNumber).map((b) => b.text));
+  const fname = `${(job.cv?.name || "CV").trim()} CV ${job.company}`.trim().replace(/\s+/g, "_");
   const html = cvHtml(A.lines, fname);
-  const skillsLine = job.mode === "upload" ? A.lines.findIndex((l) => l.kind === "p" && A.matched.some((k) => l.t.includes(k)) && /,/.test(l.t)) : -1;
+  const weakStart = new Set(R.bullets.filter((b) => /^(responsible for|helped|assisted|worked on|involved in|duties included|tasked with|participated in)/i.test(b.text)).map((b) => b.text));
+  // Where to point at missing keywords: the first skills line (or, in an uploaded CV, the first comma list)
+  const skillsLine = A.lines.findIndex((l) => l.kind === "skills" || (job.mode === "upload" && l.kind === "p" && /,.*,/.test(l.t)));
 
   const flash = (t: string) => {
     setNote(t);
@@ -546,45 +599,45 @@ function AtsCheck({ job, onEdit }: { job: CvJob; onEdit: () => void }) {
     a.remove();
   };
 
-  const STYLE: Record<string, [string, number, string, string, string]> = {
-    name: ["24px", 500, "center", "0", "-.01em"],
-    contact: ["13px", 400, "center", "0", "0"],
-    h: ["13px", 600, "left", "14px", ".08em"],
-    role: ["15px", 600, "left", "6px", "0"],
-  };
-
   return (
     <div className="animate-fade-up grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
-      <div className="flex flex-col gap-1 rounded-md bg-[#FBFCFE] px-6 py-8 text-[#0E131A] sm:px-11 sm:py-10" style={{ fontFamily: SERIF, boxShadow: "0 20px 60px -20px rgba(0,0,0,.6)" }}>
+      <div className="flex flex-col rounded-md bg-white px-6 py-8 text-black sm:px-11 sm:py-10" style={{ fontFamily: PAPER, boxShadow: "0 20px 60px -20px rgba(0,0,0,.6)" }}>
         {A.lines.map((l, i) => {
-          const [size, weight, align, mt, ls] = STYLE[l.kind] ?? ["14px", 400, "left", "0", "0"];
           let hl = "transparent";
           let tag = "";
-          let tagFg = "#0E131A";
-          if (l.kind === "b" && weak.has(l.t)) [hl, tag, tagFg] = ["rgba(244,169,184,.28)", "Add a result", "#9C3550"];
-          if ((l.kind === "skills" || i === skillsLine) && A.missing.length) [hl, tag, tagFg] = ["rgba(243,195,143,.32)", `Missing ${A.missing.length} keywords`, "#8E5413"];
-          if (l.kind === "sum" && titleIssue) [hl, tag, tagFg] = ["rgba(195,181,255,.3)", "Name the role", "#5642B0"];
+          let tagFg = "#000";
+          const plain = l.t.replace(/^•\s*/, "");
+          if (l.kind === "b" && weakStart.has(plain)) [hl, tag, tagFg] = ["rgba(244,169,184,.28)", "Start with a verb", "#9C3550"];
+          else if (l.kind === "b" && noNumber.has(plain)) [hl, tag, tagFg] = ["rgba(244,169,184,.28)", "Add a result", "#9C3550"];
+          if (i === skillsLine && A.missing.length) [hl, tag, tagFg] = ["rgba(243,195,143,.32)", `Missing ${A.missing.length} keywords`, "#8E5413"];
+          const tagEl = tag && (
+            <span className="ml-2 text-[10px] font-semibold uppercase tracking-[.04em]" style={{ fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif", color: tagFg }}>
+              {tag}
+            </span>
+          );
+          if (l.kind === "name") return <div key={i} className="text-center text-[26px] leading-tight">{l.t}</div>;
+          if (l.kind === "contact") return <div key={i} className="mb-1 text-center text-[13px]">{l.t}</div>;
+          if (l.kind === "h")
+            return (
+              <div key={i} className="mt-3 border-b border-black pb-px text-[14px] font-bold uppercase tracking-[.04em]">
+                {l.t}
+              </div>
+            );
+          if (l.kind === "role" || l.kind === "sub")
+            return (
+              <div key={i} className={`flex justify-between gap-3 text-[14px] ${l.kind === "role" ? "mt-1.5 font-bold" : "italic"}`}>
+                <span>{l.t}</span>
+                {l.right && <span>{l.right}</span>}
+              </div>
+            );
           return (
             <div
               key={i}
-              className="relative -mx-2 rounded-[5px] px-2 py-[3px] leading-[1.45]"
-              style={{
-                background: hl,
-                fontSize: size,
-                fontWeight: weight,
-                textAlign: align as "left" | "center",
-                marginTop: mt,
-                letterSpacing: ls,
-                textTransform: l.kind === "h" ? "uppercase" : "none",
-                color: l.kind === "h" ? "#1D5C9C" : "#0E131A",
-              }}
+              className={`-mx-2 rounded-[4px] px-2 py-px text-[13.5px] leading-[1.4] ${l.kind === "b" ? "pl-6 -indent-3" : ""}`}
+              style={{ background: hl }}
             >
               {l.t}
-              {tag && (
-                <span className="ml-2 text-[10px] font-semibold uppercase tracking-[.04em]" style={{ fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif", color: tagFg }}>
-                  {tag}
-                </span>
-              )}
+              {tagEl}
             </div>
           );
         })}
@@ -606,7 +659,7 @@ function AtsCheck({ job, onEdit }: { job: CvJob; onEdit: () => void }) {
             </svg>
             <div className="flex flex-col items-center">
               <span className="text-[52px] leading-none" style={{ fontFamily: SERIF }}>
-                {A.score || "—"}
+                {A.score}
               </span>
               <span className="text-[11px] text-tx3" style={{ fontFamily: MONO }}>
                 ATS score
@@ -614,35 +667,69 @@ function AtsCheck({ job, onEdit }: { job: CvJob; onEdit: () => void }) {
             </div>
           </div>
           <span className="text-sm font-medium" style={{ color: colour }}>
-            {!A.req.length ? "Add the job description to score it." : A.score >= 80 ? "Strong. Ready to send." : A.score >= 65 ? "Good. Fix the highlights first." : "Needs work before you send it."}
+            {!job.jd.trim() ? "Add the job advert to score it properly." : A.score >= 80 ? "Strong. Ready to send." : A.score >= 65 ? "Good. Fix the highlights first." : "Needs work before you send it."}
           </span>
           <span className="text-[12px] text-tx3">
             {A.matched.length} of {A.req.length} advert keywords found
           </span>
+          <div className="mt-2 flex w-full flex-col gap-2">
+            {R.areas.map((a) => (
+              <div key={a.key} className="flex flex-col gap-1">
+                <div className="flex justify-between text-[12px]">
+                  <span className="text-tx2">{a.label}</span>
+                  <span style={{ fontFamily: MONO, color: scoreColour(a.score) }}>{a.score}</span>
+                </div>
+                <span className="h-1.5 overflow-hidden rounded-full bg-line2">
+                  <span className="block h-full rounded-full" style={{ width: `${a.score}%`, background: scoreColour(a.score), transition: "width .4s" }} />
+                </span>
+              </div>
+            ))}
+          </div>
+          <button type="button" onClick={() => setHowOpen((o) => !o)} className="mt-1 cursor-pointer text-[12px] text-t-sky hover:text-tx">
+            {howOpen ? "Hide how the score works" : "How the score works"}
+          </button>
+          {howOpen && (
+            <span className="text-[12px] leading-normal text-tx2">
+              Screening software keeps CVs that contain the advert&apos;s words, so <b>keywords</b> count most (40%). Then <b>measurable impact</b> (25%): bullets that
+              start with a verb and show a number. <b>Parsing and layout</b> (20%): one column, one page, readable text. <b>Sections</b> (15%): Education, Experience,
+              Projects, Technical Skills and contact details. Fix the top item, check again, repeat.
+            </span>
+          )}
         </div>
 
         <div className="flex flex-col rounded-2xl border border-line bg-s1">
-          <span className={`${EYEBROW} px-[18px] pb-1.5 pt-4`}>Fix these · {A.issues.length}</span>
-          {A.issues.map((issue) => (
+          <span className={`${EYEBROW} px-[18px] pb-1.5 pt-4`}>Fix these · {R.issues.length}</span>
+          {R.issues.map((issue) => (
             <button
-              key={issue.key}
+              key={issue.title}
               type="button"
               onClick={() => job.mode === "build" && onEdit()}
               className="grid cursor-pointer grid-cols-[10px_minmax(0,1fr)] gap-3 border-t border-line px-[18px] py-3 text-left text-tx"
             >
-              <span className="mt-1 size-2.5 rounded-[3px]" style={{ background: issue.colour }} />
+              <span className="mt-1 size-2.5 rounded-[3px]" style={{ background: AREA_COLOUR[issue.area] }} />
               <span className="flex flex-col gap-[3px]">
-                <span className="text-sm font-medium">{issue.title}</span>
+                <span className="text-sm font-medium">
+                  {issue.title}
+                  {issue.severity === "fix" && <span className="ml-1.5 text-[11px] font-semibold uppercase tracking-[.04em] text-t-rose">fix</span>}
+                </span>
                 <span className="text-[13px] leading-[1.45] text-tx2">{issue.detail}</span>
+                {issue.lines?.map((line) => (
+                  <span key={line} className="truncate text-[12px] text-tx3">
+                    “{line}”
+                  </span>
+                ))}
               </span>
             </button>
           ))}
+          {R.issues.length === 0 && <span className="border-t border-line px-[18px] py-3 text-[13px] text-t-mint">Nothing to fix. Send it.</span>}
           {job.mode === "build" ? (
             <button type="button" onClick={onEdit} className="mx-[18px] mb-4 mt-3 h-11 cursor-pointer rounded-[10px] bg-[#8FC7FF] text-sm font-semibold text-[#06111D]">
               Edit this CV
             </button>
           ) : (
-            <span className="border-t border-line px-[18px] py-3 text-[12px] text-tx3">Fix these in your own file, then upload it again.</span>
+            <span className="border-t border-line px-[18px] py-3 text-[12px] text-tx3">
+              Fix these in your own file and upload it again, or build it with the Nimbus template (Back, then Create one for this job).
+            </span>
           )}
         </div>
 
@@ -665,9 +752,9 @@ function AtsCheck({ job, onEdit }: { job: CvJob; onEdit: () => void }) {
             </button>
             <button
               type="button"
-              onClick={() => {
-                saveBlob(new Blob([`﻿${html}`], { type: "application/msword" }), `${fname}.doc`);
-                flash(`Saved ${fname}.doc`);
+              onClick={async () => {
+                saveBlob(await cvDocx(A.lines), `${fname}.docx`);
+                flash(`Saved ${fname}.docx`);
               }}
               className="h-11 cursor-pointer whitespace-nowrap rounded-[10px] border border-line2 bg-transparent text-[13px] font-semibold text-tx"
             >
@@ -676,7 +763,7 @@ function AtsCheck({ job, onEdit }: { job: CvJob; onEdit: () => void }) {
             <button
               type="button"
               onClick={() => {
-                navigator.clipboard?.writeText(A.lines.map((l) => l.t).join("\n")).catch(() => {});
+                navigator.clipboard?.writeText(A.lines.map((l) => (l.right ? `${l.t}    ${l.right}` : l.t)).join("\n")).catch(() => {});
                 window.open("https://docs.google.com/document/create", "_blank", "noopener");
                 flash("CV copied. Paste it into the new Google Doc.");
               }}
@@ -685,10 +772,9 @@ function AtsCheck({ job, onEdit }: { job: CvJob; onEdit: () => void }) {
               Google Doc
             </button>
           </div>
-          <span className="text-[12px] text-tx3">{note ?? "Fix the highlights first for the best score."}</span>
+          <span className="text-[12px] text-tx3">{note ?? "Template: r/EngineeringResumes style, one column, one page."}</span>
         </div>
       </div>
     </div>
   );
 }
-

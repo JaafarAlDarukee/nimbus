@@ -103,17 +103,17 @@ export const SAMPLES: Record<string, { path: string; render: () => React.ReactNo
     path: "/cv-studio",
     render: () => {
       const saved = {
-        name: "Sam Okafor", email: "sam.okafor@student.ac.uk", phone: "07700 900123", address: "Birmingham", uni: "University of Birmingham",
-        degree: "BEng Mechanical Engineering", dates: "2024 – 2028", grade: "On track for a 2:1", skills: ["CAD", "ANSYS", "FEA", "CNC", "Python", "Teamwork"],
+        name: "Sam Okafor", email: "sam.okafor@student.ac.uk", phone: "07700 900123", linkedin: "linkedin.com/in/sam-okafor", address: "Birmingham", uni: "University of Birmingham",
+        degree: "BEng Mechanical Engineering", dates: "2024 – 2028", grade: "On track for a 2:1", modules: "Thermodynamics, Stress Analysis, Manufacturing Processes", skills: ["CAD", "ANSYS", "FEA", "CNC", "Python", "Teamwork"],
         exp: [
-          { role: "Formula Student, suspension lead", org: "UoB Racing", dates: "2025 – now", bullets: "Designed uprights in CAD and ran FEA in ANSYS\nCut upright mass by 18% while keeping the safety factor above 2", on: true },
-          { role: "Summer production operative", org: "Bakery line, Birmingham", dates: "Summer 2025", bullets: "Helped run Kaizen and 5S projects\nTracked downtime on the line", on: true },
+          { role: "Formula Student, suspension lead", org: "UoB Racing", dates: "2025 – now", bullets: "Designed uprights in CAD and ran FEA in ANSYS\nCut upright mass by 18% while keeping the safety factor above 2", on: true, kind: "project" as const },
+          { role: "Summer production operative", org: "Bakery line", place: "Birmingham", dates: "Summer 2025", bullets: "Helped run Kaizen and 5S projects\nTracked downtime on the line", on: true, kind: "work" as const },
         ],
       };
       const jd = "We are looking for an Operational Excellence Intern to support continuous improvement across our manufacturing site. You will use Lean and Six Sigma tools, run root cause analysis, track OEE and support Kaizen events. Requirements: studying Mechanical or Manufacturing Engineering, confident with data analysis and Excel, strong communication and teamwork, awareness of health and safety, experience with 5S or PFMEA is a plus.";
       return (
         <CvStudio
-          jobs={[{ id: "a", title: "Operational Excellence Intern", company: "Müller UK & Ireland", link: "https://careers.muller.co.uk", jd, jdName: "Muller_OpEx_Intern.pdf", mode: "build", cvName: null, cvText: null, cv: saved, step: 3 }]}
+          jobs={[{ id: "a", title: "Operational Excellence Intern", company: "Müller UK & Ireland", link: "https://careers.muller.co.uk", jd, jdName: "Muller_OpEx_Intern.pdf", mode: "build", cvName: null, cvText: null, cvMeta: null, cv: saved, step: 4 }]}
           selectedId="a"
           saved={saved}
           hasSaved
