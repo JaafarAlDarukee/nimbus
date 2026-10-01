@@ -60,20 +60,41 @@ export type Line = { t: string; kind: "name" | "contact" | "h" | "sum" | "role" 
 
 const SECTION = /^(education|experience|work experience|employment|skills|technical skills|projects|summary|profile|personal statement|achievements|awards|interests|certifications|languages|references|volunteering|leadership)$/i;
 
+const CONTACT = /@|\+?\d[\d\s()-]{8,}\d|linkedin\.com/i;
+// A new entry ("Role — Company", "Uni | 2024 – 2028"), not the rest of the previous line
+const ENTRY = /\s[—–|]\s|\s-\s|\b(19|20)\d{2}\b/;
+
+/** An uploaded CV as lines. PDFs break long bullets over several lines: join them back up, and
+ *  recognise the name and contact line at the top. */
+function uploadedLines(text: string): Line[] {
+  const lines: Line[] = [];
+  for (const raw of text.split(/\r?\n/)) {
+    const t = raw.replace(/\s+/g, " ").trim();
+    if (!t) continue;
+    if (/^[•●▪◦\-*–]\s*/.test(t)) {
+      lines.push({ t: `• ${t.replace(/^[•●▪◦\-*–]\s*/, "")}`, kind: "b" });
+      continue;
+    }
+    if (SECTION.test(t.replace(/[:\s]+$/, "")) || (/^[A-Z][A-Z &/]{3,30}$/.test(t) && !/\d/.test(t) && lines.length > 0)) {
+      lines.push({ t, kind: "h" });
+      continue;
+    }
+    const prev = lines[lines.length - 1];
+    const carriesOn = prev && (prev.kind === "b" || prev.kind === "p") && (/^[a-z(£$%&]/.test(t) || (!/[.!?:;)]$/.test(prev.t) && !ENTRY.test(t)));
+    if (carriesOn) {
+      prev.t = `${prev.t} ${t}`;
+      continue;
+    }
+    if (!lines.length && t.length < 50 && !/\d|@/.test(t)) lines.push({ t, kind: "name" });
+    else if (lines.length <= 2 && CONTACT.test(t) && !lines.some((l) => l.kind === "h")) lines.push({ t, kind: "contact" });
+    else lines.push({ t, kind: "p" });
+  }
+  return lines.slice(0, 160);
+}
+
 /** The CV as lines: built with the template, or read from an uploaded file. */
 export function cvLines(job: CvJob): Line[] {
-  if (job.mode === "upload") {
-    return (job.cvText ?? "")
-      .split(/\r?\n/)
-      .map((l) => l.replace(/\s+/g, " ").trim())
-      .filter(Boolean)
-      .slice(0, 160)
-      .map((t): Line => {
-        if (/^[•●▪◦\-*–]\s*/.test(t)) return { t: `• ${t.replace(/^[•●▪◦\-*–]\s*/, "")}`, kind: "b" };
-        if (SECTION.test(t.replace(/[:\s]+$/, "")) || (/^[A-Z][A-Z &/]{3,30}$/.test(t) && !/\d/.test(t))) return { t, kind: "h" };
-        return { t, kind: "p" };
-      });
-  }
+  if (job.mode === "upload") return uploadedLines(job.cvText ?? "");
   const c = job.cv;
   if (!c) return [];
   const lines: Line[] = [

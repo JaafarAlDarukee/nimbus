@@ -169,3 +169,129 @@ export async function ideas(input: { exp: Experience; title: string; company: st
     return fallbackIdeas(exp, jd);
   }
 }
+
+const USER_AGENT = "Mozilla/5.0 (compatible; NimbusRadar/0.1; student job alerts)";
+
+/** Hosts a student's link must never make the server call: this machine and private networks. */
+function publicUrl(value: string): URL | null {
+  let url: URL;
+  try {
+    url = new URL(value.trim());
+  } catch {
+    return null;
+  }
+  const host = url.hostname.toLowerCase();
+  if (!/^https?:$/.test(url.protocol) || !host.includes(".") || /^[\d.]+$/.test(host) || host.includes(":")) return null;
+  if (/(^|\.)(localhost|local|internal|lan|home)$/.test(host)) return null;
+  return url;
+}
+
+/** robots.txt: is this path open to tools? (User-agent: * rules, longest match wins.) */
+async function robotsAllow(url: URL): Promise<boolean> {
+  try {
+    const res = await fetch(`${url.origin}/robots.txt`, { headers: { "User-Agent": USER_AGENT }, signal: AbortSignal.timeout(6000) });
+    if (!res.ok) return true;
+    let applies = false;
+    let best: { len: number; allow: boolean } = { len: -1, allow: true };
+    for (const raw of (await res.text()).split(/\r?\n/)) {
+      const line = raw.replace(/#.*/, "").trim();
+      const [field, ...rest] = line.split(":");
+      const value = rest.join(":").trim();
+      if (/^user-agent$/i.test(field)) applies = value === "*";
+      else if (applies && /^(dis)?allow$/i.test(field) && value && url.pathname.startsWith(value.replace(/\*.*$/, ""))) {
+        const len = value.length;
+        if (len > best.len) best = { len, allow: /^allow$/i.test(field) };
+      }
+    }
+    return best.allow;
+  } catch {
+    return true;
+  }
+}
+
+const decode = (s: string) =>
+  s
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;|&rsquo;|&#8217;/g, "'")
+    .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(Number(n)));
+
+const textOfHtml = (html: string) =>
+  decode(
+    html
+      .replace(/<(script|style|noscript|svg|nav|header|footer)[\s\S]*?<\/\1>/gi, " ")
+      .replace(/<(br|\/p|\/li|\/h\d|\/div|\/tr)[^>]*>/gi, "\n")
+      .replace(/<li[^>]*>/gi, "\n• ")
+      .replace(/<[^>]+>/g, " "),
+  )
+    .split("\n")
+    .map((l) => l.replace(/\s+/g, " ").trim())
+    // Empty list items and page furniture ("Apply", "Back to jobs") aren't part of the advert
+    .filter((l) => l.replace(/^•\s*/, "").length > 1 && !/^(•\s*)?(apply( now| for this job)?|back to jobs|share( this job)?|save( job)?)$/i.test(l))
+    .join("\n");
+
+type JobPosting = { title?: string; description?: string; hiringOrganization?: { name?: string } | string };
+
+/** The schema.org JobPosting many careers sites embed for Google Jobs: the cleanest copy of the advert. */
+function jobPosting(html: string): JobPosting | null {
+  for (const m of html.matchAll(/<script[^>]+application\/ld\+json[^>]*>([\s\S]*?)<\/script>/gi)) {
+    try {
+      const data = JSON.parse(m[1]);
+      const items: unknown[] = Array.isArray(data) ? data : data["@graph"] ?? [data];
+      const found = items.find((i) => i && typeof i === "object" && (i as { "@type"?: unknown })["@type"] === "JobPosting");
+      if (found) return found as JobPosting;
+    } catch {
+      continue;
+    }
+  }
+  return null;
+}
+
+/**
+ * "Read it from the link": the advert for a job link. A role Nimbus already saved comes from the
+ * database; otherwise the page is fetched once (only if its robots.txt allows tools) and the advert
+ * text taken from it. Pages that build the advert with JavaScript, or block tools, can't be read:
+ * the student pastes the advert instead.
+ */
+export async function readJobLink(link: string): Promise<{ title: string; company: string; text: string } | { error: string }> {
+  const url = publicUrl(link);
+  if (!url) return { error: "That doesn't look like a web link. Copy it from your browser's address bar." };
+
+  const supabase = await createClient();
+  const { data: saved } = await supabase
+    .from("opportunities")
+    .select("title,company_name,description")
+    .eq("apply_url", url.toString())
+    .not("description", "is", null)
+    .limit(1)
+    .maybeSingle();
+  if (saved?.description && saved.description.length > 200) {
+    return { title: saved.title, company: saved.company_name, text: saved.description };
+  }
+
+  if (!(await robotsAllow(url))) {
+    return { error: "This site asks tools not to read its pages, so Nimbus won't. Copy the advert from the page and paste it below." };
+  }
+  let html: string;
+  try {
+    const res = await fetch(url, { headers: { "User-Agent": USER_AGENT, Accept: "text/html" }, signal: AbortSignal.timeout(10000), redirect: "follow" });
+    if (res.status === 401 || res.status === 403 || res.status === 429) {
+      return { error: "This site blocks tools, so Nimbus can't read it. Copy the advert from the page and paste it below." };
+    }
+    if (!res.ok || !(res.headers.get("content-type") ?? "").includes("html")) return { error: "Couldn't open that page. Check the link, or paste the advert below." };
+    html = (await res.text()).slice(0, 2_000_000);
+  } catch {
+    return { error: "That page took too long to answer. Paste the advert below instead." };
+  }
+
+  const posting = jobPosting(html);
+  const company = typeof posting?.hiringOrganization === "string" ? posting.hiringOrganization : (posting?.hiringOrganization?.name ?? "");
+  const text = posting?.description ? textOfHtml(decode(posting.description)) : textOfHtml(html);
+  if (text.length < 300) {
+    return { error: "This page loads the advert with JavaScript, so Nimbus can't read it from the link. Copy the advert from the page and paste it below." };
+  }
+  return { title: decode(posting?.title ?? "").trim(), company: decode(company).trim(), text: text.slice(0, 20000) };
+}

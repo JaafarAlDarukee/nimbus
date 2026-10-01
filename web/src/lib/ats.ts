@@ -31,13 +31,15 @@ const STRONG_VERBS =
   /^(designed|built|developed|led|managed|created|reduced|increased|improved|optimi[sz]ed|analy[sz]ed|tested|validated|modelled|modeled|simulated|machined|manufactured|assembled|programmed|automated|implemented|delivered|launched|cut|saved|achieved|won|coordinated|organi[sz]ed|researched|investigated|calculated|prototyped|fabricated|wrote|presented|trained|mentored|redesigned|streamlined|integrated|installed|commissioned|diagnosed|resolved|produced|drafted|conducted|evaluated|measured|characteri[sz]ed|lowered|raised|halved|doubled|engineered|planned|scheduled|supervised|captained|founded|initiated)\b/i;
 const WEAK_START = /^(responsible for|helped|assisted|worked on|involved in|duties included|tasked with|participated in|was|did)\b/i;
 const PRONOUNS = /\b(I|me|my|myself)\b/;
+// "three to four days a week", "halved", "a dozen" are results too
+const NUMBER = /\d|\b(one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|fifteen|twenty|thirty|fifty|hundreds?|thousands?|dozens?|half|halved|double[ds]?|twice|tripled?)\b/i;
 const EMAIL = /[\w.+-]+@[\w-]+(\.[\w-]+)+/;
 const PHONE = /(\+44\s?7\d{3}|\b07\d{3})\s?\d{3}\s?\d{3}\b|\+?\d[\d\s()-]{8,}\d/;
 const LINKEDIN = /linkedin\.com\/in\//i;
 const SECTION = (name: RegExp) => new RegExp(`^\\s*(${name.source})\\s*:?\\s*$`, "im");
 const SECTIONS = {
   education: SECTION(/education|academic background|qualifications/),
-  experience: SECTION(/experience|work experience|employment|professional experience|relevant experience/),
+  experience: SECTION(/experience|work experience|employment|professional experience|relevant experience|leadership( (and|&) activities)?|volunteering/),
   projects: SECTION(/projects|technical projects|engineering projects|personal projects/),
   skills: SECTION(/skills|technical skills|skills and interests|software/),
   summary: SECTION(/summary|profile|personal statement|objective|about me/),
@@ -58,10 +60,16 @@ export function atsReport(cv: CvFacts, advert: string, jobTitle = ""): AtsReport
   const missing = wanted.filter((k) => !have.has(k));
   const titleWords = jobTitle.toLowerCase().split(/[^a-z]+/).filter((w) => w.length > 3 && !["intern", "internship", "placement", "graduate", "student", "summer"].includes(w));
   const titleHit = titleWords.length === 0 || titleWords.some((w) => lower.includes(w));
-  let keywords = wanted.length ? (matched.length / wanted.length) * 90 + (titleHit ? 10 : 0) : 60;
+  const keywords = wanted.length ? (matched.length / wanted.length) * 90 + (titleHit ? 10 : 0) : 0;
   if (!advert.trim()) {
-    keywords = 0;
     issues.push({ area: "keywords", severity: "fix", title: "Add the job advert", detail: "Paste the advert (or pick a saved role) so the check knows which keywords this employer screens for." });
+  } else if (!wanted.length) {
+    issues.push({
+      area: "keywords",
+      severity: "fix",
+      title: "No skills found in this advert",
+      detail: "Paste the full advert, including the requirements or \u201cwhat you\u2019ll need\u201d part. The check looks for skills like CAD, MATLAB, Python, Lean or lab techniques; without them it can\u2019t score keywords.",
+    });
   } else if (missing.length) {
     issues.push({
       area: "keywords",
@@ -70,15 +78,25 @@ export function atsReport(cv: CvFacts, advert: string, jobTitle = ""): AtsReport
       detail: `Add ${missing.slice(0, 6).join(", ")} where you genuinely used them: in a bullet that shows how, and in Technical Skills.`,
     });
   }
-  if (advert.trim() && !titleHit) {
+  if (wanted.length && !titleHit) {
     issues.push({ area: "keywords", severity: "improve", title: "The role's own words don't appear", detail: `Use words from the job title ("${jobTitle}") where they're true, for example in a project or experience line.` });
   }
 
-  // 2. Measurable impact: bullets that start strong and show a result
-  const bullets = lines
-    .filter((l) => /^[•●▪◦\-*–]/.test(l) || (l.length > 40 && STRONG_VERBS.test(l)))
-    .map((l) => l.replace(/^[•●▪◦\-*–]\s*/, ""))
-    .map((t) => ({ text: t, hasNumber: /\d/.test(t), strongStart: STRONG_VERBS.test(t) }));
+  // 2. Measurable impact: bullets under experience and projects that start strong and show a result
+  // (course lists under Education and lists of skills aren't achievements)
+  let section = "";
+  const bullets: AtsReport["bullets"] = [];
+  for (const l of lines) {
+    const heading = (Object.keys(SECTIONS) as (keyof typeof SECTIONS)[]).find((k) => SECTIONS[k].test(l));
+    if (heading) {
+      section = heading;
+      continue;
+    }
+    if (section === "education" || section === "skills" || section === "summary") continue;
+    if (!/^[•●▪◦\-*–]/.test(l) && !(l.length > 40 && STRONG_VERBS.test(l))) continue;
+    const text = l.replace(/^[•●▪◦\-*–]\s*/, "");
+    bullets.push({ text, hasNumber: NUMBER.test(text), strongStart: STRONG_VERBS.test(text) });
+  }
   const withNumbers = bullets.filter((b) => b.hasNumber).length;
   const strong = bullets.filter((b) => b.strongStart).length;
   const weak = bullets.filter((b) => WEAK_START.test(b.text));

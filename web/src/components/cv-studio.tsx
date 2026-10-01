@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useTransition } from "react";
-import { createJob, ideas as getIdeas, readFile, readSignupCv, saveDetails, saveJob } from "@/app/(app)/cv-studio/actions";
+import { createJob, ideas as getIdeas, readFile, readJobLink, readSignupCv, saveDetails, saveJob } from "@/app/(app)/cv-studio/actions";
 import { AREA_COLOUR, analyse, blankCv, cvDocx, cvHtml, ideasPrompt, scoreColour, type BuiltCv, type CvJob, type Experience } from "@/lib/cv";
 
 type Props = { jobs: CvJob[]; selectedId: string | null; saved: BuiltCv; hasSaved: boolean; signupCv: string | null };
@@ -21,6 +21,7 @@ export function CvStudio(props: Props) {
   const [saveMine, setSaveMine] = useState(true);
   const [flash, setFlash] = useState<string | null>(null);
   const [fileError, setFileError] = useState<string | null>(null);
+  const [linkNote, setLinkNote] = useState<{ ok: boolean; text: string } | null>(null);
   const [reading, startReading] = useTransition();
   const [creating, startCreating] = useTransition();
   const pending = useRef<Record<string, Partial<CvJob>>>({});
@@ -189,6 +190,30 @@ export function CvStudio(props: Props) {
             <Field label="Job title" value={job.title} onChange={(v) => update({ title: v })} placeholder="e.g. Operational Excellence Intern" big />
             <Field label="Company" value={job.company} onChange={(v) => update({ company: v })} placeholder="e.g. Müller UK & Ireland" big />
             <Field label="Link to the job" value={job.link} onChange={(v) => update({ link: v })} placeholder="https://careers.company.com/role" mono />
+            {job.link.trim() && (
+              <div className="flex flex-wrap items-center gap-3">
+                <button
+                  type="button"
+                  disabled={reading}
+                  onClick={() => {
+                    setLinkNote(null);
+                    startReading(async () => {
+                      const r = await readJobLink(job.link);
+                      if ("error" in r) {
+                        setLinkNote({ ok: false, text: r.error });
+                        return;
+                      }
+                      update({ jd: r.text, jdName: "Read from the job link", title: job.title.trim() || r.title, company: job.company.trim() || r.company });
+                      setLinkNote({ ok: true, text: "Got the advert from the link. Check it on the next step." });
+                    });
+                  }}
+                  className="h-10 cursor-pointer rounded-[10px] border border-line2 px-3.5 text-[13px] font-medium text-t-sky disabled:opacity-60"
+                >
+                  {reading ? "Reading the page…" : "Read the advert from this link"}
+                </button>
+                {linkNote && <span className={`text-[13px] ${linkNote.ok ? "text-t-mint" : "text-t-rose"}`}>{linkNote.text}</span>}
+              </div>
+            )}
           </div>
         )}
 
@@ -582,9 +607,10 @@ function AtsCheck({ job, onEdit }: { job: CvJob; onEdit: () => void }) {
   const noNumber = new Set(R.bullets.filter((b) => !b.hasNumber).map((b) => b.text));
   const fname = `${(job.cv?.name || "CV").trim()} CV ${job.company}`.trim().replace(/\s+/g, "_");
   const html = cvHtml(A.lines, fname);
-  const weakStart = new Set(R.bullets.filter((b) => /^(responsible for|helped|assisted|worked on|involved in|duties included|tasked with|participated in)/i.test(b.text)).map((b) => b.text));
-  // Where to point at missing keywords: the first skills line (or, in an uploaded CV, the first comma list)
-  const skillsLine = A.lines.findIndex((l) => l.kind === "skills" || (job.mode === "upload" && l.kind === "p" && /,.*,/.test(l.t)));
+  const weakStart = new Set(R.bullets.filter((b) => /^(responsible for|helped|assisted|worked on|involved in|duties included|tasked with|participated in)\b/i.test(b.text)).map((b) => b.text));
+  // Where to point at missing keywords: the first skills line (in an uploaded CV, the first line under a Skills heading)
+  const skillsHeading = A.lines.findIndex((l) => l.kind === "h" && /skill/i.test(l.t));
+  const skillsLine = job.mode === "upload" ? (skillsHeading >= 0 && skillsHeading + 1 < A.lines.length ? skillsHeading + 1 : -1) : A.lines.findIndex((l) => l.kind === "skills");
 
   const flash = (t: string) => {
     setNote(t);
@@ -667,7 +693,7 @@ function AtsCheck({ job, onEdit }: { job: CvJob; onEdit: () => void }) {
             </div>
           </div>
           <span className="text-sm font-medium" style={{ color: colour }}>
-            {!job.jd.trim() ? "Add the job advert to score it properly." : A.score >= 80 ? "Strong. Ready to send." : A.score >= 65 ? "Good. Fix the highlights first." : "Needs work before you send it."}
+            {!job.jd.trim() ? "Add the job advert to score it properly." : A.req.length === 0 ? "No skills found in the advert yet." : A.score >= 80 ? "Strong. Ready to send." : A.score >= 65 ? "Good. Fix the highlights first." : "Needs work before you send it."}
           </span>
           <span className="text-[12px] text-tx3">
             {A.matched.length} of {A.req.length} advert keywords found
