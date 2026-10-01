@@ -64,3 +64,11 @@ Back to [[00 Start Here]] · code in `web/` (Next.js 16.3, React 19, Tailwind 4,
 - **Checker**: EVIDENCE map in lib/keywords.ts ("you show X in other words"); keyword bank ~200.
 - **Tailor with Claude**: `tailorPrompt` (no name/contact), copied + opens claude.ai/new (with `?q=` when short).
 - **LinkedIn**: `components/apply-tips.tsx` (`peopleToFind`, notes, headline) on the check page; people links in the Opportunities drawer. Nimbus never sends anything.
+
+## CV studio, round 3 (2026-10-01 night)
+- Example CV: `lib/cv-example.ts` (EXAMPLE_CV, EXAMPLE_NOTES pinned by line start, EXAMPLE_RULES), shown in `ExampleCv` over the page. The CV paper is one `Paper` component with a `mark` function (check highlights, example notes).
+- `ReadByAts`: what a tracking system would extract (cvFromText for uploads, the BuiltCv for built ones). Honest copy: no employer shares a score.
+- `lib/skill-tips.ts` `tipFor(skill)`: shown for listed skills no bullet proves yet.
+- Free AI review (`aiReview` server action, `AiReviewCard`): Gemini free tier, only when `GEMINI_API_KEY` is set (page passes `aiOn`); model from `GEMINI_MODEL`, else `gemini-flash-latest`, else `gemini-2.5-flash`. Sends the CV without name/contact. JSON reply: fit, verdict, strengths, fixes, rewrites, missing.
+- Jobs can be deleted (`deleteJob`, RLS-limited) and a new job can start from another job's CV (copied and tailored).
+- Keyword matching: acronyms in `CASED` only count in capitals (SPICE, SAP, CAM, PCR...).

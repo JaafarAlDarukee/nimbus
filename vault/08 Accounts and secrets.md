@@ -23,3 +23,5 @@ Back to [[00 Start Here]]
 
 ## Owner's personal details
 Not stored in this repo on purpose (public). The owner's email is approved in `access_requests` in the database; their profile is the admin.
+
+- **Gemini (free tier)**: optional `GEMINI_API_KEY` in Vercel (Production) turns on the Free AI review and better "Give me ideas". Owner creates it at aistudio.google.com with the Nimbus Gmail; never pasted to Claude.
