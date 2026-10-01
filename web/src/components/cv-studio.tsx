@@ -34,6 +34,8 @@ export function CvStudio(props: Props) {
   const [changes, setChanges] = useState<string[] | null>(null);
   const [popular, setPopular] = useState<Popular | null>(null);
   const [exampleOpen, setExampleOpen] = useState(false);
+  // "Make it better with Claude": opens by itself the first time a CV reaches the check
+  const [polishOpen, setPolishOpen] = useState(false);
 
   // Skills that real adverts for this student's degree ask for most (learned from Nimbus's saved roles)
   useEffect(() => {
@@ -83,6 +85,7 @@ export function CvStudio(props: Props) {
     const parsed = cvFromText(text, { email: saved.email, phone: saved.phone, linkedin: saved.linkedin, address: saved.address, uni: saved.uni, degree: saved.degree, dates: saved.dates, grade: saved.grade });
     const tailored = tailorCv(parsed, job.jd);
     update({ mode: "build", cv: tailored.cv, cvName: name, cvText: text, cvMeta: meta, step: 4 });
+    setPolishOpen(true);
     setChanges([`Read ${name} into the Nimbus template: ${parsed.exp.length} entries, ${parsed.skills.length} skills. Check the details on step 3.`, ...tailored.changes]);
   };
   const tailorNow = () => {
@@ -143,7 +146,7 @@ export function CvStudio(props: Props) {
 
   if (!job) {
     return (
-      <div className="grid min-h-[calc(100vh-65px)] place-items-center px-6 leading-[normal]">
+      <div className="flex min-h-[calc(100vh-65px)] flex-col items-center justify-center px-6 py-10 leading-[normal]">
         <div className="animate-fade-up flex max-w-md flex-col items-center gap-4 text-center">
           <h1 className="m-0 text-[46px] font-normal leading-none tracking-[-.03em]" style={{ fontFamily: SERIF }}>
             One CV <span className="italic text-t-sky">per job.</span>
@@ -154,9 +157,9 @@ export function CvStudio(props: Props) {
           <button type="button" onClick={newJob} disabled={creating} className="h-12 cursor-pointer rounded-xl bg-[#8FC7FF] px-6 text-[15px] font-semibold text-[#06111D]">
             {creating ? "Starting…" : "New job"}
           </button>
-          <button type="button" onClick={() => setExampleOpen(true)} className="cursor-pointer text-[14px] font-medium text-t-sky hover:text-tx">
-            See what a great student CV looks like →
-          </button>
+        </div>
+        <div className="mt-10 w-full max-w-[640px]">
+          <ExampleBanner onOpen={() => setExampleOpen(true)} />
         </div>
         {exampleOpen && <ExampleCv onClose={() => setExampleOpen(false)} />}
       </div>
@@ -178,6 +181,7 @@ export function CvStudio(props: Props) {
       saveDetails(job.cv);
     }
     update({ step: step + 1 });
+    if (step === 3) setPolishOpen(true);
   };
 
   return (
@@ -249,11 +253,10 @@ export function CvStudio(props: Props) {
           </div>
         </div>
 
+        {step < 4 && <ExampleBanner onOpen={() => setExampleOpen(true)} />}
+
         {step === 1 && (
           <div className="animate-fade-up flex max-w-[640px] flex-col gap-3.5">
-            <button type="button" onClick={() => setExampleOpen(true)} className="cursor-pointer self-start text-[13px] font-medium text-t-sky hover:text-tx">
-              First time? See what a great student CV looks like →
-            </button>
             <Field label="Job title" value={job.title} onChange={(v) => update({ title: v })} placeholder="e.g. Operational Excellence Intern" big />
             <Field label="Company" value={job.company} onChange={(v) => update({ company: v })} placeholder="e.g. Müller UK & Ireland" big />
             <Field label="Link to the job" value={job.link} onChange={(v) => update({ link: v })} placeholder="https://careers.company.com/role" mono />
@@ -322,12 +325,13 @@ export function CvStudio(props: Props) {
           </div>
         )}
 
-        {step === 3 && (
-          <button type="button" onClick={() => setExampleOpen(true)} className="-mt-2 cursor-pointer self-start text-[13px] font-medium text-t-sky hover:text-tx">
-            See what a great student CV looks like (an example with notes) →
-          </button>
-        )}
         {exampleOpen && <ExampleCv onClose={() => setExampleOpen(false)} />}
+        {polishOpen && step === 4 && (
+          <PolishModal job={job} lines={A.lines} fixes={A.report.issues.map((i) => i.title)} onEdit={() => {
+              setPolishOpen(false);
+              update({ step: 3 });
+            }} onClose={() => setPolishOpen(false)} />
+        )}
 
         {step === 3 && !job.mode && (
           <div className="animate-fade-up flex max-w-[760px] flex-col gap-3">
@@ -386,6 +390,7 @@ export function CvStudio(props: Props) {
                         const copy = { ...o.cv!, skills: [...o.cv!.skills], exp: o.cv!.exp.map((x) => ({ ...x })) };
                         const tailored = tailorCv(copy, job.jd);
                         update({ mode: "build", cv: tailored.cv, step: 4 });
+                        setPolishOpen(true);
                         setChanges([`Copied your CV from “${o.title || "another job"}”. Your other CV is unchanged.`, ...tailored.changes]);
                       }}
                       className="h-9 cursor-pointer rounded-[10px] border border-line2 px-3 text-[13px] font-medium text-t-sky hover:text-tx"
@@ -521,6 +526,7 @@ export function CvStudio(props: Props) {
             me={{ degree: job.cv?.degree || saved.degree, uni: job.cv?.uni || saved.uni }}
             aiOn={props.aiOn}
             onExample={() => setExampleOpen(true)}
+            onPolish={() => setPolishOpen(true)}
             onEdit={() => update({ step: 3 })}
           />
         )}
@@ -768,6 +774,7 @@ function AtsCheck({
   me,
   aiOn,
   onExample,
+  onPolish,
   onEdit,
 }: {
   job: CvJob;
@@ -775,6 +782,7 @@ function AtsCheck({
   me: { degree: string; uni: string };
   aiOn: boolean;
   onExample: () => void;
+  onPolish: () => void;
   onEdit: () => void;
 }) {
   const A = analyse(job);
@@ -804,7 +812,21 @@ function AtsCheck({
   };
 
   return (
-    <div className="animate-fade-up grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
+    <div className="animate-fade-up flex flex-col gap-5">
+    <button
+      type="button"
+      onClick={onPolish}
+      className="flex cursor-pointer flex-wrap items-center gap-4 rounded-2xl border-2 px-6 py-5 text-left text-tx"
+      style={{ borderColor: "#C3B5FF", background: "rgba(195,181,255,.12)" }}
+    >
+      <span className="text-[34px] leading-none">✨</span>
+      <span className="flex min-w-0 flex-1 flex-col gap-1">
+        <span className="text-[22px] font-semibold leading-tight sm:text-[26px]">Next: make it much better with Claude (free)</span>
+        <span className="text-[15px] text-tx2">Two buttons and a paste. Claude rewrites your CV for this job. No download needed.</span>
+      </span>
+      <span className="flex h-12 items-center rounded-xl bg-[#C3B5FF] px-6 text-[16px] font-semibold text-[#120B2A]">Show me how</span>
+    </button>
+    <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
       <div className="flex min-w-0 flex-col gap-4">
         <Paper
           lines={A.lines}
@@ -975,109 +997,10 @@ function AtsCheck({
 
         {aiOn && <AiReviewCard job={job} lines={A.lines} />}
 
-        <div className="flex flex-col gap-3 rounded-2xl border px-[18px] py-4" style={{ borderColor: "rgba(195,181,255,.4)", background: "rgba(195,181,255,.07)" }}>
-          <span className={EYEBROW}>Polish it with Claude or Gemini · free</span>
-          <span className="text-[13px] leading-[1.45] text-tx2">Five steps, about two minutes. Works with a free Claude or Gemini account.</span>
-          <ol className="m-0 flex list-none flex-col gap-2.5 p-0 text-[13px] leading-[1.45]">
-            <li className="flex gap-2.5">
-              <span className="grid size-6 shrink-0 place-items-center rounded-full bg-[#C3B5FF] text-[12px] font-semibold text-[#120B2A]">1</span>
-              <span className="flex flex-col gap-1.5 text-tx2">
-                <span>
-                  <b className="text-tx">Download your CV.</b> Word is the quickest to attach.
-                </span>
-                <span className="flex gap-1.5">
-                  <button
-                    type="button"
-                    onClick={async () => {
-                      saveBlob(await cvDocx(A.lines), `${fname}.docx`);
-                      flash(`Saved ${fname}.docx in your Downloads`);
-                    }}
-                    className="h-8 cursor-pointer rounded-lg border border-line2 px-2.5 text-[12px] font-medium text-tx hover:border-l-sky"
-                  >
-                    Word file
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const w = window.open("", "_blank");
-                      if (!w) return;
-                      w.document.write(html);
-                      w.document.close();
-                      setTimeout(() => w.print(), 300);
-                      flash('Choose "Save as PDF" in the print window.');
-                    }}
-                    className="h-8 cursor-pointer rounded-lg border border-line2 px-2.5 text-[12px] font-medium text-tx hover:border-l-sky"
-                  >
-                    PDF
-                  </button>
-                </span>
-              </span>
-            </li>
-            <li className="flex gap-2.5">
-              <span className="grid size-6 shrink-0 place-items-center rounded-full bg-[#C3B5FF] text-[12px] font-semibold text-[#120B2A]">2</span>
-              <span className="flex flex-col gap-1.5 text-tx2">
-                <span>
-                  <b className="text-tx">Copy the prompt.</b> It has this advert, the fix list and the template rules in it.
-                </span>
-                <button
-                  type="button"
-                  onClick={() => {
-                    navigator.clipboard?.writeText(attachPrompt(job.jd, job.title, job.company, R.issues.map((i) => i.title))).catch(() => {});
-                    flash("Prompt copied.");
-                  }}
-                  className="h-8 cursor-pointer self-start rounded-lg bg-[#C3B5FF] px-3 text-[12px] font-semibold text-[#120B2A]"
-                >
-                  Copy the prompt
-                </button>
-              </span>
-            </li>
-            <li className="flex gap-2.5">
-              <span className="grid size-6 shrink-0 place-items-center rounded-full bg-[#C3B5FF] text-[12px] font-semibold text-[#120B2A]">3</span>
-              <span className="flex flex-col gap-1.5 text-tx2">
-                <span>
-                  <b className="text-tx">Open Claude or Gemini</b> and start a new chat.
-                </span>
-                <span className="flex gap-1.5">
-                  <a href="https://claude.ai/new" target="_blank" rel="noopener noreferrer" className="flex h-8 items-center rounded-lg border border-line2 px-2.5 text-[12px] font-medium !text-tx hover:border-l-sky">
-                    Claude ↗
-                  </a>
-                  <a href="https://gemini.google.com/app" target="_blank" rel="noopener noreferrer" className="flex h-8 items-center rounded-lg border border-line2 px-2.5 text-[12px] font-medium !text-tx hover:border-l-sky">
-                    Gemini ↗
-                  </a>
-                </span>
-              </span>
-            </li>
-            <li className="flex gap-2.5">
-              <span className="grid size-6 shrink-0 place-items-center rounded-full bg-[#C3B5FF] text-[12px] font-semibold text-[#120B2A]">4</span>
-              <span className="text-tx2">
-                <b className="text-tx">Attach the file</b> with the paperclip or <b className="text-tx">+</b> button, paste the prompt (Ctrl+V, or hold and Paste on a phone) and send.
-              </span>
-            </li>
-            <li className="flex gap-2.5">
-              <span className="grid size-6 shrink-0 place-items-center rounded-full bg-[#C3B5FF] text-[12px] font-semibold text-[#120B2A]">5</span>
-              <span className="text-tx2">
-                <b className="text-tx">Bring the good bits back.</b> Copy the bullets you like into{" "}
-                <button type="button" onClick={onEdit} className="font-medium text-t-sky hover:text-tx">
-                  Edit this CV
-                </button>
-                , fill in any [X] with your real numbers, and check again here. Keep only what&apos;s true: you&apos;ll be asked about every line.
-              </span>
-            </li>
-          </ol>
-          <button
-            type="button"
-            onClick={() => {
-              navigator.clipboard?.writeText(tailorPrompt(A.lines, job.jd, job.title, job.company, R.issues.map((i) => i.title))).catch(() => {});
-              flash("Copied the prompt with your CV inside (no name or contact details). Paste it into Claude or Gemini.");
-            }}
-            className="cursor-pointer self-start text-[12px] font-medium text-tx3 hover:text-tx"
-          >
-            Can&apos;t attach files? Copy a version with your CV text inside instead
-          </button>
-        </div>
 
         <ApplyTips company={job.company} title={job.title} degree={me.degree} uni={me.uni} skills={A.matched.filter((k) => !SOFT.has(k))} />
       </div>
+    </div>
     </div>
   );
 }
@@ -1299,6 +1222,144 @@ function AiReviewCard({ job, lines }: { job: CvJob; lines: Line[] }) {
           <span className="text-[12px] text-tx3">AI can be wrong: keep only what&apos;s true about you.</span>
         </div>
       )}
+    </div>
+  );
+}
+
+/** Before anything: a big, plain invitation to look at the example CV first. */
+function ExampleBanner({ onOpen }: { onOpen: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onOpen}
+      className="flex w-full max-w-[820px] cursor-pointer flex-wrap items-center gap-4 rounded-2xl border-2 px-6 py-5 text-left text-tx"
+      style={{ borderColor: "#8FC7FF", background: "rgba(143,199,255,.1)" }}
+    >
+      <span className="text-[34px] leading-none">👀</span>
+      <span className="flex min-w-0 flex-1 flex-col gap-1">
+        <span className="text-[22px] font-semibold leading-tight sm:text-[26px]">Never made a CV? Look at this first</span>
+        <span className="text-[15px] text-tx2">A real-looking student CV with notes on every part. One minute, and you&apos;ll know what yours should look like.</span>
+      </span>
+      <span className="flex h-12 items-center rounded-xl bg-[#8FC7FF] px-6 text-[16px] font-semibold text-[#06111D]">Show me the example</span>
+    </button>
+  );
+}
+
+/** "Make it better with Claude": big steps, no download needed (the CV text goes in the prompt). */
+function PolishModal({ job, lines, fixes, onEdit, onClose }: { job: CvJob; lines: Line[]; fixes: string[]; onEdit: () => void; onClose: () => void }) {
+  const [copied, setCopied] = useState(false);
+  const [attach, setAttach] = useState(false);
+  const prompt = tailorPrompt(lines, job.jd, job.title, job.company, fixes);
+  useEffect(() => {
+    const esc = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    window.addEventListener("keydown", esc);
+    return () => window.removeEventListener("keydown", esc);
+  }, [onClose]);
+  const copy = (text: string) => {
+    navigator.clipboard?.writeText(text).catch(() => {});
+    setCopied(true);
+  };
+  const step = "grid size-10 shrink-0 place-items-center rounded-full bg-[#C3B5FF] text-[18px] font-bold text-[#120B2A]";
+  return (
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-[rgba(6,9,14,.82)] px-4 py-8 backdrop-blur-sm" onClick={onClose}>
+      <div className="mx-auto flex max-w-[620px] flex-col gap-6 rounded-3xl border border-line bg-s1 p-6 text-tx sm:p-8" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex flex-col gap-2">
+            <span className="text-[28px] font-semibold leading-tight sm:text-[32px]">Make your CV much better with Claude ✨</span>
+            <span className="text-[16px] text-tx2">Free. Takes 2 minutes. Claude rewrites your CV for this exact job.</span>
+          </div>
+          <button type="button" onClick={onClose} aria-label="Close" className="grid size-10 shrink-0 cursor-pointer place-items-center rounded-xl border border-line2 text-[20px] text-tx2 hover:text-tx">
+            ×
+          </button>
+        </div>
+
+        <div className="flex gap-4">
+          <span className={step}>1</span>
+          <div className="flex min-w-0 flex-1 flex-col gap-2.5">
+            <span className="text-[19px] font-semibold">Press this button</span>
+            <span className="text-[15px] text-tx2">It copies your CV and this job together (without your name, phone or email).</span>
+            <button
+              type="button"
+              onClick={() => copy(prompt)}
+              className="h-14 cursor-pointer rounded-2xl text-[18px] font-semibold"
+              style={copied ? { background: "#9FE6C8", color: "#06140E" } : { background: "#C3B5FF", color: "#120B2A" }}
+            >
+              {copied ? "Copied ✓" : "Copy my CV + this job"}
+            </button>
+          </div>
+        </div>
+
+        <div className="flex gap-4">
+          <span className={step}>2</span>
+          <div className="flex min-w-0 flex-1 flex-col gap-2.5">
+            <span className="text-[19px] font-semibold">Open Claude</span>
+            <span className="text-[15px] text-tx2">Sign in with Google if it asks. It&apos;s free.</span>
+            <div className="grid grid-cols-2 gap-2.5">
+              <a
+                href={encodeURIComponent(prompt).length < 6000 ? `https://claude.ai/new?q=${encodeURIComponent(prompt)}` : "https://claude.ai/new"}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => copy(prompt)}
+                className="flex h-14 items-center justify-center rounded-2xl bg-[#F5F8FC] text-[18px] font-semibold !text-[#120B2A]"
+              >
+                Open Claude ↗
+              </a>
+              <a
+                href="https://gemini.google.com/app"
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => copy(prompt)}
+                className="flex h-14 items-center justify-center rounded-2xl border-2 border-line2 text-[18px] font-semibold !text-tx"
+              >
+                or Gemini ↗
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex gap-4">
+          <span className={step}>3</span>
+          <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+            <span className="text-[19px] font-semibold">Paste and press send</span>
+            <span className="text-[15px] leading-normal text-tx2">
+              Click in the message box and press <b className="text-tx">Ctrl + V</b>. On a phone: hold your finger in the box and tap <b className="text-tx">Paste</b>. Then press
+              the send arrow. (If the box already has the text in it, just press send.)
+            </span>
+          </div>
+        </div>
+
+        <div className="flex gap-4">
+          <span className={step}>4</span>
+          <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+            <span className="text-[19px] font-semibold">Bring the good bits back</span>
+            <span className="text-[15px] leading-normal text-tx2">
+              Copy the new bullet points you like into your CV, and swap any <b className="text-tx">[X]</b> for your real number. Only keep what&apos;s true: they&apos;ll ask you
+              about every line in the interview.
+            </span>
+            <button type="button" onClick={onEdit} className="mt-1 h-12 cursor-pointer self-start rounded-xl border-2 border-line2 px-5 text-[16px] font-semibold text-tx hover:border-l-sky">
+              Edit my CV now
+            </button>
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-2 border-t border-line pt-4">
+          <button type="button" onClick={() => setAttach((a) => !a)} className="cursor-pointer self-start text-[14px] font-medium text-t-sky hover:text-tx">
+            {attach ? "Hide" : "Rather attach your CV file instead?"}
+          </button>
+          {attach && (
+            <span className="text-[14px] leading-normal text-tx2">
+              Download it (Word or PDF, on the check page), start a new chat, attach the file with the paperclip or +, then{" "}
+              <button type="button" onClick={() => copy(attachPrompt(job.jd, job.title, job.company, fixes))} className="font-medium text-t-sky hover:text-tx">
+                copy this shorter prompt
+              </button>{" "}
+              and paste it with the file.
+            </span>
+          )}
+          <button type="button" onClick={onClose} className="cursor-pointer self-start text-[14px] text-tx3 hover:text-tx">
+            Maybe later (it&apos;s always at the top of the check page)
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
