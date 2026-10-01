@@ -69,3 +69,34 @@ export async function addApplication(form: {
   revalidatePath("/calendar");
   return { ok: true };
 }
+
+/** Edit a row: stage, next step, due date (YYYY-MM-DD or empty), notes; hand-added rows can also rename. */
+export async function updateApplication(
+  id: string,
+  fields: { stage?: string; nextStep?: string; dueOn?: string; notes?: string; role?: string; company?: string },
+): Promise<{ ok: boolean }> {
+  if (fields.stage) {
+    const moved = await setStage(id, fields.stage);
+    if (!moved.ok) return moved;
+  }
+  const row: Record<string, unknown> = { last_update_at: new Date().toISOString() };
+  if (fields.nextStep !== undefined) row.next_step = fields.nextStep.trim().slice(0, 120) || null;
+  if (fields.dueOn !== undefined) row.due_on = /^\d{4}-\d{2}-\d{2}$/.test(fields.dueOn) ? fields.dueOn : null;
+  if (fields.notes !== undefined) row.notes = fields.notes.trim().slice(0, 2000) || null;
+  if (fields.role?.trim()) row.title = fields.role.trim().slice(0, 200);
+  if (fields.company?.trim()) row.company_name = fields.company.trim().slice(0, 120);
+  const supabase = await createClient();
+  const { error } = await supabase.from("applications").update(row).eq("id", id);
+  revalidatePath("/tracker");
+  revalidatePath("/calendar");
+  return { ok: !error };
+}
+
+export async function deleteApplication(id: string): Promise<{ ok: boolean }> {
+  const supabase = await createClient();
+  const { error } = await supabase.from("applications").delete().eq("id", id);
+  revalidatePath("/tracker");
+  revalidatePath("/calendar");
+  revalidatePath("/");
+  return { ok: !error };
+}

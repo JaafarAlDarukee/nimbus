@@ -1,9 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState, useTransition } from "react";
-import { addApplication, setStage } from "@/app/(app)/tracker/actions";
-import { STAGE_GROUPS, groupOf, nextStage } from "@/lib/tracker";
+import { useEffect, useRef, useState, useTransition } from "react";
+import { addApplication, deleteApplication, setStage, updateApplication } from "@/app/(app)/tracker/actions";
+import { STAGE_GROUPS, STAGE_OPTIONS, groupOf, stageLabel } from "@/lib/tracker";
 
 export type TrackerRow = {
   id: string;
@@ -20,6 +20,12 @@ export type TrackerRow = {
   urgent: boolean;
   fresh: boolean;
   ghosted: boolean;
+  nextStep: string | null;
+  dueOn: string | null;
+  notes: string | null;
+  url: string | null;
+  /** Added by hand (not from Opportunities): role and company can be edited */
+  manual: boolean;
 };
 
 const SERIF = "var(--font-newsreader), Georgia, serif";
@@ -33,12 +39,14 @@ export function TrackerView({ rows: serverRows }: { rows: TrackerRow[] }) {
   const [closed, setClosed] = useState<Record<string, boolean>>({ Closed: true });
   const [moved, setMoved] = useState<Record<string, string>>({});
   const [modal, setModal] = useState(false);
+  const [editing, setEditing] = useState<TrackerRow | null>(null);
 
   // Stage changes show at once; the server's copy replaces them when the page refreshes
   const rows = serverRows.map((r) => (moved[r.id] && moved[r.id] !== r.stage ? { ...r, stage: moved[r.id], group: groupOf(moved[r.id]).name } : r));
 
-  const cycle = async (r: TrackerRow) => {
-    const to = nextStage(r.stage);
+  // Pick any stage, like a Notion select
+  const move = async (r: TrackerRow, to: string) => {
+    if (to === r.stage) return;
     setMoved((m) => ({ ...m, [r.id]: to }));
     const result = await setStage(r.id, to);
     if (!result.ok) setMoved((m) => ({ ...m, [r.id]: r.stage }));
@@ -151,7 +159,14 @@ export function TrackerView({ rows: serverRows }: { rows: TrackerRow[] }) {
                         className="grid min-h-12 grid-cols-[minmax(0,2.2fr)_minmax(0,1.4fr)_128px_108px_84px_minmax(0,1.4fr)_104px] items-center border-b border-line text-sm hover:bg-s1"
                         style={r.fresh ? { background: "rgba(143,199,255,.06)" } : undefined}
                       >
-                        <div className="flex min-w-0 items-center gap-2.5 pl-1 pr-3">
+                        <div
+                          role="button"
+                          tabIndex={0}
+                          onClick={() => setEditing(r)}
+                          onKeyDown={(e) => e.key === "Enter" && setEditing(r)}
+                          title="Edit"
+                          className="flex min-w-0 cursor-pointer items-center gap-2.5 pl-1 pr-3"
+                        >
                           <span className="grid size-6 flex-none place-items-center rounded-md border border-line bg-s2 text-[13px]" style={{ fontFamily: SERIF }}>
                             {r.initial}
                           </span>
@@ -160,15 +175,7 @@ export function TrackerView({ rows: serverRows }: { rows: TrackerRow[] }) {
                         </div>
                         <span className="truncate border-l border-line px-3 leading-[48px] text-tx2">{r.company}</span>
                         <div className="flex h-12 items-center border-l border-line px-3">
-                          <button
-                            type="button"
-                            onClick={() => cycle(r)}
-                            title="Click to move to next stage"
-                            className="h-6 cursor-pointer whitespace-nowrap rounded-md px-[9px] text-[12px] font-medium"
-                            style={tag(groupOf(r.stage).tone)}
-                          >
-                            {r.group}
-                          </button>
+                          <StagePicker stage={r.stage} onPick={(to) => move(r, to)} />
                         </div>
                         <span className="whitespace-nowrap border-l border-line px-3 text-[13px] leading-[48px] text-tx2">{r.type}</span>
                         <span className="border-l border-line px-3 text-[12px] leading-[48px] text-tx3" style={{ fontFamily: MONO }}>
@@ -206,8 +213,8 @@ export function TrackerView({ rows: serverRows }: { rows: TrackerRow[] }) {
                   <button
                     key={r.id}
                     type="button"
-                    onClick={() => cycle(r)}
-                    title="Click to move to next stage"
+                    onClick={() => setEditing(r)}
+                    title="Edit"
                     className="flex cursor-pointer flex-col gap-1.5 rounded-[10px] border border-line bg-s1 p-3 text-left text-tx hover:bg-s2"
                   >
                     <span className="text-sm font-medium leading-[1.3]">{r.role}</span>
@@ -224,6 +231,7 @@ export function TrackerView({ rows: serverRows }: { rows: TrackerRow[] }) {
       )}
 
       {modal && <AddModal onClose={() => setModal(false)} />}
+      {editing && <EditModal row={editing} onClose={() => setEditing(null)} />}
     </main>
   );
 }
@@ -314,6 +322,211 @@ function AddModal({ onClose }: { onClose: () => void }) {
         >
           {pending ? "Adding…" : "Add to tracker"}
         </button>
+      </div>
+    </>
+  );
+}
+
+/** The stage tag: click it to choose any stage from a list (Notion-style). */
+function StagePicker({ stage, onPick }: { stage: string; onPick: (stage: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const box = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const close = (e: MouseEvent | KeyboardEvent) => {
+      if (e instanceof KeyboardEvent ? e.key === "Escape" : !box.current?.contains(e.target as Node)) setOpen(false);
+    };
+    window.addEventListener("mousedown", close);
+    window.addEventListener("keydown", close);
+    return () => {
+      window.removeEventListener("mousedown", close);
+      window.removeEventListener("keydown", close);
+    };
+  }, [open]);
+
+  return (
+    <div ref={box} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        title="Change stage"
+        className="flex h-6 cursor-pointer items-center gap-1 whitespace-nowrap rounded-md px-[9px] text-[12px] font-medium"
+        style={tag(groupOf(stage).tone)}
+      >
+        {stageLabel(stage)}
+        <svg width="8" height="8" viewBox="0 0 10 10" aria-hidden style={{ fill: "none", stroke: "currentColor", strokeWidth: 1.6, strokeLinecap: "round" }}>
+          <path d="m2 3.5 3 3 3-3" />
+        </svg>
+      </button>
+      {open && (
+        <div
+          role="listbox"
+          className="animate-pop-in absolute left-0 top-8 z-30 flex w-[210px] flex-col rounded-xl border border-line2 bg-s1 p-1.5"
+          style={{ boxShadow: "0 20px 50px -15px rgba(0,0,0,.7)" }}
+        >
+          {STAGE_OPTIONS.map((o, i) => {
+            const group = groupOf(o.stage);
+            const newGroup = i === 0 || groupOf(STAGE_OPTIONS[i - 1].stage).name !== group.name;
+            return (
+              <div key={o.stage}>
+                {newGroup && i > 0 && <div className="mx-1 my-1 h-px bg-line" />}
+                <button
+                  type="button"
+                  role="option"
+                  aria-selected={o.stage === stage}
+                  onClick={() => {
+                    onPick(o.stage);
+                    setOpen(false);
+                  }}
+                  className="flex w-full cursor-pointer items-center justify-between rounded-lg px-2 py-1.5 text-left hover:bg-s2"
+                >
+                  <span className="flex h-6 items-center rounded-md px-2 text-[12px] font-medium" style={tag(group.tone)}>
+                    {o.label}
+                  </span>
+                  {o.stage === stage && <span className="text-[12px] text-t-sky">✓</span>}
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** Click a row: change its stage, next step, due date and notes, or delete it. */
+function EditModal({ row, onClose }: { row: TrackerRow; onClose: () => void }) {
+  const [form, setForm] = useState({
+    stage: row.stage,
+    role: row.role,
+    company: row.company,
+    nextStep: row.nextStep ?? "",
+    dueOn: row.dueOn ?? "",
+    notes: row.notes ?? "",
+  });
+  const [pending, startTransition] = useTransition();
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  const save = () =>
+    startTransition(async () => {
+      const result = await updateApplication(row.id, {
+        stage: form.stage !== row.stage ? form.stage : undefined,
+        nextStep: form.nextStep,
+        dueOn: form.dueOn,
+        notes: form.notes,
+        ...(row.manual ? { role: form.role, company: form.company } : {}),
+      });
+      if (result.ok) onClose();
+      else setError("Couldn't save. Try again.");
+    });
+  const remove = () =>
+    startTransition(async () => {
+      if (!window.confirm("Remove this from your tracker?")) return;
+      const result = await deleteApplication(row.id);
+      if (result.ok) onClose();
+      else setError("Couldn't remove it. Try again.");
+    });
+
+  const input = "h-11 min-w-0 rounded-[10px] border border-line2 bg-bg px-3 text-sm text-tx outline-none focus:border-l-sky";
+  return (
+    <>
+      <div onClick={onClose} className="animate-scrim-in fixed inset-0 z-20" style={{ background: "rgba(4,6,9,.6)" }} />
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label={row.role}
+        className="animate-pop-in fixed left-1/2 top-1/2 z-[21] flex max-h-[calc(100vh-32px)] w-[520px] max-w-[calc(100%-32px)] -translate-x-1/2 -translate-y-1/2 flex-col gap-4 overflow-auto rounded-[18px] border border-line2 bg-s1 p-6"
+        style={{ boxShadow: "0 30px 80px -20px rgba(0,0,0,.6)" }}
+      >
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex min-w-0 flex-col gap-1">
+            <span className="text-[26px] leading-[1.1] tracking-[-.02em]" style={{ fontFamily: SERIF }}>
+              {row.role}
+            </span>
+            <span className="text-sm text-tx2">{row.company}</span>
+          </div>
+          <button type="button" onClick={onClose} aria-label="Close" className="size-9 flex-none cursor-pointer rounded-[9px] border border-line2 text-tx2">
+            ✕
+          </button>
+        </div>
+        {row.manual && (
+          <div className="grid gap-2.5 sm:grid-cols-2">
+            <label className="flex flex-col gap-1.5">
+              <span className="text-[13px] text-tx2">Role</span>
+              <input value={form.role} onChange={(e) => setForm((f) => ({ ...f, role: e.target.value }))} className={input} />
+            </label>
+            <label className="flex flex-col gap-1.5">
+              <span className="text-[13px] text-tx2">Company</span>
+              <input value={form.company} onChange={(e) => setForm((f) => ({ ...f, company: e.target.value }))} className={input} />
+            </label>
+          </div>
+        )}
+        <div className="flex flex-col gap-1.5">
+          <span className="text-[13px] text-tx2">Stage</span>
+          <div className="flex flex-wrap gap-1.5">
+            {STAGE_OPTIONS.map((o) => {
+              const on = form.stage === o.stage;
+              const tone = groupOf(o.stage).tone;
+              return (
+                <button
+                  key={o.stage}
+                  type="button"
+                  onClick={() => setForm((f) => ({ ...f, stage: o.stage }))}
+                  aria-pressed={on}
+                  className="h-8 cursor-pointer rounded-lg border px-2.5 text-[12px] font-medium"
+                  style={{ ...tag(tone), borderColor: on ? `var(--t-${tone})` : "var(--line2)", opacity: on ? 1 : 0.6 }}
+                >
+                  {o.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+        <div className="grid gap-2.5 sm:grid-cols-[1fr_170px]">
+          <label className="flex flex-col gap-1.5">
+            <span className="text-[13px] text-tx2">Next step</span>
+            <input value={form.nextStep} onChange={(e) => setForm((f) => ({ ...f, nextStep: e.target.value }))} placeholder="e.g. Numerical test, 60 min" className={input} />
+          </label>
+          <label className="flex flex-col gap-1.5">
+            <span className="text-[13px] text-tx2">Due</span>
+            <input type="date" value={form.dueOn} onChange={(e) => setForm((f) => ({ ...f, dueOn: e.target.value }))} className={input} style={{ fontFamily: MONO, colorScheme: "dark" }} />
+          </label>
+        </div>
+        <label className="flex flex-col gap-1.5">
+          <span className="text-[13px] text-tx2">Notes</span>
+          <textarea
+            value={form.notes}
+            onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
+            placeholder="Who you spoke to, interview questions, anything to remember"
+            className="min-h-[84px] resize-y rounded-[10px] border border-line2 bg-bg p-3 text-sm leading-normal text-tx outline-none focus:border-l-sky"
+          />
+        </label>
+        <span className="-mt-1 text-[12px] text-tx3">
+          Tip: an Online test or Interview with a due date shows on your Calendar, and you can get a Telegram reminder the day before.
+        </span>
+        {error && <span className="text-[13px] text-t-rose">{error}</span>}
+        <div className="flex flex-wrap items-center gap-2">
+          <button type="button" onClick={remove} disabled={pending} className="h-11 cursor-pointer rounded-xl border px-4 text-sm font-medium text-[#F6B4C1]" style={{ borderColor: "rgba(244,169,184,.5)" }}>
+            Remove
+          </button>
+          {row.url && (
+            <a href={row.url} target="_blank" rel="noopener noreferrer" className="flex h-11 items-center rounded-xl border border-line2 px-4 text-sm font-medium !text-tx2 hover:!text-tx">
+              Open the advert
+            </a>
+          )}
+          <button type="button" onClick={save} disabled={pending} className="ml-auto h-11 cursor-pointer rounded-xl bg-[#8FC7FF] px-6 text-[15px] font-semibold text-[#06111D] disabled:opacity-70">
+            {pending ? "Saving…" : "Save"}
+          </button>
+        </div>
       </div>
     </>
   );

@@ -12,7 +12,7 @@ import { DEFAULT_PREFERENCES } from "@/lib/preferences";
 const DAY = 86_400_000;
 export const CHECKED_AT = new Date(Date.now() - 4 * 60_000).toISOString();
 const row = (id: number, stage: string, group: string, role: string, company: string, type: string, applied: string, next: string, due: string, urgent = false, fresh = false): TrackerRow => ({
-  id: String(id), stage, group, role, company, initial: company[0], type, applied, next, due, dueAt: id * DAY, urgent, fresh, ghosted: next.startsWith("Ghosted"),
+  id: String(id), stage, group, role, company, initial: company[0], type, applied, next, due, dueAt: id * DAY, urgent, fresh, ghosted: next.startsWith("Ghosted"), nextStep: null, dueOn: null, notes: null, url: null, manual: false,
 });
 
 export const SAMPLES: Record<string, { path: string; render: () => React.ReactNode }> = {

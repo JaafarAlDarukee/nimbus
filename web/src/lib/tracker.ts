@@ -47,3 +47,22 @@ export function parseDue(text: string, now = new Date()): string | null {
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   return iso(thisYear < today ? new Date(now.getFullYear() + 1, month, day) : thisYear);
 }
+
+/** Every stage you can pick, in order, with its label (the tag colour comes from its group). */
+export const STAGE_OPTIONS: { stage: string; label: string }[] = [
+  { stage: "saved", label: "Saved" },
+  { stage: "speculative", label: "Speculative" },
+  { stage: "applied", label: "Applied" },
+  { stage: "online_test", label: "Online test" },
+  { stage: "video_interview", label: "Video interview" },
+  { stage: "interview", label: "Interview" },
+  { stage: "assessment_centre", label: "Assessment centre" },
+  { stage: "offer", label: "Offer" },
+  { stage: "accepted", label: "Accepted" },
+  { stage: "rejected", label: "Rejected" },
+  { stage: "ghosted", label: "Ghosted" },
+  { stage: "withdrawn", label: "Withdrawn" },
+  { stage: "declined", label: "Declined" },
+];
+
+export const stageLabel = (stage: string) => STAGE_OPTIONS.find((o) => o.stage === stage)?.label ?? groupOf(stage).name;

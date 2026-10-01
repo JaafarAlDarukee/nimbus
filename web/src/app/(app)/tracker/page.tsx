@@ -12,8 +12,9 @@ type Application = {
   next_follow_up_at: string | null;
   next_step: string | null;
   due_on: string | null;
+  notes: string | null;
   created_at: string;
-  opportunity: { title: string; company_name: string; kind: string; closes_at: string | null; status: string } | null;
+  opportunity: { title: string; company_name: string; kind: string; closes_at: string | null; status: string; apply_url: string } | null;
 };
 
 const DAY = 86_400_000;
@@ -28,7 +29,7 @@ async function loadRows(): Promise<TrackerRow[]> {
   const { data } = await supabase
     .from("applications")
     .select(
-      "id,stage,title,company_name,applied_at,next_follow_up_at,next_step,due_on,created_at,opportunity:opportunities(title,company_name,kind,closes_at,status)",
+      "id,stage,title,company_name,applied_at,next_follow_up_at,next_step,due_on,notes,created_at,opportunity:opportunities(title,company_name,kind,closes_at,status,apply_url)",
     )
     .order("created_at", { ascending: false });
 
@@ -88,6 +89,11 @@ async function loadRows(): Promise<TrackerRow[]> {
       urgent: group.name !== "Closed" && !!due && (deadline || dueSoon),
       fresh: now.getTime() - new Date(a.created_at).getTime() < DAY,
       ghosted: a.stage === "ghosted",
+      nextStep: a.next_step,
+      dueOn: a.due_on,
+      notes: a.notes,
+      url: a.opportunity?.apply_url ?? null,
+      manual: !a.opportunity,
     };
   });
 }
