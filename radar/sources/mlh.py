@@ -2,7 +2,8 @@
 robots.txt allows it). Each event card carries schema.org Event data: name, dates, place, country,
 online or in person, and the hackathon's own website.
 
-`ref` is unused (`hackathons`). Keeps online hackathons and ones in the UK, Ireland or Europe.
+`ref` is unused (`hackathons`). Keeps in-person hackathons in the UK, Europe, North America and the Middle
+East (MLH's online weeks are software-only). They go to engineering degrees.
 MLH seasons run August to July and are named after the year they end in."""
 
 from __future__ import annotations
@@ -13,8 +14,8 @@ from datetime import datetime, timezone
 
 from ..http import Fetcher
 from ..models import Board, RawJob
+from .event_tags import ENGINEERING_ONLY, REGIONS, engineering_tags
 
-NEAR = {"GB", "IE", "FR", "DE", "NL", "BE", "ES", "PT", "IT", "CH", "AT", "DK", "SE", "NO", "FI", "PL", "CZ"}
 EVENT = re.compile(r'itemType="https://schema.org/Event"')
 
 
@@ -46,7 +47,7 @@ def events_from(page: str) -> list[RawJob]:
             continue
         online = _prop(block, "eventAttendanceMode").endswith("OnlineEventAttendanceMode")
         country = _prop(block, "addressCountry") or None
-        if not online and country not in NEAR:
+        if online or country not in REGIONS:
             continue
         place = ", ".join(dict.fromkeys(p for p in (_prop(block, "addressLocality"), _prop(block, "addressRegion")) if p))
         starts, ends = _date(_prop(block, "startDate")), _date(_prop(block, "endDate"))
@@ -69,7 +70,7 @@ def events_from(page: str) -> list[RawJob]:
                 ) if p),
                 posted_at=None,
                 closes_at=ends or starts,
-                raw={"employment": "hackathon", "disciplines": []},
+                raw={"employment": "hackathon", "disciplines": engineering_tags(title) or ENGINEERING_ONLY + ["software"]},
             )
         )
     return jobs

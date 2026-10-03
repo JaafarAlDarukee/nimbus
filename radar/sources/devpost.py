@@ -1,7 +1,8 @@
 """Hackathons from Devpost's public listing (devpost.com/api/hackathons; robots.txt allows it).
 
-`ref` is unused (`hackathons`). Keeps online hackathons and ones in the UK, Ireland or Europe.
-Each becomes an event ("hackathon" hint), closing when submissions close."""
+`ref` is unused (`hackathons`). Keeps engineering and science hackathons (hardware, robotics, energy,
+space, medtech...; see event_tags.py) that are online or in the UK, Europe, North America or the Middle East.
+Each becomes an event ("hackathon" hint) for the degrees it suits, closing when submissions close."""
 
 from __future__ import annotations
 
@@ -12,9 +13,9 @@ from ..geo import guess_country
 from ..http import Fetcher
 from ..models import Board, RawJob
 from ..text import html_to_text
+from .event_tags import REGIONS, engineering_tags
 
 PAGES = {"priority": 2, "full": 8}
-NEAR = {"GB", "IE", "FR", "DE", "NL", "BE", "ES", "PT", "IT", "CH", "AT", "DK", "SE", "NO", "FI", "PL", "CZ"}
 
 
 def _end_date(dates: str) -> datetime | None:
@@ -39,9 +40,13 @@ async def fetch(board: Board, http: Fetcher, tier: str) -> list[RawJob]:
             where = (h.get("displayed_location") or {}).get("location") or ""
             online = where.strip().lower() == "online"
             country = None if online else guess_country(where)
-            if not online and country not in NEAR:
+            if not online and country not in REGIONS:
                 continue
             title = html_to_text(h.get("title"))
+            themes_text = " ".join(t.get("name", "") for t in h.get("themes") or [])
+            tags = engineering_tags(f"{title} {themes_text}")
+            if tags is None:  # AI-, web- or app-only: not for engineering and science students
+                continue
             if "hackathon" not in title.lower():
                 title = f"{title} (hackathon)"
             themes = ", ".join(t.get("name", "") for t in h.get("themes") or [])
@@ -58,7 +63,7 @@ async def fetch(board: Board, http: Fetcher, tier: str) -> list[RawJob]:
                     description=" · ".join(p for p in (f"Themes: {themes}" if themes else "", f"Prizes: {prize}" if prize else "",
                                                        f"Dates: {h.get('submission_period_dates', '')}") if p),
                     closes_at=_end_date(h.get("submission_period_dates", "")),
-                    raw={"employment": "hackathon", "disciplines": [], "registrations": h.get("registrations_count")},
+                    raw={"employment": "hackathon", "disciplines": tags, "registrations": h.get("registrations_count")},
                 )
             )
         if len(hackathons) < 9:
