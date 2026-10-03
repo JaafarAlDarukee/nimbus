@@ -67,3 +67,8 @@ Back to [[00 Start Here]] · code in `radar/`
 - `STAFF_ROLE` no longer matches bare "staff" (NHS Staff Nurse is entry level); only "staff engineer/scientist/developer/software/data/accountant/product".
 - Health tags: clinician, MSK, audiology, health screening, wellbeing, practitioner, therapist, mental health, CWP.
 - Workday science boards: found by POSTing likely site names to `/wday/cxs/{tenant}/{site}/jobs` (the tenant root returns 406, no redirect).
+
+## Changes 2026-10-03
+- Events are engineering-only: `sources/event_tags.py` (`engineering_tags`, `REGIONS` = UK, Europe, US/CA, Gulf). Devpost keeps only hackathons whose name/themes match; MLH keeps in-person events in REGIONS (online software weeks dropped), tagged for engineering + software.
+- `events.csv` now has 10 international events (Formnext, electronica, MEDICA, Hannover Messe, CES, SAE WCX, ASME IMECE, ADIPEC, GITEX, WHX Dubai). Abroad events only show to users who picked those regions in Profile.
+- Bright Network alerts arrive late because they're digest emails and its site blocks tools; owner told to set its email frequency to the most frequent.
