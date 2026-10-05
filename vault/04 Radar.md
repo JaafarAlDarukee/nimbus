@@ -72,3 +72,10 @@ Back to [[00 Start Here]] · code in `radar/`
 - Events are engineering-only: `sources/event_tags.py` (`engineering_tags`, `REGIONS` = UK, Europe, US/CA, Gulf). Devpost keeps only hackathons whose name/themes match; MLH keeps in-person events in REGIONS (online software weeks dropped), tagged for engineering + software.
 - `events.csv` now has 10 international events (Formnext, electronica, MEDICA, Hannover Messe, CES, SAE WCX, ASME IMECE, ADIPEC, GITEX, WHX Dubai). Abroad events only show to users who picked those regions in Profile.
 - Bright Network alerts arrive late because they're digest emails and its site blocks tools; owner told to set its email frequency to the most frequent.
+
+## Changes 2026-10-05 (computing)
+- `software` discipline now matches full-stack, front/back end, DevOps, cloud, SRE, web, mobile, iOS/Android, ML/AI/LLM/NLP, computer vision, technology graduate programmes, information security, test automation, games developer; description fallback counts python/java/javascript/typescript/react/kubernetes/aws/azure.
+- Shared channel (`notify/telegram.py` `is_engineering`): `software` added to the set; everything else unchanged.
+- Devpost: hackathons with no engineering/science theme are kept and tagged `["software"]` (computing degrees only).
+- Boards: probe found Cloudflare, Monzo, Graphcore, Wayve, Quantexa, Faculty, Synthesia, Sophos, Thoughtworks, dunnhumby, GoCardless, PolyAI, Dexory, Carbon Clean, Ashfield MedComms; Workday: Nvidia, Cisco, Mastercard, PayPal, Lloyds (lbg), NatWest (rbs), Citi, Morgan Stanley, Deutsche Bank, Kainos, Broadcom, Workday. Not found: Arm, BT, Capgemini, Dell, Goldman, HSBC, Sage, Siemens, Vodafone; big tech (Google, Microsoft, Amazon, Apple, Meta) use their own sites (not read yet).
+- Gotcha: `companies-data.ts` keys must be double-quoted, or `match.DIRECTORY` silently becomes empty (radar_checks now asserts it parses).

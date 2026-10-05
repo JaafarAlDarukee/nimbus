@@ -72,3 +72,6 @@ Back to [[00 Start Here]] · code in `web/` (Next.js 16.3, React 19, Tailwind 4,
 - Free AI review (`aiReview` server action, `AiReviewCard`): Gemini free tier, only when `GEMINI_API_KEY` is set (page passes `aiOn`); model from `GEMINI_MODEL`, else `gemini-flash-latest`, else `gemini-2.5-flash`. Sends the CV without name/contact. JSON reply: fit, verdict, strengths, fixes, rewrites, missing.
 - Jobs can be deleted (`deleteJob`, RLS-limited) and a new job can start from another job's CV (copied and tailored).
 - Keyword matching: acronyms in `CASED` only count in capitals (SPICE, SAP, CAM, PCR...).
+
+## Computing (2026-10-05)
+- `FIELDS`: Computing is live. Degrees: Computer Science, Software Engineering, Artificial Intelligence and Machine Learning, Data Science, Cyber Security, Computer Engineering, Information Technology, Games Development (notes + SUGGEST in `onboarding-data.ts`; `FIELD_EXTRAS.Computing`). Sector group "Computing and tech" (Big tech, Software and SaaS, AI and machine learning, Data and analytics, Cyber security, Fintech, Cloud and infrastructure, Gaming, Telecoms, Tech consultancy).
