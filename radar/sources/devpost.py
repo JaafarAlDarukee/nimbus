@@ -1,8 +1,9 @@
 """Hackathons from Devpost's public listing (devpost.com/api/hackathons; robots.txt allows it).
 
-`ref` is unused (`hackathons`). Keeps engineering and science hackathons (hardware, robotics, energy,
-space, medtech...; see event_tags.py) that are online or in the UK, Europe, North America or the Middle East.
-Each becomes an event ("hackathon" hint) for the degrees it suits, closing when submissions close."""
+`ref` is unused (`hackathons`). Keeps hackathons online or in the UK, Europe, North America or the Middle
+East. Engineering and science ones (hardware, robotics, energy, space, medtech...; see event_tags.py) go to
+those degrees, AI/web/app ones to computing degrees. Each becomes an event ("hackathon" hint) closing when
+submissions close."""
 
 from __future__ import annotations
 
@@ -44,9 +45,8 @@ async def fetch(board: Board, http: Fetcher, tier: str) -> list[RawJob]:
                 continue
             title = html_to_text(h.get("title"))
             themes_text = " ".join(t.get("name", "") for t in h.get("themes") or [])
-            tags = engineering_tags(f"{title} {themes_text}")
-            if tags is None:  # AI-, web- or app-only: not for engineering and science students
-                continue
+            # Engineering or science themes go to those degrees; AI, web and app hackathons to computing
+            tags = engineering_tags(f"{title} {themes_text}") or ["software"]
             if "hackathon" not in title.lower():
                 title = f"{title} (hackathon)"
             themes = ", ".join(t.get("name", "") for t in h.get("themes") or [])

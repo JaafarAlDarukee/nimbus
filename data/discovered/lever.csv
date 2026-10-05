@@ -31,6 +31,7 @@ Pnlfin,lever,pnlfin,standard,auto: 4 UK jobs of 78 when discovered
 Prima,lever,prima,standard,auto: 25 UK jobs of 94 when discovered
 Quantinuum,lever,quantinuum,standard,auto: 12 UK jobs of 126 when discovered
 Silverfin,lever,silverfin,standard,auto: 2 UK jobs of 8 when discovered
+Sophos,lever,sophos,standard,"probe: full-name board, 50+ jobs"
 Stellar,lever,stellar,standard,auto: 8 UK jobs of 8 when discovered
 Sunsrce,lever,sunsrce,standard,auto: 1 UK jobs of 282 when discovered
 Supercharge,lever,supercharge,standard,auto: 1 UK jobs of 10 when discovered

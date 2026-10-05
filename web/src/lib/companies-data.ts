@@ -2,8 +2,19 @@
  * The Companies directory: employers by industry, from the design handoff (nimbus-data.js).
  * Defence, Nuclear and Fusion industries and excluded employers (Airbus, BAE Systems, Boeing…) are
  * left out, as everywhere else in Nimbus. Each entry is "Name|Town".
+ * radar/match.py and radar/discover/probe.py read this object as JSON: keep every key in double quotes.
  */
 export const COMPANIES: Record<string, string[]> = {
+  "Big tech": ["Google|London", "Microsoft|Reading", "Amazon|London", "Meta|London", "Apple|London", "IBM|London", "Bloomberg|London", "Nvidia|Reading"],
+  "Software and SaaS": ["Sage|Newcastle", "Salesforce|London", "Oracle|Reading", "SAP UK|Feltham", "Autodesk|London", "Rightmove|Milton Keynes", "Auto Trader|Manchester", "Ocado Technology|Hatfield"],
+  "AI and machine learning": ["Google DeepMind|London", "Wayve|London", "Faculty|London", "Synthesia|London", "PolyAI|London", "Graphcore|Bristol", "Arm|Cambridge"],
+  "Data and analytics": ["Experian|Nottingham", "dunnhumby|London", "Quantexa|London", "Mastercard|London", "Office for National Statistics|Newport"],
+  "Cyber security": ["Darktrace|Cambridge", "NCC Group|Manchester", "Sophos|Abingdon", "BT Security|London"],
+  "Fintech": ["Revolut|London", "Monzo|London", "Wise|London", "Starling Bank|London", "Checkout.com|London", "GoCardless|London", "Zopa|London"],
+  "Cloud and infrastructure": ["Amazon Web Services|London", "Cloudflare|London", "Equinix|Slough", "Rackspace|Hayes"],
+  "Gaming": ["Rockstar North|Edinburgh", "Sumo Digital|Sheffield", "Frontier Developments|Cambridge", "Playground Games|Leamington Spa", "Ubisoft Reflections|Newcastle", "Jagex|Cambridge", "Codemasters|Southam"],
+  "Telecoms": ["BT|London", "Vodafone UK|Newbury", "Sky|London", "Virgin Media O2|London", "Three UK|Reading"],
+  "Tech consultancy": ["Accenture|London", "Capgemini|London", "Deloitte Digital|London", "IBM Consulting|London", "Kainos|Belfast", "BJSS|Leeds", "Thoughtworks|London"],
   "NHS hospitals": ["NHS England graduate schemes|England", "Guy’s and St Thomas’|London", "Manchester University NHS FT|Manchester", "Leeds Teaching Hospitals|Leeds", "Oxford University Hospitals|Oxford", "NHS Scotland|Edinburgh", "NHS Wales|Cardiff"],
   "Clinical research": ["IQVIA|Reading", "ICON|Reading", "Parexel|Uxbridge", "Labcorp|Harrogate", "Syneos Health|Farnborough", "Quotient Sciences|Nottingham"],
   "Community pharmacy": ["Boots|Nottingham", "Well Pharmacy|Manchester", "Superdrug|Croydon", "Rowlands Pharmacy|Runcorn"],

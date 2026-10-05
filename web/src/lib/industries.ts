@@ -37,6 +37,15 @@ const WORDS: Record<string, RegExp> = {
   "Water and wastewater": /\b(water|wastewater)\b/i,
   Semiconductors: /\b(semiconductors?|chip design|wafer|foundry)\b/i,
   "Electronics and hardware": /\b(electronics|hardware|pcb)\b/i,
+  "Software and SaaS": /\b(saas|software)\b/i,
+  "AI and machine learning": /\b(machine learning|artificial intelligence|ai|ml|deep learning|llms?|nlp|computer vision)\b/i,
+  "Data and analytics": /\b(data (science|scientist|engineer\w*|analyst|analytics)|analytics)\b/i,
+  "Cyber security": /\b(cyber|infosec|information security|penetration test\w*|soc analyst)\b/i,
+  Fintech: /\b(fintech|payments?|neobank|banking app)\b/i,
+  "Cloud and infrastructure": /\b(cloud|aws|azure|gcp|devops|kubernetes|site reliability|data cent(er|re)s?)\b/i,
+  Gaming: /\b(games?|gaming|video games?)\b/i,
+  Telecoms: /\b(telecom\w*|5g|mobile networks?|broadband)\b/i,
+  "Tech consultancy": /\b(technology consult\w*|digital consult\w*|it consult\w*)\b/i,
 };
 
 const DIRECTORY = Object.fromEntries(

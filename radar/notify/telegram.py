@@ -13,10 +13,10 @@ import httpx
 MAX_MESSAGES_PER_RUN = 25
 ALERT_COUNTRIES = {"GB", "IE"}
 
-# The shared channel is for engineering-type roles. Everything else is still saved (for the
-# website and friends' own filters later), it just doesn't ping the channel.
+# The shared channel is for engineering-type and computing roles. Everything else is still saved
+# (for the website and friends' own filters), it just doesn't ping the channel.
 ENGINEERING = {"mechanical", "manufacturing", "robotics", "electrical", "aerospace", "automotive",
-               "materials", "civil", "chemical"}
+               "materials", "civil", "chemical", "software"}
 TECHNICAL_TITLE = re.compile(
     r"\b(engineer\w*|technical|technician|design|manufactur\w*|production|quality|maintenance|"
     r"r&d|research|scien\w+|lab\w*|mechanic\w*|robot\w*|automation|energy|sustainab\w+|environment\w*)\b",

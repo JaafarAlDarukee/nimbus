@@ -10,7 +10,7 @@ export const FIELDS: FieldOption[] = [
   { label: "Engineering", soon: false, d: "Mechanical, civil, electrical, aerospace, biomedical and more" },
   { label: "Science", soon: false, d: "Biomedical science, biochemistry, marine biology and more" },
   { label: "Medical and health", soon: false, d: "Medicine, pharmacy, nursing, allied health" },
-  { label: "Computing", soon: true, d: "" },
+  { label: "Computing", soon: false, d: "Computer science, software, AI and machine learning, data, cyber" },
   { label: "Business", soon: true, d: "" },
 ];
 
@@ -25,6 +25,10 @@ export const DEGREES_BY_FIELD: Record<string, string[]> = {
     "Genetics", "Neuroscience", "Pharmacology", "Biotechnology", "Zoology", "Ecology and Conservation",
     "Environmental Science", "Oceanography", "Geology and Earth Sciences", "Forensic Science",
     "Food Science and Nutrition", "Materials Science", "Mathematics", "Sport and Exercise Science", "Psychology",
+  ],
+  Computing: [
+    "Computer Science", "Software Engineering", "Artificial Intelligence and Machine Learning", "Data Science",
+    "Cyber Security", "Computer Engineering", "Information Technology", "Games Development",
   ],
   "Medical and health": [
     "Medicine", "Pharmacy", "Nursing", "Midwifery", "Dentistry", "Physiotherapy", "Paramedic Science", "Radiography",
@@ -47,6 +51,14 @@ export const DEGREE_NOTES: Record<string, string> = {
   "Materials Engineering": "Metals, polymers, composites and testing",
   "General Engineering": "Roles across every engineering discipline",
   "Biomedical Science": "Lab medicine, diagnostics, pathology and research",
+  "Computer Science": "Software, AI, data, systems: the lot",
+  "Software Engineering": "Building and shipping software: web, backend, mobile, cloud",
+  "Artificial Intelligence and Machine Learning": "ML engineering, research, LLMs, computer vision",
+  "Data Science": "Data analysis, data engineering, statistics and ML",
+  "Cyber Security": "Security analysis, pen testing, security engineering",
+  "Computer Engineering": "Hardware and software together: embedded, chips, systems",
+  "Information Technology": "IT, support, networks, cloud and tech consultancy",
+  "Games Development": "Game programming, engines, tools and design",
   Biochemistry: "Molecular biology, pharma R&D and biotech",
   "Marine Biology": "Oceans, fisheries, aquaculture and conservation",
   Medicine: "Clinical attachments, research and summer schools",
@@ -68,10 +80,19 @@ export const SECTOR_GROUPS: { g: string; items: string[] }[] = [
   { g: "Clinical and healthcare", items: ["NHS hospitals", "Private healthcare", "Clinical research", "Public health", "Community pharmacy", "Mental health services", "Dental practices", "Veterinary", "Medical communications", "Health tech"] },
   { g: "Science and research", items: ["Research institutes", "Genomics", "Neuroscience research", "Analytical labs", "Forensics", "Food science", "Cosmetics and personal care", "Chemicals", "Science communication", "Museums and botanic gardens"] },
   { g: "Marine and environment", items: ["Marine conservation", "Aquaculture and fisheries", "Oceanography", "Ecology and wildlife", "Environmental consultancy", "Zoos and aquariums", "Offshore survey"] },
+  { g: "Computing and tech", items: ["Big tech", "Software and SaaS", "AI and machine learning", "Data and analytics", "Cyber security", "Fintech", "Cloud and infrastructure", "Gaming", "Telecoms", "Tech consultancy"] },
   { g: "Other paths", items: ["Engineering consultancy", "R&D labs", "Climate tech", "Agritech", "Sports equipment", "Audio and music tech", "Gaming hardware", "Startups", "Public sector", "Academia and research", "Patents and IP", "Technical sales", "Quant and finance"] },
 ];
 
 export const SUGGEST: Record<string, string[]> = {
+  "Computer Science": ["Big tech", "Software and SaaS", "AI and machine learning", "Fintech", "Cloud and infrastructure", "Gaming", "Tech consultancy"],
+  "Software Engineering": ["Software and SaaS", "Big tech", "Fintech", "Cloud and infrastructure", "Gaming", "Tech consultancy"],
+  "Artificial Intelligence and Machine Learning": ["AI and machine learning", "Big tech", "Data and analytics", "Health tech", "Autonomous vehicles", "Robotics"],
+  "Data Science": ["Data and analytics", "AI and machine learning", "Fintech", "Quant and finance", "Big tech", "Health tech"],
+  "Cyber Security": ["Cyber security", "Telecoms", "Tech consultancy", "Big tech", "Fintech"],
+  "Computer Engineering": ["Semiconductors", "Electronics and hardware", "Cloud and infrastructure", "Big tech", "Robotics"],
+  "Information Technology": ["Tech consultancy", "Telecoms", "Cloud and infrastructure", "Software and SaaS", "Public sector"],
+  "Games Development": ["Gaming", "Software and SaaS", "Big tech"],
   "Mechanical Engineering": ["Motorsport", "Automotive", "Civil aerospace", "Robotics", "Consumer products", "Industrial automation", "Wind and solar", "Rail", "Engineering consultancy"],
   "Biomedical Engineering": ["Medtech and devices", "Surgical robotics", "Prosthetics and orthotics", "Pharmaceuticals", "Biotech", "Diagnostics", "NHS and clinical engineering"],
   "Chemical Engineering": ["Pharmaceuticals", "Oil and gas", "Hydrogen", "Food and drink manufacturing", "Carbon capture", "Water and wastewater", "Consumer products"],
@@ -158,4 +179,5 @@ export const FIELD_EXTRAS: Record<string, string[]> = {
   Engineering: ["Engineering consultancy", "R&D labs"],
   Science: ["Research institutes", "Analytical labs"],
   "Medical and health": ["NHS hospitals", "Clinical research"],
+  Computing: ["Startups", "Quant and finance"],
 };

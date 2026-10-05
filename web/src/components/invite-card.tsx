@@ -5,7 +5,7 @@ import { useState } from "react";
 /** Admin: a ready-to-send invite for friends, and what happens after they tap the link. */
 export function InviteCard({ site }: { site: string }) {
   const [copied, setCopied] = useState(false);
-  const message = `Made something for us 🫵 Nimbus finds engineering and science placements, internships and grad jobs the moment they open, and pings you on Telegram. It also checks your CV for each job.
+  const message = `Made something for us 🫵 Nimbus finds engineering, science and computing placements, internships and grad jobs the moment they open, and pings you on Telegram. It also checks your CV for each job.
 
 1. Open ${site}
 2. Type your email, tap "Email me a login link", then "Request access"

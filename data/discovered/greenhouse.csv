@@ -95,7 +95,7 @@ Artefact,greenhouse,artefact,standard,auto: 9 UK jobs of 137 when discovered
 ARX Robotics GmbH,greenhouse,arxroboticsgmbh,standard,auto: 7 UK jobs of 58 when discovered
 Asana,greenhouse,asana,standard,auto: 2 UK jobs of 97 when discovered
 Ascend Healthcare,greenhouse,ascendhealthcare,standard,auto: 1 UK jobs of 39 when discovered
-Ashfield MedComms,greenhouse,ashfieldmedcomms,standard,auto: 2 UK jobs of 10 when discovered
+Ashfield MedComms,greenhouse,ashfieldmedcomms,standard,"probe: name confirmed, 10 jobs"
 Ashley Digital,greenhouse,residenthome,standard,auto: 1 UK jobs of 10 when discovered
 ASI Government,greenhouse,asigovernment,standard,auto: 2 UK jobs of 22 when discovered
 AssemblyAI,greenhouse,assemblyai,standard,auto: 1 UK jobs of 10 when discovered
@@ -244,6 +244,7 @@ Clearway Energy,greenhouse,clearwayjobs,standard,auto: 1 UK jobs of 53 when disc
 ClinChoice,greenhouse,clinchoice,standard,auto: 3 UK jobs of 41 when discovered
 Clockwork.io,greenhouse,clockworksystems,standard,auto: 1 UK jobs of 10 when discovered
 Cloudbeds,greenhouse,cloudbeds,standard,auto: 1 UK jobs of 34 when discovered
+Cloudflare,greenhouse,cloudflare,standard,"probe: name confirmed, 413 jobs"
 CMTelematics,greenhouse,cmt,standard,auto: 2 UK jobs of 2 when discovered
 "Coalition, Inc.",greenhouse,coalition,standard,auto: 3 UK jobs of 42 when discovered
 Cockroach Labs,greenhouse,cockroachlabs,standard,auto: 2 UK jobs of 19 when discovered
@@ -336,7 +337,7 @@ Design Bridge and Partners,greenhouse,designbridge,standard,auto: 12 UK jobs of 
 Dev Talent Network,greenhouse,devfuturetalent,standard,auto: 3 UK jobs of 8 when discovered
 Dev Technology,greenhouse,devtechnology,standard,auto: 1 UK jobs of 28 when discovered
 DevRev,greenhouse,devrev,standard,auto: 2 UK jobs of 52 when discovered
-Dexory,greenhouse,dexory,standard,auto: 7 UK jobs of 26 when discovered
+Dexory,greenhouse,dexory,standard,"probe: name confirmed, 26 jobs"
 Dialpad,greenhouse,dialpad,standard,auto: 3 UK jobs of 60 when discovered
 DICE,greenhouse,dicefm-careers,standard,auto: 1 UK jobs of 10 when discovered
 DigiCert,greenhouse,digicert,standard,auto: 2 UK jobs of 53 when discovered
@@ -368,7 +369,7 @@ Dropzone AI,greenhouse,dropzoneai,standard,auto: 1 UK jobs of 11 when discovered
 DRW,greenhouse,drweng,standard,auto: 40 UK jobs of 170 when discovered
 Dscout,greenhouse,dscout,standard,auto: 1 UK jobs of 10 when discovered
 Duetto Research,greenhouse,duettoresearch,standard,auto: 7 UK jobs of 16 when discovered
-Dunnhumby,greenhouse,dunnhumby,standard,auto: 6 UK jobs of 26 when discovered
+Dunnhumby,greenhouse,dunnhumby,standard,"probe: name confirmed, 41 jobs"
 Duolingo,greenhouse,duolingo,standard,auto: 2 UK jobs of 59 when discovered
 DV Trading,greenhouse,dvtrading,standard,auto: 18 UK jobs of 75 when discovered
 Dwelly,greenhouse,dwelly,standard,auto: 19 UK jobs of 24 when discovered
@@ -515,7 +516,7 @@ Global Energy Alliance for People and Planet (Global Energy Alliance) LLC,greenh
 Globalli,greenhouse,globalli,standard,auto: 2 UK jobs of 14 when discovered
 Glossier,greenhouse,glossier,standard,auto: 3 UK jobs of 27 when discovered
 GO Tutor Corps,greenhouse,gotutorcorps,standard,auto: 1 UK jobs of 5 when discovered
-GoCardless,greenhouse,gocardless,standard,auto: 8 UK jobs of 25 when discovered
+GoCardless,greenhouse,gocardless,standard,"probe: name confirmed, 25 jobs"
 GoDaddy,greenhouse,godaddy,standard,auto: 1 UK jobs of 38 when discovered
 Gong.io,greenhouse,gongio,standard,auto: 1 UK jobs of 98 when discovered
 Goodfire,greenhouse,goodfire,standard,auto: 1 UK jobs of 27 when discovered
@@ -526,7 +527,7 @@ Gradial,greenhouse,gradial,standard,auto: 1 UK jobs of 9 when discovered
 Grafana Labs,greenhouse,grafanalabs,standard,auto: 11 UK jobs of 121 when discovered
 "Graham Capital Management, L.P.",greenhouse,grahamcapitalmanagement,standard,auto: 5 UK jobs of 10 when discovered
 Gram Games,greenhouse,gramgamescareers,standard,auto: 4 UK jobs of 4 when discovered
-Graphcore,greenhouse,graphcore,standard,auto: 86 UK jobs of 178 when discovered
+Graphcore,greenhouse,graphcore,standard,"probe: name confirmed, 177 jobs"
 Grassi,greenhouse,grassi,standard,auto: 17 UK jobs of 49 when discovered
 Great State,greenhouse,greatstate,standard,auto: 2 UK jobs of 2 when discovered
 Green Thumb,greenhouse,greenthumbindustries,standard,auto: 5 UK jobs of 211 when discovered
@@ -794,7 +795,7 @@ MongoDB,greenhouse,mongodb,standard,auto: 11 UK jobs of 390 when discovered
 Moniepoint,greenhouse,moniepoint,standard,auto: 14 UK jobs of 150 when discovered
 Monks,greenhouse,monks,standard,auto: 3 UK jobs of 383 when discovered
 Monumental Sports & Entertainment,greenhouse,monumentalsports,standard,auto: 29 UK jobs of 46 when discovered
-Monzo,greenhouse,monzo,standard,auto: 56 UK jobs of 71 when discovered
+Monzo,greenhouse,monzo,standard,"probe: name confirmed, 69 jobs"
 "Morgan & Morgan, P.A.",greenhouse,morganmorganjobsapplynow,standard,auto: 15 UK jobs of 435 when discovered
 Motive,greenhouse,gomotive,standard,auto: 2 UK jobs of 150 when discovered
 Movable Ink,greenhouse,movableink,standard,auto: 3 UK jobs of 37 when discovered
@@ -930,6 +931,7 @@ PLS,greenhouse,plscareers,standard,auto: 6 UK jobs of 778 when discovered
 PMG,greenhouse,pmg,standard,auto: 3 UK jobs of 79 when discovered
 PMG UK,greenhouse,pmguk,standard,auto: 3 UK jobs of 3 when discovered
 Point72,greenhouse,point72,standard,auto: 24 UK jobs of 212 when discovered
+PolyAI,greenhouse,polyai,standard,"probe: name confirmed, 3 jobs"
 Polygon US,greenhouse,polygonus,standard,auto: 1 UK jobs of 7 when discovered
 Power Digital,greenhouse,powerdigitalmarketing,standard,auto: 1 UK jobs of 250 when discovered
 POWERX,greenhouse,powerx,standard,auto: 4 UK jobs of 89 when discovered
@@ -1187,7 +1189,7 @@ think-cell Software,greenhouse,thinkcellsoftware,standard,auto: 2 UK jobs of 27 
 ThinkMarkets,greenhouse,thinkmarkets,standard,auto: 3 UK jobs of 7 when discovered
 Third Bridge,greenhouse,thirdbridge,standard,auto: 46 UK jobs of 130 when discovered
 Third-Party Job Posts,greenhouse,cloudbedsthirdpartyboard,standard,auto: 8 UK jobs of 75 when discovered
-Thoughtworks,greenhouse,thoughtworks,standard,auto: 5 UK jobs of 36 when discovered
+Thoughtworks,greenhouse,thoughtworks,standard,"probe: name confirmed, 37 jobs"
 Threecolts,greenhouse,threecolts,standard,auto: 6 UK jobs of 10 when discovered
 ThriveCart,greenhouse,thrivecart,standard,auto: 2 UK jobs of 8 when discovered
 Tines,greenhouse,tines,standard,auto: 1 UK jobs of 26 when discovered

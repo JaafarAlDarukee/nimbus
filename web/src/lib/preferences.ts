@@ -77,6 +77,14 @@ export const DEGREE_DISCIPLINES: Record<string, string[]> = {
   "Mathematics": ["software", "business"],
   "Sport and Exercise Science": ["healthcare", "life_sciences"],
   "Psychology": ["healthcare"],
+  "Computer Science": ["software"],
+  "Software Engineering": ["software"],
+  "Artificial Intelligence and Machine Learning": ["software"],
+  "Data Science": ["software"],
+  "Cyber Security": ["software"],
+  "Computer Engineering": ["software", "electrical"],
+  "Information Technology": ["software"],
+  "Games Development": ["software"],
   "Medicine": ["healthcare", "life_sciences"],
   "Pharmacy": ["healthcare", "life_sciences"],
   "Nursing": ["healthcare"],
@@ -100,6 +108,7 @@ export const FIELD_DISCIPLINES: Record<string, string[]> = {
   "Engineering": ["mechanical", "manufacturing", "robotics", "aerospace", "automotive", "materials", "electrical", "chemical", "civil"],
   "Science": ["life_sciences", "environmental", "chemical", "biomedical"],
   "Medical and health": ["healthcare", "biomedical", "life_sciences"],
+  "Computing": ["software"],
 };
 
 function disciplinesFor(p: Pick<Preferences, "degrees" | "field">): string[] {

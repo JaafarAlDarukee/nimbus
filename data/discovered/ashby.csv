@@ -200,7 +200,7 @@ Exa,ashby,exa,standard,auto: 2 UK jobs of 57 when discovered
 Expa,ashby,expa,standard,auto: 1 UK jobs of 15 when discovered
 Extrac Ai,ashby,extrac.ai,standard,auto: 7 UK jobs of 8 when discovered
 Factory,ashby,factory,standard,auto: 1 UK jobs of 52 when discovered
-Faculty,ashby,faculty,standard,auto: 77 UK jobs of 77 when discovered
+Faculty,ashby,faculty,standard,"probe: full-name board, 77 jobs"
 Fanvue Com,ashby,fanvue.com,standard,auto: 10 UK jobs of 10 when discovered
 Fence Finance,ashby,fence-finance,standard,auto: 1 UK jobs of 5 when discovered
 Fieldguide,ashby,fieldguide,standard,auto: 1 UK jobs of 46 when discovered
@@ -484,6 +484,7 @@ Promise,ashby,Promise,standard,auto: 4 UK jobs of 11 when discovered
 Pryzm,ashby,pryzm,standard,auto: 2 UK jobs of 6 when discovered
 Pylon Labs,ashby,pylon-labs,standard,auto: 1 UK jobs of 20 when discovered
 Quantcast,ashby,quantcast,standard,auto: 4 UK jobs of 18 when discovered
+Quantexa,ashby,quantexa,standard,"probe: full-name board, 35 jobs"
 Quantum,ashby,quantum,standard,auto: 15 UK jobs of 15 when discovered
 Quartermaster,ashby,quartermaster,standard,auto: 1 UK jobs of 16 when discovered
 Qumulo,ashby,qumulo,standard,auto: 2 UK jobs of 25 when discovered
@@ -597,7 +598,7 @@ Supercell,ashby,supercell,standard,auto: 4 UK jobs of 34 when discovered
 Swap,ashby,swap,standard,auto: 9 UK jobs of 10 when discovered
 Sylvera,ashby,sylvera,standard,auto: 2 UK jobs of 5 when discovered
 Symbiotic,ashby,symbiotic,standard,auto: 1 UK jobs of 3 when discovered
-Synthesia,ashby,Synthesia,standard,auto: 29 UK jobs of 49 when discovered
+Synthesia,ashby,synthesia,standard,"probe: full-name board, 48 jobs"
 Taktile,ashby,taktile,standard,auto: 4 UK jobs of 38 when discovered
 Talkiatry,ashby,talkiatry,standard,auto: 7 UK jobs of 183 when discovered
 Talos Trading,ashby,Talos-Trading,standard,auto: 6 UK jobs of 18 when discovered
@@ -668,7 +669,7 @@ Voleon,ashby,voleon,standard,auto: 9 UK jobs of 56 when discovered
 Volta,ashby,volta,standard,auto: 15 UK jobs of 51 when discovered
 Watershed,ashby,Watershed,standard,auto: 9 UK jobs of 37 when discovered
 Wayflyer,ashby,wayflyer,standard,auto: 3 UK jobs of 19 when discovered
-Wayve,ashby,wayve,standard,auto: 31 UK jobs of 68 when discovered
+Wayve,ashby,wayve,standard,"probe: full-name board, 130 jobs"
 Wearebeyondsports,ashby,wearebeyondsports,standard,auto: 2 UK jobs of 34 when discovered
 Whitecircle,ashby,whitecircle,standard,auto: 1 UK jobs of 21 when discovered
 Whoop,ashby,whoop,standard,auto: 1 UK jobs of 154 when discovered

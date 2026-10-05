@@ -90,8 +90,11 @@ DISCIPLINES: dict[str, re.Pattern] = {
     "chemical": _rx(r"\bchemical\b", r"\bchemistry\b"),
     "nuclear": _rx(r"\bnuclear\b", r"\bfusion\b"),
     "software": _rx(
-        r"\bsoftware\b", r"\bdata\b", r"\bcomputer science\b", r"\bdeveloper\b", r"\bcyber\b", r"\bmachine learning\b",
-        r"\b(ai|ml)\b",
+        r"\bsoftware\b", r"\bdata\b", r"\bcomputer science\b", r"\bcomputing\b", r"\bdeveloper\b", r"\bprogrammer\b", r"\bcyber\b",
+        r"\bmachine learning\b", r"\bdeep learning\b", r"\b(ai|ml|llms?|nlp)\b", r"\bcomputer vision\b", r"\bdevops\b",
+        r"\bfull[- ]?stack\b", r"\bfront[- ]?end\b", r"\bback[- ]?end\b", r"\bcloud\b", r"\bsite reliability\b", r"\bsre\b",
+        r"\bweb\b", r"\bmobile\b", r"\bios\b", r"\bandroid\b", r"\bplatform engineer", r"\btechnology (graduate|analyst|programme|intern)",
+        r"\binformation security\b", r"\btest automation\b", r"\bgames? (developer|programmer)\b",
     ),
     # Science and health, for students outside engineering (Biomedical Science, Medicine, Marine Biology...)
     "biomedical": _rx(
@@ -147,7 +150,10 @@ DESCRIPTION_DISCIPLINES: dict[str, re.Pattern] = {
     "materials": _rx(r"\bmaterials (science|engineering|engineer|scientist)\b", r"\bmetallurg", r"\bcomposites\b"),
     "civil": _rx(r"\bcivil engineering\b", r"\bstructural engineering\b"),
     "chemical": _rx(r"\bchemical engineering\b", r"\bprocess chemistry\b"),
-    "software": _rx(r"\bsoftware engineering\b", r"\bsoftware developer\b", r"\bcomputer science\b"),
+    "software": _rx(
+        r"\bsoftware engineering\b", r"\bsoftware developer\b", r"\bcomputer science\b", r"\bmachine learning\b",
+        r"\b(python|java|javascript|typescript|react|kubernetes|aws|azure)\b",
+    ),
     "biomedical": _rx(r"\bbiomedical (engineering|science)\b", r"\bmedical devices?\b"),
     "life_sciences": _rx(
         r"\b(biology|biochemistry|biotechnology|microbiology|molecular biology|cell biology|pharmacology|life sciences|"

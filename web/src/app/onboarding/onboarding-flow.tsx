@@ -20,7 +20,7 @@ import { cn } from "@/lib/utils";
 
 const STEPS = [
   { key: "name", label: "Name", title: "First, what should we call you?", sub: "Your name goes on your CVs and cover letters. You can change it later in Profile." },
-  { key: "field", label: "Field", title: "Start with your field.", sub: "Engineering is fully covered today. Science and medical roles are being added; computing and business are on the way." },
+  { key: "field", label: "Field", title: "Start with your field.", sub: "Engineering, science, medical and computing are covered. Business is on the way." },
   { key: "deg", label: "Degree", title: "Which degree are you on?", sub: "Pick every one that fits. Joint honours count. Add yours if it is not listed." },
   { key: "year", label: "Year", title: "Where are you in your course?", sub: "Spring weeks, placements and grad schemes open to different years, so this filters a lot." },
   { key: "sec", label: "Industries", title: "Which industries pull you in?", sub: "The starred set is common for your degree. Pick as many as you like, or leave it empty to hear about all of them." },

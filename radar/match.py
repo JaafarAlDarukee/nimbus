@@ -89,6 +89,15 @@ INDUSTRY_WORDS = {
     "Water and wastewater": r"\b(water|wastewater)\b",
     "Semiconductors": r"\b(semiconductors?|chip design|wafer|foundry)\b",
     "Electronics and hardware": r"\b(electronics|hardware|pcb)\b",
+    "Software and SaaS": r"\b(saas|software)\b",
+    "AI and machine learning": r"\b(machine learning|artificial intelligence|ai|ml|deep learning|llms?|nlp|computer vision)\b",
+    "Data and analytics": r"\b(data (science|scientist|engineer\w*|analyst|analytics)|analytics)\b",
+    "Cyber security": r"\b(cyber|infosec|information security|penetration test\w*|soc analyst)\b",
+    "Fintech": r"\b(fintech|payments?|neobank|banking app)\b",
+    "Cloud and infrastructure": r"\b(cloud|aws|azure|gcp|devops|kubernetes|site reliability|data cent(er|re)s?)\b",
+    "Gaming": r"\b(games?|gaming|video games?)\b",
+    "Telecoms": r"\b(telecom\w*|5g|mobile networks?|broadband)\b",
+    "Tech consultancy": r"\b(technology consult\w*|digital consult\w*|it consult\w*)\b",
 }
 
 _NOISE = re.compile(r"\b(the|uk|u\.k\.|ltd|limited|plc|llp|inc|group|holdings|gmbh|co|company)\b")
