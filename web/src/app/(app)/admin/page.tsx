@@ -4,7 +4,7 @@ import { InviteCard } from "@/components/invite-card";
 import { createClient } from "@/lib/supabase/server";
 import { timeAgo } from "@/lib/time";
 import { PRICE, accessState, timeLeft } from "@/lib/access";
-import { decide, saveSettings, setPaid } from "./actions";
+import { decide, saveSettings, setChannelField, setPaid } from "./actions";
 
 type Member = {
   id: string;
@@ -50,11 +50,13 @@ export default async function AdminPage(props: PageProps<"/admin">) {
       return acc;
     }, {}),
   );
-  const [{ data: memberRows }, { data: paymentRows }, { data: settingRows }] = await Promise.all([
+  const [{ data: memberRows }, { data: paymentRows }, { data: settingRows }, { data: channelRows }] = await Promise.all([
     supabase.rpc("admin_members"),
     supabase.from("payments").select("amount_pence"),
     supabase.from("app_settings").select("key,value"),
+    supabase.from("telegram_channels").select("chat_id,title,field").order("added_at"),
   ]);
+  const channels = (channelRows ?? []) as { chat_id: string; title: string; field: string | null }[];
   const members = (memberRows ?? []) as Member[];
   const setting = (key: string) => (settingRows ?? []).find((r) => r.key === key)?.value ?? "";
   const earned = (paymentRows ?? []).reduce((sum, p) => sum + (p.amount_pence as number), 0) / 100;
@@ -129,6 +131,32 @@ export default async function AdminPage(props: PageProps<"/admin">) {
         </label>
         <button className="h-10 self-start rounded-[10px] bg-sky px-4 text-sm font-medium text-on-sky hover:brightness-105">Save</button>
       </form>
+
+      <h2 className="mb-3 mt-10 text-xs font-semibold uppercase tracking-[0.08em] text-tx3">Your Telegram field channels</h2>
+      <div className="flex flex-col gap-3 rounded-2xl border border-line bg-s1 p-5">
+        <p className="m-0 text-sm leading-relaxed text-tx2">
+          Make a private channel in Telegram, then add <span className="font-mono">@NimbusRadarBot</span> as an admin who can post. It
+          appears here within seconds (and the bot messages you). Pick its field: it gets every new UK and Ireland role in that field.
+          Your main channel keeps getting everything.
+        </p>
+        {channels.map((c) => (
+          <form key={c.chat_id} action={setChannelField} className="flex flex-wrap items-center gap-3 border-t border-line pt-3">
+            <input type="hidden" name="chat_id" value={c.chat_id} />
+            <span className="min-w-0 flex-1 truncate text-[15px] font-medium">{c.title}</span>
+            <select name="field" defaultValue={c.field ?? ""} className="h-10 rounded-[10px] border border-line2 bg-bg px-3 text-sm text-tx">
+              <option value="">Not used</option>
+              <option value="engineering">Engineering</option>
+              <option value="medical">Medical &amp; health</option>
+              <option value="business">Business</option>
+              <option value="computing">Computing</option>
+              <option value="science">Science</option>
+              <option value="creative">Creative</option>
+            </select>
+            <button className="h-10 rounded-[10px] bg-sky px-4 text-sm font-medium text-on-sky hover:brightness-105">Save</button>
+          </form>
+        ))}
+        {channels.length === 0 && <p className="m-0 text-sm text-tx3">No channels yet.</p>}
+      </div>
 
       <h2 className="mb-3 mt-10 text-xs font-semibold uppercase tracking-[0.08em] text-tx3">Members ({members.length})</h2>
       <div className="rounded-2xl border border-line bg-s1">

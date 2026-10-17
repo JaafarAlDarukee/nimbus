@@ -203,6 +203,20 @@ def main() -> None:
     many = [{**jlr, "id": str(i), "title": f"Graduate Engineer {i} " + "x" * 60, "apply_url": "https://example.com/" + "y" * 120} for i in range(100)]
     packed = role_lists("🌍 <b>100 new roles abroad</b>", many)
     check("channel lists keep every role and fit Telegram", sum(m.count("\n• ") for m in packed) == 100 and all(len(m) <= LIST_CHARS for m in packed), str([len(m) for m in packed]))
+    from .notify.telegram import fields_for
+    check("embedded software goes to engineering and computing", fields_for({"disciplines": ["electrical", "software"]}) == {"engineering", "computing"})
+    check("nursing goes to medical only", fields_for({"disciplines": ["healthcare"]}) == {"medical"})
+    check("chemistry goes to engineering and science", fields_for({"disciplines": ["chemical"]}) == {"engineering", "science"})
+    check("no subject: main channel only", fields_for({"disciplines": []}) == set())
+    from .notify import telegram as tg
+    delivered: list[str] = []
+    real_send, real_pause = tg._send, tg.PAUSE
+    tg._send, tg.PAUSE = (lambda client, token, chat, text, url=None: delivered.append(chat) or True), 0
+    try:
+        count = tg._deliver(None, "t", {"main": [("a", None)] * 3, "eng": [("b", None)] * 2, "empty": []})
+    finally:
+        tg._send, tg.PAUSE = real_send, real_pause
+    check("every channel's messages delivered, taking turns", count == 5 and delivered.count("main") == 3 and delivered[:2] in (["main", "eng"], ["eng", "main"]), str(delivered))
     check("muted employers stay muted", not wanted({**channel_rows[3], "company_name": "Muted Co"}, {**mech, "muted": ["Muted Co"]}, fm))
     check("apprenticeships reach a mechanical student", m.is_match({**jlr, "kind": "apprenticeship", "title": "Engineering Apprentice", "disciplines": ["engineering"]}, mech, fm))
     msg = format_match({**jlr, "posted_at": None, "first_seen_at": "2026-10-17T09:00:00+00:00"}, ["Mechanical in the title"])

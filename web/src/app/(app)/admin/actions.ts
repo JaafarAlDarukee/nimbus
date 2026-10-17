@@ -41,6 +41,18 @@ export async function decide(formData: FormData) {
   redirect(`/admin?notice=${encodeURIComponent(notice)}`);
 }
 
+/** The field one of the owner's Telegram channels posts (or none: it stays quiet). */
+export async function setChannelField(formData: FormData) {
+  const supabase = await createClient();
+  const field = String(formData.get("field") ?? "");
+  const { error } = await supabase
+    .from("telegram_channels")
+    .update({ field: field || null })
+    .eq("chat_id", String(formData.get("chat_id")));
+  revalidatePath("/admin");
+  redirect(`/admin?notice=${encodeURIComponent(error ? "Couldn't save that channel." : "Channel saved.")}`);
+}
+
 /** Mark someone as paid (cash, a friend) or undo it. The database checks the caller is an admin. */
 export async function setPaid(formData: FormData) {
   const supabase = await createClient();

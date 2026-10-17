@@ -161,6 +161,27 @@ async function onButton(cb: any) {
 }
 
 const escape = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+const SITE = (Deno.env.get("NIMBUS_SITE_URL") ?? "https://nimbus-pi-three.vercel.app").replace(/\/$/, "");
+
+/** The bot was made an admin of a channel (or removed). Only channels the owner adds count: the
+ *  person who added it must be a Nimbus admin connected to this bot. Admin then picks its field. */
+async function onChannelMember(update: any) {
+  if (update.chat?.type !== "channel") return;
+  const userId = await userForChat(update.from?.id);
+  if (!userId) return;
+  const { data: profile } = await db.from("profiles").select("is_admin").eq("id", userId).maybeSingle();
+  if (!profile?.is_admin) return;
+  const chatId = String(update.chat.id);
+  const title = String(update.chat.title ?? "Channel");
+  const status = update.new_chat_member?.status;
+  if (status === "administrator") {
+    await db.from("telegram_channels").upsert({ chat_id: chatId, title }, { onConflict: "chat_id" });
+    await say(update.from.id, `✅ Nimbus can post in <b>${escape(title)}</b>. Pick its field on Admin: ${SITE}/admin`);
+  } else if (status === "left" || status === "kicked" || status === "member") {
+    await db.from("telegram_channels").delete().eq("chat_id", chatId);
+    await say(update.from.id, `Nimbus will no longer post in <b>${escape(title)}</b>.`);
+  }
+}
 
 Deno.serve(async (req) => {
   if (!TOKEN || req.headers.get("x-telegram-bot-api-secret-token") !== (await webhookSecret())) {
@@ -170,6 +191,7 @@ Deno.serve(async (req) => {
   try {
     if (update.message) await onMessage(update.message);
     else if (update.callback_query) await onButton(update.callback_query);
+    else if (update.my_chat_member) await onChannelMember(update.my_chat_member);
   } catch (e) {
     console.error("update failed:", e instanceof Error ? e.name : "unknown");
   }

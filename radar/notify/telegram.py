@@ -1,6 +1,8 @@
 """The main Telegram channel (TELEGRAM_CHAT_ID): the owner's own, with EVERY new role the radar finds, no
 filter (owner, 17 Oct: "I want to see everything posting in that", and it shows the radar is working).
 UK and Ireland roles get a message each; the rest, and anything past MAX_SINGLE_PER_RUN, come as lists.
+The owner's field channels (Engineering, Medical & health, Business, Computing, Science, Creative,
+registered by the bot and given a field on Admin) get every new UK and Ireland role whose subjects fit.
 Personal bots (notify/personal.py) are the filtered version for each user."""
 
 from __future__ import annotations
@@ -20,6 +22,18 @@ ALERT_COUNTRIES = {"GB", "IE"}
 PAUSE = 3.1
 # A message can hold 4,096 characters; lists stop a little before
 LIST_CHARS = 3800
+# Which subjects go to which of the owner's field channels (a role can go to several)
+FIELD_TAGS = {
+    "engineering": {"engineering", "mechanical", "manufacturing", "robotics", "electrical", "aerospace", "automotive",
+                    "materials", "civil", "chemical"},
+    "medical": {"healthcare", "biomedical"},
+    "business": {"business"},
+    "computing": {"software"},
+    "science": {"science", "life_sciences", "environmental", "chemical", "biomedical"},
+    "creative": {"creative"},
+}
+FIELD_NAMES = {"engineering": "engineering", "medical": "medical and health", "business": "business", "computing": "computing",
+               "science": "science", "creative": "creative"}
 
 # Engineering, computing and science roles. The channel no longer filters by this (it posts everything);
 # personal bots give engineering students every UK and Ireland role it covers (personal.py `wanted`).
@@ -114,6 +128,46 @@ def role_lists(heading: str, rows: list[dict]) -> list[str]:
     return messages
 
 
+def fields_for(row: dict) -> set[str]:
+    """The owner's field channels a role belongs in, from its subjects."""
+    tags = set(row.get("disciplines") or [])
+    return {field for field, wanted in FIELD_TAGS.items() if tags & wanted}
+
+
+def _field_channels() -> dict[str, str]:
+    """chat id -> field, for the owner's channels that have a field (none if the database can't be reached)."""
+    try:
+        from ..store import _fetch_all, client
+        with client() as db:
+            return {c["chat_id"]: c["field"] for c in _fetch_all(db, "/telegram_channels", {"select": "chat_id,field", "field": "not.is.null"})}
+    except Exception as error:  # the main channel still posts
+        print(f"Telegram: couldn't load the field channels ({type(error).__name__})")
+        return {}
+
+
+def _messages(rows: list[dict], more_heading: str) -> list[tuple[str, str | None]]:
+    """One message per role up to MAX_SINGLE_PER_RUN, then lists, so none are dropped."""
+    singles, rest = rows[:MAX_SINGLE_PER_RUN], rows[MAX_SINGLE_PER_RUN:]
+    return [(format_alert(r), r.get("apply_url")) for r in singles] + [(t, None) for t in role_lists(more_heading.format(n=len(rest)), rest)]
+
+
+def _deliver(client: httpx.Client, token: str, outbox: dict[str, list[tuple[str, str | None]]]) -> int:
+    """Send every channel's messages, taking turns so each channel keeps to Telegram's pace (PAUSE) without
+    the others waiting behind it."""
+    queues = {chat: list(messages) for chat, messages in outbox.items() if messages}
+    ready = dict.fromkeys(queues, 0.0)
+    sent = 0
+    while queues:
+        chat = min(queues, key=lambda c: ready[c])
+        time.sleep(max(0.05, ready[chat] - time.monotonic()))
+        text, url = queues[chat].pop(0)
+        sent += _send(client, token, chat, text, url)
+        ready[chat] = time.monotonic() + PAUSE
+        if not queues[chat]:
+            del queues[chat]
+    return sent
+
+
 def send_new(rows: list[dict], first_run: bool, total_tracked: int) -> None:
     """Every new role, no filter: UK and Ireland one by one (up to MAX_SINGLE_PER_RUN), the rest as lists."""
     token = os.environ.get("TELEGRAM_BOT_TOKEN")
@@ -131,14 +185,12 @@ def send_new(rows: list[dict], first_run: bool, total_tracked: int) -> None:
 
         home = [r for r in rows if r.get("country") in ALERT_COUNTRIES]
         abroad = [r for r in rows if r.get("country") not in ALERT_COUNTRIES]
-        singles, rest = home[:MAX_SINGLE_PER_RUN], home[MAX_SINGLE_PER_RUN:]
-        sent = 0
-        for row in singles:
-            sent += _send(client, token, chat_id, format_alert(row), row.get("apply_url"))
-            time.sleep(PAUSE)
-        lists = role_lists(f"📋 <b>{len(rest)} more new roles in the UK and Ireland</b>", rest) + role_lists(
-            f"🌍 <b>{len(abroad)} new roles abroad</b>", abroad)
-        for text in lists:
-            sent += _send(client, token, chat_id, text)
-            time.sleep(PAUSE)
-    print(f"Telegram channel: {sent} messages for {len(rows)} new roles ({len(home)} UK and Ireland, {len(abroad)} abroad)")
+        outbox = {chat_id: _messages(home, "📋 <b>{n} more new roles in the UK and Ireland</b>")
+                  + [(t, None) for t in role_lists(f"🌍 <b>{len(abroad)} new roles abroad</b>", abroad)]}
+        for channel, field in _field_channels().items():
+            if channel != chat_id:
+                fits = [r for r in home if field in fields_for(r)]
+                outbox[channel] = _messages(fits, f"📋 <b>{{n}} more new {FIELD_NAMES[field]} roles</b>")
+        sent = _deliver(client, token, outbox)
+    print(f"Telegram channels: {sent} messages for {len(rows)} new roles ({len(home)} UK and Ireland, {len(abroad)} abroad; "
+          f"{len(outbox) - 1} field channels)")
