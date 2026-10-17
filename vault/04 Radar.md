@@ -109,3 +109,10 @@ Back to [[00 Start Here]] · code in `radar/`
 - `run.py`: personal alerts (`send_welcome`, `send_matches`) now go **before** `send_new`, so the channel's longer posting never delays them.
 - `is_engineering` stays: it's the "engineering radar" that personal `wanted()` adds for engineering students.
 - Volume last 7 days: priority runs 1,548 new, full runs 5,540 (biggest single run 2,599); ~1,740 UK/IE and ~4,100 abroad posted within a week.
+
+## Field channels (17 Oct)
+- Table `telegram_channels(chat_id, title, field, added_at)` (migration `20261017030000_field_channels.sql`, admins only via `public.is_admin()`). Chat IDs live only in the database.
+- Bot (`supabase/functions/telegram`, `onChannelMember`): on `my_chat_member` for a channel, if the person who added it is a Nimbus admin connected to the bot, status administrator → upsert + DM "pick its field on Admin"; left/kicked/member → delete + DM. Webhook `allowed_updates` now includes `my_chat_member` (workflow "Telegram bot webhook", re-run 17 Oct).
+- Admin page: "Your Telegram field channels" with a field select per channel (`setChannelField`).
+- `notify/telegram.py`: `FIELD_TAGS` (engineering = all engineering tags incl. chemical; medical = healthcare, biomedical; business; computing = software; science = science, life_sciences, environmental, chemical, biomedical; creative), `fields_for(row)` (a role can go to several; no subject → main channel only). `send_new` builds an outbox per channel (main: everything; field: UK/IE roles that fit; 60 single messages then lists) and `_deliver` sends round-robin with a per-channel `PAUSE` (3.1 s) so channels don't wait for each other.
+- Weekly UK/IE volumes (last week): engineering ~550, business ~350, medical ~145, computing ~110, science ~75, creative ~18; no subject ~520 (main channel only).

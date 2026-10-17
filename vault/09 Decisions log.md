@@ -58,3 +58,5 @@ No Airbus, BAE Systems, Boeing, or any nuclear / weapons / defence company or ro
 
 ## 2026-10-17 (latest) · Main channel
 - **Main channel = every new role, no filter**, owner only (replaces "engineering-type UK roles only" from 29 Sep). UK/IE one message each, the rest as lists. **Personal bots are the filtered version.**
+
+- **2026-10-17 · Field channels**: the owner's own private channels per field (Engineering, Medical & health, Business, Computing, Science, Creative), everything instantly, UK & Ireland only; main everything-channel kept. Computing (software, data, cyber, AI) is its own field; a role that is both (embedded software) goes to both channels.
