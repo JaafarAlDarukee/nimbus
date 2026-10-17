@@ -17,6 +17,9 @@ Live site: **https://nimbus-pi-three.vercel.app** (open sign-ups: 2 days free, t
 - **Users (17 Oct):** 5 website accounts (owner included), 3 finished sign-up, 2 on personal Telegram alerts; 5 people in the channel.
 - **Checks:** `python -m radar.checks` (158 pass) and `cd web && npx tsx scripts/checks.ts` (156 pass). Run both after any change to matching, tagging, readers or CV logic.
 
+## Main channel = everything, no filter (17 Oct, latest)
+The owner's channel ("Children of Khan" branding) now posts **every new role the radar finds** (all subjects, types and countries), to show the radar is working; it's for the owner only. UK and Ireland roles one message each (up to 60 a check), the rest as lists (~15 roles a message, linked). ~7,000 new roles a week (~1,740 UK/IE, ~4,100 abroad). **Personal bots stay filtered** (their matches + every UK/IE engineering, computing and science role for engineering students) and are sent **before** the channel. See [[04 Radar#Main channel posts everything (17 Oct, latest)]].
+
 ## Done 17 Oct, late: the bot gets everything the channel posts, + improvements
 - **Personal bot ⊇ main channel** for engineering students: computing and science roles, Ireland, untagged technical titles (last week that was 158 roles the bot had missed). For you also shows computing and science for engineers.
 - **Trial reminder** on Telegram ~12 h before a free trial ends (once).

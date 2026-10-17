@@ -55,3 +55,6 @@ No Airbus, BAE Systems, Boeing, or any nuclear / weapons / defence company or ro
 ## 2026-10-17 (late)
 - **The personal bot never has less than the main channel** (owner) for engineering students.
 - Claude chose and published: trial-ending reminder, Privacy/Terms (refunds within 14 days, owner can change), app icon. The owner asked for suggestions to be made and published.
+
+## 2026-10-17 (latest) · Main channel
+- **Main channel = every new role, no filter**, owner only (replaces "engineering-type UK roles only" from 29 Sep). UK/IE one message each, the rest as lists. **Personal bots are the filtered version.**
