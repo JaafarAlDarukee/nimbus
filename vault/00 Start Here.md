@@ -2,7 +2,7 @@
 
 Nimbus is a private job radar for UK students, built by the owner (a 2nd-year mechanical engineering student, first time coding) for themselves and their classmates ("Children of Khan"). It watches thousands of employers' own careers pages plus job-site alert emails, finds placements / internships / grad schemes / events the moment they open, and alerts people on Telegram. It also has a tracker, calendar, companies directory and a CV studio with a checker. **It never applies or messages employers for anyone.**
 
-Live site: **https://nimbus-pi-three.vercel.app** (invite by approval) · Repo: `JaafarAlDarukee/nimbus` (**public**: never commit personal data) · Bot: **@NimbusRadarBot** · Channel: **Nimbus Alerts**
+Live site: **https://nimbus-pi-three.vercel.app** (open sign-ups: 2 days free, then **£5 once** for lifetime access) · Repo: `JaafarAlDarukee/nimbus` (**public**: never commit personal data) · Bot: **@NimbusRadarBot** · Channel: **Nimbus Alerts**
 
 ## If you are Claude starting a new session
 1. Read [[12 Working with the user]] first: how to talk to the owner, and their standing rules (incl. **update this vault before starting and after finishing every task**).
@@ -14,14 +14,23 @@ Live site: **https://nimbus-pi-three.vercel.app** (invite by approval) · Repo: 
 
 ## State on 17 Oct 2026
 - **Everything is live and healthy.** Radar: priority run every 30 min, full run every 6 h (Supabase pg_cron → GitHub Actions). ~24,000 open roles, newest within minutes. Website on Vercel (auto-deploys from `main`). Telegram: shared channel + personal alerts per user.
-- **Users:** only the owner (two accounts: their main one and a second test account). Friends were invited but didn't sign up; owner is now thinking of charging classmates a **one-time £3** (see [[13 Ideas backlog#Paid version (owner, 17 Oct)]]).
-- **Checks:** `python -m radar.checks` (124 pass) and `cd web && npx tsx scripts/checks.ts` (136 pass). Run both after any change to matching, tagging, readers or CV logic.
+- **Users (17 Oct):** 5 website accounts (owner included), 3 finished sign-up, 2 on personal Telegram alerts; 5 people in the channel.
+- **Checks:** `python -m radar.checks` (129 pass) and `cd web && npx tsx scripts/checks.ts` (144 pass). Run both after any change to matching, tagging, readers or CV logic.
 
-## IN PROGRESS (17 Oct): going paid and public
-Plan approved by the owner (full text in [[13 Ideas backlog#Paid version (owner, 17 Oct)]] and the session log): **Phase 1 money** (open sign-ups, 2-day free trial limited to 5 jobs and 2 CVs, then **£5 one-off** via a **Stripe** payment link shown as "NIMBUS"; webhook unlocks; Admin members + settings; sign-up questions "applications planned" and "how did you hear"); **Phase 2 public website** (landing with animations, privacy/terms, app icons, free commercial hosting); **Phase 3 ads** (Remotion motion graphics, posters, daily "opened today" story, growth plan). Owner stays anonymous as "Nimbus".
+## Going paid and public (plan approved 17 Oct)
+Owner stays anonymous as "Nimbus". Full plan in [[13 Ideas backlog#Paid version (owner, 17 Oct)]].
+- **Phase 1 money: built and live (17 Oct).** Open sign-ups; 2-day free trial with 5 jobs, 2 CVs and 5 personal Telegram alerts; then `/pay` (**£5 once** via a Stripe Payment Link); the `stripe-webhook` Edge Function unlocks the account; Admin shows money, members (Mark paid) and the payment links. Details: [[06 Website#Paid access (17 Oct)]], [[05 Database#Paid access (17 Oct)]]. **Waiting on the owner's Stripe setup** (open item 1). Until the Stripe link is pasted on Admin, `/pay` says "Payments open very soon".
+- **Phase 2 public website** (next): landing with animations, privacy/terms, app icons, hosting that allows selling. Anonymity gap to raise with the owner: the public GitHub repo's account name shows their real name (options: a new brand GitHub account, or a private repo, which loses unlimited Actions minutes).
+- **Phase 3 ads**: Remotion motion graphics, posters, daily "opened today" story, growth plan.
 
 ## Open items (in order)
-1. **Paid access (waiting on the owner):** offered to show the owner's payment link on the "Request sent" screen and add a **Paid** tick on Admin. Owner must send their Monzo/PayPal link first (keep it out of the repo: use a Vercel env var). Owner to make the Telegram channel **private with join requests** (steps in [[Sessions/2026-10-01 to 17#17 Oct]]).
+1. **Owner's Stripe setup** (Claude guides click by click; the owner types every detail and key):
+   1. Create a **Stripe** account. Public business name and statement descriptor: **NIMBUS**. Support email: a brand email without the owner's name (make a new "Nimbus" Gmail if needed).
+   2. Product **"Nimbus lifetime access"**, £5, one-off. Create a **Payment Link**; after payment, redirect to `https://nimbus-pi-three.vercel.app/pay?paid=1`.
+   3. Developers → Webhooks → add endpoint `https://rwcpwqhjmhsxtslamudm.supabase.co/functions/v1/stripe-webhook`, event `checkout.session.completed` (and `checkout.session.async_payment_succeeded`). Copy its **signing secret** into Supabase → Edge Functions → Secrets as `STRIPE_WEBHOOK_SECRET`.
+   4. Paste the Payment Link and the private channel's invite link on **Admin → Payment links**.
+   5. Telegram: make **Nimbus Alerts** private with "Request admin approval" invite link; remove people who haven't paid.
+   6. Test in Stripe **test mode** first (a test account, test card), then switch the link to live.
 2. **Coverage gaps:** Haleon, Reckitt, Johnson Matthey, Takeda, Lilly, Boston Scientific, Novo Nordisk, Charles River, Arm, BT, HSBC, Vodafone, Sage, Dell, Goldman (no obvious Workday board); Google, Microsoft, Amazon, Apple, Meta (own career sites, not read yet).
 3. **Owner actions suggested, not confirmed:** Bright Network email frequency → most frequent; Profile → add Europe/USA/Canada/UAE to see abroad events.
 4. Ideas in [[13 Ideas backlog]] (learned keywords per role type, Recruitee/Teamtailor readers, hidden opportunities, digests…).

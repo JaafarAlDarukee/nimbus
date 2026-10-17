@@ -11,18 +11,19 @@ Back to [[00 Start Here]] · updated 2026-10-17 · full history in [[Sessions/20
 - Telegram: shared **Nimbus Alerts** channel (UK/IE engineering + computing roles); **personal alerts** per linked user (For you rules), welcome matches, deadline reminders, follow-up nudges.
 
 **Website** ([[06 Website]]) at nimbus-pi-three.vercel.app
-- Landing ("Welcome to Children of Khan, boy 🫵"), invite by approval, onboarding (4 fields: Engineering, Science, Medical and health, Computing; 50+ degrees), Opportunities (For you / All, drawer with LinkedIn people to find), Tracker, Calendar, Companies (by field/degree, routes for blocked employers), Profile, Admin (requests, invite card, company suggestions).
+- Landing ("Welcome to Children of Khan, boy 🫵"), **open sign-ups with a 2-day free trial** (5 jobs, 2 CVs, 5 Telegram alerts), **/pay** (£5 once via Stripe), onboarding (4 fields: Engineering, Science, Medical and health, Computing; 50+ degrees), Opportunities (For you / All, drawer with LinkedIn people to find), Tracker, Calendar, Companies (by field/degree, routes for blocked employers), Profile, Admin (money, members with Mark paid, payment links, invite card, company suggestions, old access requests).
 - CV studio: r/EngineeringResumes template, ATS checker, read advert from a link, Use my CV (one-click tailoring), example CV, Claude pop-up, LinkedIn tips, downloads (PDF/Word/Google Doc).
 
 **Email**: Supabase sends sign-up emails through the Nimbus Gmail as "Children of Khan".
 
 ## Users
-Only the owner so far (main + test account). Friends invited, none joined.
+17 Oct: 5 website accounts (owner included), 3 finished sign-up, 2 on personal alerts; 5 people in the channel. Nobody has paid yet (Stripe not set up).
 
 ## Next ⏭️
-1. Paid access for classmates (one-time £3): payment link on the request screen + Paid tick on Admin, once the owner sends their link. Channel private with join requests (owner).
-2. Coverage gaps: Haleon, Reckitt, Johnson Matthey, Takeda, Lilly, Boston Scientific, Novo Nordisk, Charles River, Arm, BT, HSBC, Vodafone, Sage, Dell, Goldman; big tech own sites (Google, Microsoft, Amazon, Apple, Meta).
-3. See [[13 Ideas backlog]].
+1. Owner sets up Stripe (steps in [[00 Start Here#Open items (in order)]]), then a test-mode payment end to end.
+2. Phase 2: public website (landing with animations, privacy/terms, app icons, hosting that allows selling). Phase 3: ads and social media.
+3. Coverage gaps: Haleon, Reckitt, Johnson Matthey, Takeda, Lilly, Boston Scientific, Novo Nordisk, Charles River, Arm, BT, HSBC, Vodafone, Sage, Dell, Goldman; big tech own sites (Google, Microsoft, Amazon, Apple, Meta).
+4. See [[13 Ideas backlog]].
 
 ## Numbers (17 Oct)
 - ~24,000 open roles; ~1,845 new UK roles per week (about a third apprenticeships/grad jobs).

@@ -24,8 +24,9 @@ $env:Path = [Environment]::GetEnvironmentVariable('Path','Machine') + ';' + [Env
 - Design reference server: `preview_start design` → http://localhost:8765.
 
 ## Checks (run after any change to matching, tags, readers or CV logic)
-- Radar rules: `.venv/Scripts/python.exe -m radar.checks` (no network/DB; 124 checks on 17 Oct).
-- Website logic: `cd web && npx tsx scripts/checks.ts` (136 checks on 17 Oct).
+- Radar rules: `.venv/Scripts/python.exe -m radar.checks` (no network/DB; 129 checks on 17 Oct).
+- Website logic: `cd web && npx tsx scripts/checks.ts` (144 checks on 17 Oct).
+- Edge Functions: `npx supabase functions deploy telegram --use-api --no-verify-jwt`, same for `stripe-webhook`.
 - Website build: `cd web && npx tsc --noEmit && npx eslint src && npm run build`.
 - Live site smoke: `/login` 200; `/`, `/tracker`, `/admin`… redirect (307) to `/login`; `/auth/preview/*` 404 in production.
 - Radar health: `gh run list --limit 40`; a single failed run is usually a passing Supabase error (now retried).

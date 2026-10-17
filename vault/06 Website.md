@@ -7,12 +7,13 @@ Back to [[00 Start Here]] · code in `web/` (Next.js 16.3, React 19, Tailwind 4,
 ## Routes
 | Route | File | Status |
 |---|---|---|
-| `/login` (Landing) | `src/app/login/page.tsx`, `login-form.tsx` | ✅ design-matched; request access flow |
+| `/login` (Landing) | `src/app/login/page.tsx`, `login-form.tsx` | ✅ design-matched; open sign-up by email link |
+| `/pay` | `src/app/pay/page.tsx` (data) + `components/pay-view.tsx` (look) | ✅ trial / trial ended / paid (channel invite) / "payment received" |
 | `/auth/callback` | `src/app/auth/callback/route.ts` | ✅ PKCE code exchange (same browser) |
 | `/auth/confirm` | `src/app/auth/confirm/page.tsx` | ✅ handles hash tokens, token_hash, code |
 | `/onboarding` | `src/app/onboarding/page.tsx`, `onboarding-flow.tsx` | ✅ 10 steps, saves to `profiles` |
 | `/` Opportunities | `src/app/(app)/page.tsx` (data) + `src/components/opportunity-feed.tsx` (UI) + `src/lib/opportunity-view.ts` (row → card, match score, why) | ✅ design-matched |
-| `/admin` | `src/app/(app)/admin/` | ✅ approve / decline access requests |
+| `/admin` | `src/app/(app)/admin/` | ✅ money, members (Mark paid / Undo), payment links, invite card, old access requests |
 | `/tracker` | `(app)/tracker/` + `components/tracker-view.tsx`, `lib/tracker.ts` (stage groups, `parseDue`) | ✅ table/board, click stage to move on, New modal |
 | `/profile` | `(app)/profile/` + `components/profile-view.tsx` | ✅ edits preferences (autosave), Telegram connect/disconnect, log out |
 | `/companies` | `(app)/companies/` + `components/companies-view.tsx`, `lib/companies-data.ts` (directory from the design minus exclusions), `lib/company-match.ts` | ✅ open counts via `open_roles_by_company()`, mute (hidden from For you), suggest |
@@ -33,8 +34,16 @@ Back to [[00 Start Here]] · code in `web/` (Next.js 16.3, React 19, Tailwind 4,
 - `src/components/brand.tsx`: `LogoMark`, `Wordmark` (star as the i-dot), `Brand`, `Sparkle`, `StarField` (seeded), `TelegramFab`.
 
 ## Auth
-- Invite by approval. Landing: approved → login email; not approved → "Request access" (inserts `access_requests`). Admin approves in `/admin` → server action sends sign-in email with a session-less implicit-flow client → lands on `/auth/confirm`.
+- Open sign-ups (17 Oct): anyone types their email and gets a login link. (Before: invite by approval through `access_requests`; Admin still lists old requests.)
 - Supabase keys in `web/.env.local` (URL + **publishable** key only; git-ignored).
+
+## Paid access (17 Oct)
+- `src/lib/access.ts`: `PRICE` £5, `TRIAL_JOBS` 5, `TRIAL_CVS` 2, `accessState()` → `paid | trial | locked` (admins always paid), `timeLeft()`, `payLink()` (only Stripe URLs; adds `client_reference_id` = user id and `prefilled_email`). Mirrored in `radar/notify/personal.py` `access_state`: change both together.
+- `(app)/layout.tsx`: locked → `/pay`; trial → lilac banner "Free trial: X left · 5 jobs and 2 CVs" linking to `/pay`.
+- Opportunities: trial shows the first 5 roles (2 closing soon on phones) and a 🔒 "N more roles for you" unlock card.
+- CV studio: `createJob` returns `"limit"` after 2 CV jobs on trial (→ `/pay`); the page refuses `?job=` too.
+- Onboarding asks "How many applications are you planning this season?" and "How did you hear about Nimbus?" (`preferences.applications`, `preferences.heardFrom`), shown on Admin.
+- Dev previews: `/auth/preview/pay-trial`, `pay-locked`, `pay-paid` (shown without the app frame).
 
 ## Matching
 `src/lib/preferences.ts`: `Preferences` type (stored in `profiles.preferences`), defaults, `matchFilters` (degree → radar disciplines, opportunity types → radar kinds, locations → country codes, "Worldwide" = anywhere) and `applyMatch` for Supabase queries. Used by the onboarding count; to be reused by the For you feed and personal alerts (port to SQL or Python for the radar).

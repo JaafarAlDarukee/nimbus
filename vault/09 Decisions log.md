@@ -31,3 +31,11 @@ No Airbus, BAE Systems, Boeing, or any nuclear / weapons / defence company or ro
 - **2026-10-01 · No in-browser AI model**: a local model would be hundreds of MB per phone, slow and weaker than Claude. Instead: rule-based tailoring and checks (explainable, never invents) + one-click Tailor with Claude. A built-in AI via the Anthropic API is offered to the owner (needs their key in Vercel; pennies per CV); Gemini free tier not used for CVs because Google may use free-tier data.
 - **2026-10-01 · Soft skills**: kept in Skills only when the advert asks for them (screening software counts them); otherwise shown in bullets.
 - **2026-10-01 · No built-in AI for now** (owner): CV help is the rules + example CV + a step-by-step "attach your CV and this prompt to Claude or Gemini" guide. The Gemini review code stays, switched off without a key.
+
+## 2026-10-17 · Paid and public
+- **Price: £5 once, lifetime access** (owner). Not monthly. Replaces the earlier "£3 by Monzo/PayPal" idea.
+- **Stripe Payment Link** (checkout and statement show "NIMBUS"), unlocked automatically by a webhook. Owner chose Stripe after first saying no to it.
+- **Open sign-ups with a 2-day free trial** limited to **5 jobs, 2 CVs** (and 5 personal Telegram alerts), then pay. Replaces invite by approval.
+- **Anonymous**: sold as "Nimbus"; the owner's name never shows.
+- Order: **money → website → ads and marketing**.
+- Under £1,000 a year is covered by the UK trading allowance (no registration). Claude won't help hide income above it.

@@ -3,9 +3,10 @@
 Back to [[00 Start Here]] · updated 2026-10-17
 
 ## Paid version (owner, 17 Oct)
-- Owner wants classmates to pay a **one-time £3** (≤10 people). No monthly, no Stripe for now, no cash referrals.
-- Plan agreed in chat: payment by Monzo/PayPal link → owner approves in Admin after the money lands (approval is the paywall).
-- To build when the owner sends the link: show it on the "Request sent" screen (store it in a Vercel env var, not the repo) and a **Paid** tick / date per person on Admin. Maybe: personal alerts only for paid users; channel as a free teaser (few posts a day, a day late).
+- First idea: one-time £3 by Monzo/PayPal with approval as the paywall. **Replaced the same day** by the approved plan: **£5 once via Stripe**, open sign-ups with a 2-day trial (5 jobs, 2 CVs), anonymous as "Nimbus", goal ~£300. Phases: money (done 17 Oct) → public website → ads and marketing. The full plan was written in Claude's plan file; its phases are summarised in [[00 Start Here#Going paid and public (plan approved 17 Oct)]].
+- Phase 2 ideas: landing with an animated phone of Telegram alerts, how it works, what you get, fields, pricing, FAQ, live counts; privacy and terms pages; app icons and manifest; hosting that allows selling (Vercel Hobby is non-commercial: check Netlify / Cloudflare for Next.js 16 support).
+- Phase 3 ideas: Remotion videos (9:16, 15-20 s: "It opened 2 minutes ago", "Your CV vs the job", "Every placement, one place"), QR posters, Instagram/TikTok templates, a daily "N placements opened today" story from the database, a 2-week posting plan, measure with "How did you hear" on Admin.
+- Maybe later: channel as a free teaser (few posts a day, a day late).
 - Channel: owner makes it private with join requests and removes non-payers (steps in [[Sessions/2026-10-01 to 17#17 Oct]]).
 - Known caveats (owner informed, chose to ignore at this scale): Vercel Hobby is non-commercial; job-board listings (Gradcracker, Bright Network, Higherin, TARGETjobs, LinkedIn) shouldn't be resold; privacy page / ICO if it grows.
 
