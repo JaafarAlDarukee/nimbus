@@ -29,3 +29,10 @@ The owner was (rightly) angry when a page didn't look like their design. For eve
 
 ## Motion
 Owner feedback (2026-09-30): "no animation, it's so blank". The handoff says keep motion light (rings/bars .4s, chevrons .15s, scrims). Plan: twinkling stars, current-star pulse in the onboarding stepper, step content fade/slide-in, counting-up numbers, hover lifts. Keep it subtle and respect `prefers-reduced-motion`.
+
+## Telegram images
+Made 1 Oct with headless Chrome from small HTML files in `design/telegram/` (git-ignored, local only):
+- `nimbus-profile.png` (640×640, cloud mark on night sky) for profile pictures (BotFather `/setuserpic`, channel Edit → Set new photo).
+- `nimbus-header.png` (640×360, "Nimbus · Welcome to Children of Khan, boy 🫵") for BotFather `/setdescriptionpic`.
+- `nimbus-logo-{night,sky,dawn,lilac,mint,cloud}.png`: the six app-icon colourways from `Nimbus Brand.dc.html` (bg / stroke / star: Night #0B0E13/#8FC7FF/#F3C38F, Sky #8FC7FF/#06111D, Dawn #F3C38F/#2A1606, Lilac #C3B5FF/#150F33, Mint #93E0C0/#06241A, Cloud #FFFFFF/#1D5C9C/#C9812F).
+Re-render: `chrome --headless=new --window-size=640,640 --screenshot=out.png file:///…/logo-x.html`.

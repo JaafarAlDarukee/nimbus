@@ -9,10 +9,10 @@ Back to [[00 Start Here]]
 |---|---|---|
 | GitHub | repo `JaafarAlDarukee/nimbus` (public) | `gh` CLI logged in on the PC. Student Pack active |
 | Supabase | project `nimbus`, ref `rwcpwqhjmhsxtslamudm`, London | CLI linked (`npx supabase ...`); owner logged in via `npx.cmd supabase login` |
-| Telegram | bot **@NimbusRadarBot** (token was rotated once); channel **Nimbus Alerts** | Owner's private chat with the bot is used for admin DMs |
+| Telegram | bot **@NimbusRadarBot** (token was rotated once); channel **Nimbus Alerts** (public link; owner may make it private for paid access) | Owner's private chat with the bot is used for admin DMs. Branding images in `design/telegram/` |
 | Gmail | a dedicated "Nimbus" Gmail with 2-step verification + app password "Nimbus" | Used by the radar inbox (IMAP). Owner's main Gmail is NOT connected |
 | Adzuna | developer API (app id + key) | Credit "Jobs by Adzuna" wherever its jobs show |
-| Google AI Studio / Gemini | not set up yet | For parsing/CV features later |
+| Google AI Studio / Gemini | **not set up; owner declined ("forget about AI")** | Optional `GEMINI_API_KEY` in Vercel would switch on CV studio's dormant Free AI review |
 | Vercel | Owner signed up with GitHub (Hobby), 1 Oct. Project `nimbus` (team slug `nimbus24`), root directory `web`, deploys on every push to `main`. Live at https://nimbus-pi-three.vercel.app | Env vars (Production + Preview): `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, pasted by the owner. Supabase `site_url` + redirect URLs point here (`supabase/config.toml`, config push). Custom domain: not yet. |
 
 ## Where each secret lives (names only)
@@ -24,4 +24,8 @@ Back to [[00 Start Here]]
 ## Owner's personal details
 Not stored in this repo on purpose (public). The owner's email is approved in `access_requests` in the database; their profile is the admin.
 
-- **Gemini (free tier)**: optional `GEMINI_API_KEY` in Vercel (Production) turns on the Free AI review and better "Give me ideas". Owner creates it at aistudio.google.com with the Nimbus Gmail; never pasted to Claude.
+## Email sending (since 1 Oct)
+Supabase Auth → Emails → SMTP: host `smtp.gmail.com`, port 465, the Nimbus Gmail with an app password named **"Supabase"** (owner typed it), sender name **"Children of Khan"**. Rate limit 30 emails/hour (dashboard). Templates in `supabase/templates/` via `config push`.
+
+## Job-site accounts (Nimbus Gmail, 1 Oct)
+Gradcracker (follows all employer hubs), Higherin (saved searches), Bright Network (preferences + emails), TARGETjobs (tracker). LinkedIn alerts stay on the owner's own account; a Gmail filter forwards only `jobalerts-noreply@linkedin.com`.
