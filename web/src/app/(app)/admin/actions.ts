@@ -49,10 +49,10 @@ export async function setPaid(formData: FormData) {
   redirect(`/admin?notice=${encodeURIComponent(error ? "Couldn't change that." : "Saved.")}`);
 }
 
-/** The Stripe payment link and the private channel's invite link. */
+/** The Stripe payment link. (The main Telegram channel is the owner's own: no invite for payers.) */
 export async function saveSettings(formData: FormData) {
   const supabase = await createClient();
-  const rows = ["stripe_link", "channel_invite"].map((key) => ({ key, value: String(formData.get(key) ?? "").trim(), updated_at: new Date().toISOString() }));
+  const rows = ["stripe_link"].map((key) => ({ key, value: String(formData.get(key) ?? "").trim(), updated_at: new Date().toISOString() }));
   const { error } = await supabase.from("app_settings").upsert(rows);
   revalidatePath("/admin");
   redirect(`/admin?notice=${encodeURIComponent(error ? "Couldn't save the links." : "Links saved.")}`);

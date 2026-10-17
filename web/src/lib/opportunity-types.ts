@@ -3,11 +3,6 @@
 
 export type Tone = "sky" | "lil" | "dawn" | "mint" | "teal" | "rose";
 
-/** How well a role fits, worked out from facts only (owner, 17 Oct: no made-up % score). */
-export type Fit = "top" | "good" | "look";
-export const FIT_LABEL: Record<Fit, string> = { top: "Top match", good: "Good match", look: "Worth a look" };
-export const FIT_TONE: Record<Fit, Tone> = { top: "mint", good: "sky", look: "dawn" };
-
 /** What a card and the detail drawer show. */
 export type OpportunityView = {
   id: string;
@@ -20,9 +15,7 @@ export type OpportunityView = {
   tone: Tone;
   found: string;
   isNew: boolean;
-  /** null when it isn't one of your subjects (the All tab) */
-  fit: Fit | null;
-  /** The facts behind the fit: "Mechanical in the title", "Placement", "Automotive", "CAD, MATLAB on your CV" */
+  /** Facts about the fit, no score: "Mechanical in the title", "Chemical engineering", "Automotive" */
   ticks: string[];
   why: string[];
   deadline: string;
@@ -37,7 +30,15 @@ export type OpportunityView = {
   via: string | null;
 };
 
-/** The type chips on the page, in the design's order, and which radar kinds each one covers. */
+/** For you is split into these, side by side on a computer and as tabs on a phone (owner, 17 Oct). */
+export const TYPE_COLUMNS: { label: string; kinds: string[] }[] = [
+  { label: "Placements & internships", kinds: ["placement", "internship", "spring_week", "insight"] },
+  { label: "Graduate jobs", kinds: ["grad_scheme", "graduate_job"] },
+  { label: "Apprenticeships", kinds: ["apprenticeship"] },
+  { label: "Events & research", kinds: ["event", "research", "scholarship"] },
+];
+
+/** Older, finer type filters: still understood in links (?type=Placement). */
 export const TYPE_CHIPS: { label: string; kinds: string[]; title?: "hack" | "not-hack" }[] = [
   { label: "All types", kinds: [] },
   { label: "Placement", kinds: ["placement"] },

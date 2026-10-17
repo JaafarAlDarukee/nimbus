@@ -8,7 +8,7 @@ import { telegramLinkCode } from "@/app/(app)/profile/actions";
 import { peopleToFind } from "@/components/apply-tips";
 import { SPARKLE, StarField, TELEGRAM_BOT_URL, TelegramFab } from "@/components/brand";
 import { PRICE, TRIAL_JOBS } from "@/lib/access";
-import { FIT_LABEL, FIT_TONE, TYPE_CHIPS, type Fit, type OpportunityView } from "@/lib/opportunity-types";
+import type { OpportunityView } from "@/lib/opportunity-types";
 
 type Props = {
   tab: "you" | "all";
@@ -28,6 +28,12 @@ type Props = {
   error: string | null;
   /** Free trial: how many more roles are hidden behind the paywall (0 when paid) */
   trialLocked: number;
+  /** One per type group, with how many are open; `items` only when the columns are shown */
+  columns: { label: string; count: number; items: OpportunityView[] }[];
+  /** Side by side columns on a computer (All types, not on the free trial) */
+  columnsView: boolean;
+  /** Opened from a Telegram alert (?open=<id>): its drawer starts open */
+  openRole: OpportunityView | null;
 };
 
 const SERIF = "var(--font-newsreader), Georgia, serif";
@@ -41,7 +47,7 @@ export function OpportunityFeed(props: Props) {
   const pathname = usePathname();
   const [pending, startTransition] = useTransition();
   const [q, setQ] = useState(props.q);
-  const [selected, setSelected] = useState<OpportunityView | null>(null);
+  const [selected, setSelected] = useState<OpportunityView | null>(props.openRole);
   // The role the "check your CV first?" question is about
   const [applyFor, setApplyFor] = useState<OpportunityView | null>(null);
   // What the user just saved or applied to, on top of what the server knows
@@ -144,7 +150,7 @@ export function OpportunityFeed(props: Props) {
         </svg>
       </div>
 
-      <main className="relative mx-auto hidden max-w-[928px] flex-col gap-7 px-6 pb-[120px] pt-16 leading-[normal] md:flex">
+      <main className={`relative mx-auto hidden flex-col gap-7 px-6 pb-[120px] pt-16 leading-[normal] md:flex ${props.columnsView ? "max-w-[1360px]" : "max-w-[928px]"}`}>
         <div className="flex flex-col items-center gap-3.5 text-center">
           <span
             className="animate-fade-up flex h-[30px] items-center gap-2 rounded-full px-3 text-[13px] text-t-sky"
@@ -164,7 +170,7 @@ export function OpportunityFeed(props: Props) {
           </p>
         </div>
 
-        <div className="animate-fade-up flex flex-col gap-3.5" style={{ animationDelay: "180ms" }}>
+        <div className="animate-fade-up mx-auto flex w-full max-w-[880px] flex-col gap-3.5" style={{ animationDelay: "180ms" }}>
           <div className="flex flex-col gap-2 sm:flex-row">
             <div className="flex gap-0.5 self-start rounded-xl border border-line bg-s1 p-[3px]">
               {(
@@ -204,22 +210,30 @@ export function OpportunityFeed(props: Props) {
             </label>
           </div>
           <div className="flex flex-wrap gap-1.5">
-            {TYPE_CHIPS.map((c) => (
+            {[{ label: "All types", count: null as number | null }, ...props.columns].map((c) => (
               <button
                 key={c.label}
                 type="button"
                 onClick={() => go({ type: c.label })}
                 aria-pressed={type === c.label}
-                className={`h-[34px] cursor-pointer whitespace-nowrap rounded-full border px-[13px] text-[13px] font-medium transition-colors ${
+                className={`flex h-[34px] cursor-pointer items-center gap-2 whitespace-nowrap rounded-full border px-[13px] text-[13px] font-medium transition-colors ${
                   type === c.label ? "border-l-sky bg-b-sky text-t-sky" : "border-line bg-transparent text-tx2 hover:text-tx"
                 }`}
               >
                 {c.label}
+                {c.count !== null && (
+                  <span className="text-[11px] text-tx3" style={{ fontFamily: MONO }}>
+                    {c.count.toLocaleString("en-GB")}
+                  </span>
+                )}
               </button>
             ))}
           </div>
         </div>
 
+        {props.columnsView ? (
+          <Columns columns={props.columns} error={error} pending={pending} tracked={tracked} onOpen={setSelected} onMore={(label) => go({ type: label })} />
+        ) : (
         <div className={`flex flex-col gap-2.5 transition-opacity ${pending ? "opacity-60" : ""}`}>
           {error && (
             <div className="rounded-[14px] border border-dashed border-line2 px-5 py-12 text-center text-tx3">{error}</div>
@@ -229,7 +243,7 @@ export function OpportunityFeed(props: Props) {
               key={o.id}
               type="button"
               onClick={() => setSelected(o)}
-              className="animate-fade-up grid cursor-pointer grid-cols-[48px_minmax(0,1fr)_auto] items-center gap-4 rounded-2xl border border-line bg-s1 px-5 py-[18px] text-left text-tx transition-colors hover:border-l-sky hover:bg-s2"
+              className="animate-fade-up grid cursor-pointer grid-cols-[48px_minmax(0,1fr)] items-center gap-4 rounded-2xl border border-line bg-s1 px-5 py-[18px] text-left text-tx transition-colors hover:border-l-sky hover:bg-s2"
               style={{ boxShadow: "0 1px 0 rgba(255,255,255,.04) inset", animationDelay: `${Math.min(i, 10) * 40 + 220}ms` }}
             >
               <LogoTile o={o} size={48} />
@@ -254,7 +268,6 @@ export function OpportunityFeed(props: Props) {
                 </span>
                 <Ticks ticks={o.ticks} />
               </div>
-              <FitPill fit={o.fit} />
             </button>
           ))}
           {props.trialLocked > 0 && <TrialLock count={props.trialLocked} />}
@@ -273,6 +286,7 @@ export function OpportunityFeed(props: Props) {
             </button>
           )}
         </div>
+        )}
       </main>
 
       <PhoneFeed
@@ -331,11 +345,6 @@ export function OpportunityFeed(props: Props) {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <TypePill o={selected} drawer />
-                  {selected.fit && (
-                    <span className="flex h-6 items-center rounded-full px-2.5 text-[12px] font-semibold" style={DRAWER_FIT[selected.fit]}>
-                      {FIT_LABEL[selected.fit]}
-                    </span>
-                  )}
                 </div>
                 <button
                   type="button"
@@ -596,17 +605,69 @@ function LogoTile({ o, size, drawer }: { o: OpportunityView; size: number; drawe
   );
 }
 
-/** "Top match" / "Good match" / "Worth a look", from facts only (no % score). */
-function FitPill({ fit, small }: { fit: Fit | null; small?: boolean }) {
-  if (!fit) return <span />;
-  const tone = FIT_TONE[fit];
+/** For you, side by side: one column per type group, newest first (owner, 17 Oct). */
+function Columns(props: {
+  columns: { label: string; count: number; items: OpportunityView[] }[];
+  error: string | null;
+  pending: boolean;
+  tracked: Record<string, string | undefined>;
+  onOpen: (o: OpportunityView) => void;
+  onMore: (label: string) => void;
+}) {
+  if (props.error) {
+    return <div className="rounded-[14px] border border-dashed border-line2 px-5 py-12 text-center text-tx3">{props.error}</div>;
+  }
   return (
-    <span
-      className={`flex items-center whitespace-nowrap rounded-full font-sans font-semibold ${small ? "h-5 px-2 text-[11px]" : "h-7 px-3 text-[12px]"}`}
-      style={{ background: `var(--b-${tone})`, color: `var(--t-${tone})` }}
-    >
-      {FIT_LABEL[fit]}
-    </span>
+    <div className={`grid grid-cols-2 items-start gap-4 transition-opacity xl:grid-cols-4 ${props.pending ? "opacity-60" : ""}`}>
+      {props.columns.map((col) => (
+        <section key={col.label} className="flex min-w-0 flex-col gap-2.5">
+          <button type="button" onClick={() => props.onMore(col.label)} className="flex cursor-pointer items-baseline justify-between gap-2 px-1 text-left">
+            <span className="text-[13px] font-semibold uppercase tracking-[.08em] text-tx2">{col.label}</span>
+            <span className="text-[12px] text-tx3" style={{ fontFamily: MONO }}>
+              {col.count.toLocaleString("en-GB")}
+            </span>
+          </button>
+          {col.items.map((o, i) => (
+            <button
+              key={o.id}
+              type="button"
+              onClick={() => props.onOpen(o)}
+              className="animate-fade-up flex cursor-pointer flex-col gap-2 rounded-2xl border border-line bg-s1 p-3.5 text-left text-tx transition-colors hover:border-l-sky hover:bg-s2"
+              style={{ animationDelay: `${Math.min(i, 8) * 30 + 200}ms` }}
+            >
+              <span className="flex flex-wrap items-center gap-2">
+                <LogoTile o={o} size={32} />
+                <TypePill o={o} />
+                {o.isNew && <span className="text-[11px] font-medium text-t-mint">● Just opened</span>}
+                {props.tracked[o.id] && <span className="text-[11px] text-t-sky">In tracker</span>}
+              </span>
+              <span className="line-clamp-2 text-[15px] font-medium leading-snug">{o.title}</span>
+              <span className="truncate text-[13px] text-tx2">
+                {o.company} · {o.loc}
+              </span>
+              <Ticks ticks={o.ticks} />
+              <span className="text-[11px] text-tx3" style={{ fontFamily: MONO }}>
+                found {o.found}
+                {o.via && ` · via ${o.via}`}
+                {o.closing && ` · ${o.closing}`}
+              </span>
+            </button>
+          ))}
+          {col.items.length === 0 && (
+            <div className="rounded-2xl border border-dashed border-line2 px-3 py-8 text-center text-[13px] text-tx3">Nothing open here right now.</div>
+          )}
+          {col.count > col.items.length && (
+            <button
+              type="button"
+              onClick={() => props.onMore(col.label)}
+              className="h-[38px] cursor-pointer rounded-full border border-line text-[13px] font-medium text-tx2 transition-colors hover:border-l-sky hover:text-tx"
+            >
+              See all {col.count.toLocaleString("en-GB")}
+            </button>
+          )}
+        </section>
+      ))}
+    </div>
   );
 }
 
@@ -626,12 +687,6 @@ function Ticks({ ticks, light }: { ticks: string[]; light?: boolean }) {
     </span>
   );
 }
-
-const DRAWER_FIT: Record<Fit, React.CSSProperties> = {
-  top: { background: "rgba(147,224,192,.4)", color: "#1B6E4D" },
-  good: { background: "rgba(143,199,255,.35)", color: "#1D5C9C" },
-  look: { background: "rgba(255,196,140,.35)", color: "#8E5413" },
-};
 
 function Fact({ label, value, colour, small }: { label: string; value: string; colour?: string; small?: boolean }) {
   return (
@@ -738,6 +793,29 @@ function PhoneFeed(
         ))}
       </div>
 
+      {tab === "New" && (
+        <div className="-mt-1 mb-3 flex gap-1.5 overflow-x-auto px-4 pb-1 [scrollbar-width:none]">
+          {[{ label: "All types", count: null as number | null }, ...props.columns].map((c) => (
+            <Link
+              key={c.label}
+              href={c.label === "All types" ? "/" : `/?type=${encodeURIComponent(c.label)}`}
+              scroll={false}
+              aria-current={props.type === c.label ? "page" : undefined}
+              className={`flex h-9 flex-none items-center gap-1.5 whitespace-nowrap rounded-full border px-3 text-[13px] font-medium ${
+                props.type === c.label ? "border-l-sky bg-b-sky !text-t-sky" : "border-line !text-tx2"
+              }`}
+            >
+              {c.label}
+              {c.count !== null && (
+                <span className="text-[11px] opacity-70" style={{ fontFamily: MONO }}>
+                  {c.count.toLocaleString("en-GB")}
+                </span>
+              )}
+            </Link>
+          ))}
+        </div>
+      )}
+
       <div className="flex flex-col gap-2.5 px-4">
         {top && (
           <div className="animate-fade-up flex flex-col gap-3 rounded-[18px] bg-[#F4F6F8] p-[18px] text-[#08090B]">
@@ -754,7 +832,7 @@ function PhoneFeed(
                   )}
                 </span>
                 <span className="text-[12px] font-semibold uppercase tracking-[.08em] text-[#1D5C9C]">
-                  {top.fit ? FIT_LABEL[top.fit] : "New"}
+                  {top.isNew ? "Just opened" : "Newest for you"}
                 </span>
               </span>
               <span className="text-[11px] text-[#5A616C]" style={{ fontFamily: MONO }}>
@@ -825,7 +903,6 @@ function PhoneFeed(
               </span>
               <Ticks ticks={o.ticks} />
               <div className="mt-1 flex flex-wrap items-center gap-2 text-[11px]" style={{ fontFamily: MONO }}>
-                <FitPill fit={o.fit} small />
                 <span
                   className="flex h-5 items-center rounded-full px-2 font-sans text-[11px] font-medium"
                   style={{ background: `var(--b-${o.tone})`, color: `var(--t-${o.tone})` }}

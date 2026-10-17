@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Brand } from "@/components/brand";
+import { takeNextCookie } from "@/lib/next-path";
 import { createClient } from "@/lib/supabase/client";
 
 /**
@@ -38,7 +39,7 @@ export default function ConfirmPage() {
         setFailed(true);
         return;
       }
-      router.replace("/");
+      router.replace(takeNextCookie() ?? "/");
       router.refresh();
     }
     void confirm();

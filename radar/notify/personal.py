@@ -15,12 +15,13 @@ from zoneinfo import ZoneInfo
 
 import httpx
 
-from ..match import DISCIPLINE_WORDS, FIT_LABELS, FIT_RANK, filters_for, fit, is_match, with_defaults
+from ..match import filters_for, fit, is_match, with_defaults
 from ..store import _fetch_all, client
 from ..sources.inbox import SITES
 from .telegram import KIND_LABELS
 
-MAX_PER_PERSON = 8
+# One message per role, as soon as it's found (owner, 17 Oct); more than this in one check get a link instead
+MAX_PER_PERSON = 30
 # The same role from several places (employer, Gradcracker, Bright Network, Adzuna) is sent once
 REPEAT_DAYS = 30
 # Paid access (mirrors web/src/lib/access.ts): 2 days free with TRIAL_ALERTS alerts, then £5 once
@@ -39,10 +40,6 @@ def _dm(when: datetime, weekday: bool = False) -> str:
 
 def _day(value: str | None) -> str | None:
     return _dm(datetime.fromisoformat(value)) if value else None
-
-
-def _hashtag(word: str) -> str:
-    return "#" + "".join(part[:1].upper() + part[1:] for part in word.replace("&", " ").split())
 
 
 def event_type(title: str) -> str:
@@ -101,10 +98,20 @@ def _seen_roles(db: httpx.Client, ids: str) -> dict[str, list[tuple[str, str]]]:
     return seen
 
 
-def format_match(row: dict, level: str, ticks: list[str]) -> str:
+# The type on top, in the colours of the website's type pills
+TYPE_ICONS = {"placement": "🟦", "internship": "🟪", "spring_week": "🟨", "insight": "🟨", "grad_scheme": "🟫",
+              "graduate_job": "🟫", "apprenticeship": "🟩", "research": "🟥", "scholarship": "🟥", "event": "🟧"}
+
+
+def open_on_nimbus(row: dict) -> str:
+    """The role on the website (sign-in and payment first), which links on to the employer."""
+    return f"{SITE_URL}/?open={row['id']}"
+
+
+def format_match(row: dict, ticks: list[str]) -> str:
     e = html.escape
-    label = FIT_LABELS.get(level, "New for you")
-    icon = {"top": "🟢", "good": "🔵"}.get(level, "🟠")
+    kind = row.get("kind") or ""
+    label = event_type(row.get("title") or "") if kind == "event" else KIND_LABELS.get(kind, "Opportunity")
     posted = row.get("posted_at") or row.get("first_seen_at")
     posted_text = "posted today" if posted and datetime.fromisoformat(posted).astimezone(UK).date() == datetime.now(UK).date() else (
         f"posted {_day(posted)}" if posted else "just found")
@@ -119,7 +126,7 @@ def format_match(row: dict, level: str, ticks: list[str]) -> str:
             details.append("rolling, apply early")
     where = row.get("location_text") or ("United Kingdom" if row.get("country") == "GB" else row.get("country") or "")
     lines = [
-        f"{icon} <b>{label}</b>",
+        f"{TYPE_ICONS.get(kind, '⬜')} <b>{e(label.upper())}</b>",
         f"<b>{e(row['title'])}</b>",
         e(" · ".join(p for p in (row.get("company_name"), where) if p)),
         e(" · ".join(details)),
@@ -133,7 +140,7 @@ def format_match(row: dict, level: str, ticks: list[str]) -> str:
 
 def _buttons(row: dict) -> dict:
     return {"inline_keyboard": [
-        [{"text": "Open and apply", "url": row["apply_url"]}],
+        [{"text": "Open on Nimbus", "url": open_on_nimbus(row)}],
         [{"text": "Save", "callback_data": f"s:{row['id']}"}, {"text": "Applied", "callback_data": f"a:{row['id']}"},
          {"text": "Not for me", "callback_data": f"n:{row['id']}"}],
     ]}
@@ -249,15 +256,13 @@ def send_matches(rows: list[dict]) -> None:
             profile = profiles.get(person["user_id"]) or {}
             prefs = with_defaults(profile.get("preferences"))
             filters = filters_for(prefs)
-            cv_skills = (profile.get("cv_details") or {}).get("skills") or []
             fits = []
             for row in rows:
                 if row["id"] in hidden.get(person["user_id"], set()) or not is_match(row, prefs, filters):
                     continue
-                level, ticks, _ = fit(row, prefs, filters, cv_skills)
-                if level:
-                    fits.append((level, ticks, row))
-            fits.sort(key=lambda f: -FIT_RANK[f[0]])
+                rank, ticks, _ = fit(row, prefs, filters)
+                fits.append((rank, ticks, row))
+            fits.sort(key=lambda f: -f[0])  # your own degree's roles first when there are more than fit
             # Once per role, however many places list it (this run and the last 30 days)
             mine = seen.setdefault(person["user_id"], [])
             unique = []
@@ -273,13 +278,13 @@ def send_matches(rows: list[dict]) -> None:
             if not fits or limit <= 0:
                 continue
             sent_here = 0
-            for level, ticks, row in fits[:limit]:
-                if _send_once(db, telegram, person["user_id"], row["id"], "telegram", chat, format_match(row, level, ticks), _buttons(row)):
+            for _, ticks, row in fits[:limit]:
+                if _send_once(db, telegram, person["user_id"], row["id"], "telegram", chat, format_match(row, ticks), _buttons(row)):
                     sent_here += 1
             if len(fits) > limit and left is not None:
                 telegram.send(chat, f"🔒 {len(fits) - limit} more new matches for you. The free trial includes {TRIAL_ALERTS} alerts: unlock every alert for {PRICE}, once: {SITE_URL}/pay")
             elif len(fits) > limit:
-                telegram.send(chat, f"…and {len(fits) - limit} more new matches. They're all in <b>For you</b> on the website.")
+                telegram.send(chat, f"…and {len(fits) - limit} more new roles for you this round. They're all on Nimbus: {SITE_URL}")
             reached += sent_here > 0
     print(f"Personal alerts: {telegram.sent} messages to {reached} people")
 
@@ -311,14 +316,10 @@ def send_welcome() -> None:
             profile = profiles.get(person["user_id"]) or {}
             prefs = with_defaults(profile.get("preferences"))
             filters = filters_for(prefs)
-            cv_skills = (profile.get("cv_details") or {}).get("skills") or []
-            ranked = sorted(
-                ((fit(r, prefs, filters, cv_skills), r) for r in recent if is_match(r, prefs, filters)),
-                key=lambda f: -FIT_RANK.get(f[0][0] or "", -1),
-            )
+            ranked = sorted(((fit(r, prefs, filters), r) for r in recent if is_match(r, prefs, filters)), key=lambda f: -f[0][0])
             fits, keys = [], []
             for f in ranked:
-                if f[0][0] and not is_repeat(same_role_key(f[1]), keys):
+                if not is_repeat(same_role_key(f[1]), keys):
                     keys.append(same_role_key(f[1]))
                     fits.append(f)
             fits = fits[:3]  # newcomers have sent nothing yet, so this fits inside the trial's 5
@@ -326,8 +327,8 @@ def send_welcome() -> None:
                 continue
             chat = person["config"]["chat_id"]
             telegram.send(chat, "👋 <b>To get you started</b>, here are your best open matches right now. New ones will arrive the moment they open.")
-            for (level, ticks, _), row in fits:
-                _send_once(db, telegram, person["user_id"], row["id"], "telegram", chat, format_match(row, level, ticks), _buttons(row))
+            for (_, ticks, _), row in fits:
+                _send_once(db, telegram, person["user_id"], row["id"], "telegram", chat, format_match(row, ticks), _buttons(row))
     print(f"Welcome matches: {telegram.sent} messages")
 
 

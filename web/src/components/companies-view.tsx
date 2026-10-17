@@ -485,7 +485,7 @@ function CompanyDrawer({
             <span className={section}>Where we look</span>
             <span className="text-sm leading-normal text-[#1F2733]">
               {company.watching
-                ? `Their own careers site (${systems.join(", ")}), every 30 minutes. Never a job board copy.`
+                ? `Their own careers site (${systems.join(", ")}), every 15 minutes. Never a job board copy.`
                 : "Not linked yet: Nimbus can't read their careers site yet, or the site asks tools not to. Their roles still reach you through job-alert emails sent to the Nimbus inbox and through Adzuna."}
             </span>
           </div>

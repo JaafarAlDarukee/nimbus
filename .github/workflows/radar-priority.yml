@@ -1,6 +1,6 @@
-name: Radar (priority, every 30 min)
+name: Radar (priority, every 15 min)
 
-# Normally started every 30 min by Supabase (pg_cron -> workflow_dispatch; see
+# Normally started every 15 min by Supabase (pg_cron -> workflow_dispatch; see
 # supabase/migrations/*_radar_trigger.sql). GitHub's own schedule, which can be delayed or
 # skipped when GitHub is busy, is only a backup, on off-peak minutes.
 on:

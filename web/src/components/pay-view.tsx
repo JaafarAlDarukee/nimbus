@@ -8,7 +8,6 @@ const WHAT_YOU_GET = [
   "Instant Telegram alerts the moment they open",
   "Unlimited CV checks for every job you apply to",
   "Your tracker, calendar and deadline reminders",
-  "The private Nimbus Alerts channel",
 ];
 
 type Props = {
@@ -18,13 +17,11 @@ type Props = {
   left: string;
   /** The Stripe link with who is paying, or null before the owner has set it */
   link: string | null;
-  /** The private channel's invite link (only paid users can read it) */
-  invite: string;
   home: string;
 };
 
 /** /pay: pay once (Stripe), or see that you're in. */
-export function PayView({ access, justPaid, left, link, invite, home }: Props) {
+export function PayView({ access, justPaid, left, link, home }: Props) {
   return (
     <main className="relative flex min-h-screen flex-col items-center overflow-hidden bg-bg px-5 py-10 text-tx">
       <StarField count={50} seed={9} />
@@ -37,11 +34,6 @@ export function PayView({ access, justPaid, left, link, invite, home }: Props) {
               You&apos;re in, <span className="text-t-sky">for life</span> 🎉
             </h1>
             <p className="m-0 text-[17px] leading-normal text-tx2">Thank you for supporting Nimbus. Everything is unlocked: every job, every alert, unlimited CVs.</p>
-            {invite && (
-              <a href={invite} target="_blank" rel="noopener noreferrer" className="flex min-h-14 items-center justify-center rounded-2xl bg-[#2AABEE] px-5 py-3 text-center text-[17px] font-semibold !text-white">
-                Join the private Nimbus Alerts channel ↗
-              </a>
-            )}
             <Link href={home} className="flex h-14 items-center justify-center rounded-2xl bg-[#8FC7FF] text-[17px] font-semibold !text-[#06111D]">
               Go to Nimbus →
             </Link>

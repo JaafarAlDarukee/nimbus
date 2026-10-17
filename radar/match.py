@@ -134,12 +134,23 @@ def with_defaults(stored: dict | None) -> dict:
     return prefs
 
 
-def filters_for(prefs: dict) -> tuple[set[str], set[str], set[str] | None]:
-    kinds = {k for t in prefs.get("types", []) for k in TYPE_KINDS.get(t, [])}
+STUDENT_KINDS = {k for kinds in TYPE_KINDS.values() for k in kinds}
+
+
+def degree_disciplines(prefs: dict) -> set[str]:
+    """The subjects of the user's own degree(s); the whole field when a degree was typed by hand."""
     degrees = prefs.get("degrees", [])
     disciplines = {d for deg in degrees for d in DEGREE_DISCIPLINES.get(deg, [])}
-    if not degrees or any(deg not in DEGREE_DISCIPLINES for deg in degrees):  # typed by hand: go by the field
+    if not degrees or any(deg not in DEGREE_DISCIPLINES for deg in degrees):
         disciplines.update(FIELD_DISCIPLINES.get(prefs.get("field", ""), []))
+    return disciplines
+
+
+def filters_for(prefs: dict) -> tuple[set[str], set[str], set[str] | None]:
+    """Every student type and every subject in the user's field (owner, 17 Oct: show everything,
+    grouped by type; a Mechanical student sees Chemical roles too). Same as preferences.ts matchFilters."""
+    kinds = set(STUDENT_KINDS)
+    disciplines = degree_disciplines(prefs) | set(FIELD_DISCIPLINES.get(prefs.get("field", ""), []))
     abroad = prefs.get("abroad", [])
     if "Worldwide" in abroad:
         return kinds, disciplines, None
@@ -179,59 +190,42 @@ def is_match(row: dict, prefs: dict, filters: tuple) -> bool:
     return not any(company.startswith(m.lower()) for m in prefs.get("muted", []))
 
 
-FIT_LABELS = {"top": "Top match", "good": "Good match", "look": "Worth a look"}
-FIT_RANK = {"top": 2, "good": 1, "look": 0}
 SHORT_WORDS = {
     "mechanical": "Mechanical", "manufacturing": "Manufacturing", "robotics": "Robotics", "electrical": "Electrical",
     "aerospace": "Aerospace", "automotive": "Automotive", "materials": "Materials", "civil": "Civil", "chemical": "Chemical",
     "software": "Computing", "business": "Business", "biomedical": "Biomedical", "life_sciences": "Life sciences",
     "healthcare": "Healthcare", "environmental": "Environmental", "engineering": "Engineering", "science": "Science",
 }
-KIND_TICKS = {
-    "placement": "Placement", "internship": "Internship", "spring_week": "Spring week", "insight": "Insight",
-    "grad_scheme": "Graduate", "graduate_job": "Graduate", "apprenticeship": "Apprenticeship", "research": "Research",
-    "scholarship": "Scholarship",
-}
 GENERIC_TAGS = {"engineering", "science"}
 
 
-def fit(row: dict, prefs: dict, filters: tuple, cv_skills: list[str]) -> tuple[str | None, list[str], str | None]:
-    """(level, ticks, industry): how well a role fits, from facts only, no made-up score (owner,
-    17 Oct). Ticks are the facts ("Mechanical in the title", "Placement", "Automotive", "CAD,
-    MATLAB on your CV"). Level: top = your subject in the title plus your industry or 2+ CV skills;
-    good = your subject in the title, or a broader subject match plus one of those; look = the
-    rest; None = not one of your subjects. The same rules as the website (opportunity-view.ts)."""
-    kinds, disciplines, _ = filters
+def fit(row: dict, prefs: dict, filters: tuple) -> tuple[int, list[str], str | None]:
+    """(rank, ticks, industry): facts only, no score or label (owner, 17 Oct). Ticks: "Mechanical in
+    the title" (your degree), "Asks for mechanical engineering", "Chemical engineering" (another
+    subject in your field), "Engineering role" (no field named), "Any subject", your industry. CV
+    skills aren't used: most adverts don't list them. Rank orders alerts only: 2 = your degree's
+    subject in the title, 1 = your degree in the advert or your industry, 0 = the rest of your field.
+    The same rules as the website (opportunity-view.ts fitRole)."""
+    _, disciplines, _ = filters
+    mine = degree_disciplines(prefs)
     title = row.get("title") or ""
     tags = row.get("disciplines") or []
-    overlap = [d for d in tags if d in disciplines]
-    in_title = next((d for d in overlap if d not in GENERIC_TAGS and d in TITLE_DISCIPLINE and TITLE_DISCIPLINE[d].search(title)), None)
+    own = [d for d in tags if d in mine and d not in GENERIC_TAGS]
+    other = [d for d in tags if d in disciplines and d not in mine and d not in GENERIC_TAGS]
+    in_title = next((d for d in own if d in TITLE_DISCIPLINE and TITLE_DISCIPLINE[d].search(title)), None)
     ticks: list[str] = []
     if in_title:
         ticks.append(f"{SHORT_WORDS.get(in_title, in_title)} in the title")
-    elif overlap:
-        subject = next((d for d in overlap if d not in GENERIC_TAGS), overlap[0])
-        ticks.append(f"{SHORT_WORDS[subject]} role" if subject in GENERIC_TAGS else f"Asks for {DISCIPLINE_WORDS.get(subject, subject).lower()}")
+    elif own:
+        ticks.append(f"Asks for {DISCIPLINE_WORDS.get(own[0], own[0]).lower()}")
+    elif other:
+        ticks.append(DISCIPLINE_WORDS.get(other[0], other[0]))
+    elif any(d in GENERIC_TAGS and d in disciplines for d in tags):
+        ticks.append(f"{SHORT_WORDS[next(d for d in tags if d in GENERIC_TAGS)]} role")
     elif row.get("kind") == "event" and not tags:
         ticks.append("Any subject")
-    kind = row.get("kind")
-    if kind in kinds:
-        ticks.append(("Hackathon" if re.search(r"hack", title, re.I) else "Event") if kind == "event" else KIND_TICKS.get(kind, "Opportunity"))
     text = f"{title} {row.get('company_name', '')} {(row.get('description') or '')[:800]}"
     industry = industry_match(prefs.get("sectors", []), row.get("company_name") or "", text) if prefs.get("sectors") else None
     if industry:
         ticks.append(industry)
-    mine = {s.lower() for s in cv_skills}
-    shared = [s for s in row.get("skills") or [] if s.lower() in mine]
-    if shared:
-        ticks.append(", ".join(shared[:2]) + (f" +{len(shared) - 2}" if len(shared) > 2 else "") + " on your CV")
-    extra = bool(industry) or len(shared) >= 2
-    if in_title:
-        level = "top" if extra else "good"
-    elif overlap:
-        level = "good" if extra else "look"
-    elif kind == "event" and not tags:
-        level = "look"
-    else:
-        level = None
-    return level, ticks, industry
+    return (2 if in_title else 1 if own or industry else 0), ticks, industry

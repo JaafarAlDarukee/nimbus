@@ -116,7 +116,7 @@ def main() -> None:
         check(f"event tags known {e.title}", all(t in m.DISCIPLINE_WORDS for t in e.raw["disciplines"]), str(e.raw["disciplines"]))
     check("event labels", event_type("Advanced Engineering 2026 (expo)") == "Expo" and event_type("DurHack") == "Hackathon")
     msg = format_match({"kind": "event", "title": "Lab Innovations 2026 (expo)", "company_name": "Lab Innovations", "location_text": "Birmingham",
-                        "country": "GB", "closes_at": "2026-11-05T23:59:00+00:00", "disciplines": ["life_sciences"]}, "good", ["Life sciences in the title"])
+                        "country": "GB", "closes_at": "2026-11-05T23:59:00+00:00", "disciplines": ["life_sciences"]}, ["Life sciences in the title"])
     check("event alert wording", "Expo · ends 5 Nov" in msg, msg)
     check("hackathon tags", engineering_tags("Climate Hardware Hack") is not None and engineering_tags("Web3 Builders") is None)
 
@@ -180,15 +180,20 @@ def main() -> None:
                                                              [same_role_key({"title": "Mechanical Engineering Industrial Placement", "company_name": "Phillips 66"})]))
     mech = m.with_defaults({"field": "Engineering", "degrees": ["Mechanical Engineering"], "types": ["Placement"], "sectors": ["Automotive"]})
     fm = m.filters_for(mech)
-    jlr = {"title": "Industrial Placement 2027: Mechanical", "company_name": "Jaguar Land Rover", "kind": "placement", "disciplines": ["mechanical"],
-           "skills": ["CAD", "MATLAB"], "country": "GB"}
-    level, ticks, _ = m.fit(jlr, mech, fm, ["CAD", "MATLAB"])
-    check("fit: top with ticks", level == "top" and ticks[0] == "Mechanical in the title" and "Placement" in ticks and "CAD, MATLAB on your CV" in ticks, f"{level} {ticks}")
-    level, ticks, _ = m.fit({**jlr, "title": "Placement Student - Quality", "disciplines": ["engineering"], "skills": [], "company_name": "Acme Ltd"}, mech, fm, [])
-    check("fit: generic engineering is worth a look", level == "look" and ticks[0] == "Engineering role", f"{level} {ticks}")
-    check("fit: other subject is no fit", m.fit({**jlr, "title": "Cyber Security Placement", "disciplines": ["software"]}, mech, fm, [])[0] is None)
-    msg = format_match({**jlr, "posted_at": None, "first_seen_at": "2026-10-17T09:00:00+00:00", "apply_url": "https://example.com"}, "top", ["Mechanical in the title", "Placement"])
-    check("alert shows ticks, no %", "Top match" in msg and "✓ Mechanical in the title" in msg and "%" not in msg, msg)
+    check("every type shows", {"placement", "apprenticeship", "grad_scheme", "graduate_job", "event"} <= fm[0])
+    check("the whole field shows", {"chemical", "civil", "electrical", "engineering"} <= fm[1] and "software" not in fm[1])
+    jlr = {"id": "abc", "title": "Industrial Placement 2027: Mechanical", "company_name": "Jaguar Land Rover", "kind": "placement",
+           "disciplines": ["mechanical"], "skills": ["CAD", "MATLAB"], "country": "GB", "apply_url": "https://example.com"}
+    rank, ticks, _ = m.fit(jlr, mech, fm)
+    check("fit: your degree in the title", rank == 2 and ticks[0] == "Mechanical in the title" and not any("CV" in t for t in ticks), f"{rank} {ticks}")
+    check("fit: another subject in your field", m.fit({**jlr, "title": "Chemical Engineer Placement", "disciplines": ["chemical"], "company_name": "Acme Ltd"}, mech, fm)[1][0] == "Chemical engineering")
+    rank, ticks, _ = m.fit({**jlr, "title": "Placement Student - Quality", "disciplines": ["engineering"], "company_name": "Acme Ltd"}, mech, fm)
+    check("fit: general engineering role", rank == 0 and ticks[0] == "Engineering role", f"{rank} {ticks}")
+    check("apprenticeships reach a mechanical student", m.is_match({**jlr, "kind": "apprenticeship", "title": "Engineering Apprentice", "disciplines": ["engineering"]}, mech, fm))
+    msg = format_match({**jlr, "posted_at": None, "first_seen_at": "2026-10-17T09:00:00+00:00"}, ["Mechanical in the title"])
+    check("alert: type on top, ticks, no score", msg.startswith("🟦 <b>PLACEMENT</b>") and "✓ Mechanical in the title" in msg and "%" not in msg and "match" not in msg.lower(), msg)
+    from .notify.personal import _buttons
+    check("alert opens Nimbus first", _buttons(jlr)["inline_keyboard"][0][0]["url"].endswith("/?open=abc"))
 
     print(f"{ok} passed, {fail} failed")
     sys.exit(1 if fail else 0)

@@ -1,10 +1,13 @@
 import { OpportunityFeed } from "@/components/opportunity-feed";
 import { TRIAL_JOBS, accessState } from "@/lib/access";
-import { OPPORTUNITY_SELECT, TYPE_CHIPS, isSameRole, sameRoleKey, toView, type OpportunityRow, type OpportunityView } from "@/lib/opportunity-view";
+import { OPPORTUNITY_SELECT, TYPE_CHIPS, TYPE_COLUMNS, isSameRole, sameRoleKey, toView, type OpportunityRow, type OpportunityView } from "@/lib/opportunity-view";
 import { applyMatch, matchFilters, withDefaults } from "@/lib/preferences";
 import { createClient } from "@/lib/supabase/server";
 
 const PAGE_SIZE = 40;
+/** Cards per column when For you is shown side by side */
+const COLUMN_SIZE = 25;
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 const DAY = 86_400_000;
 
 const first = (value: string | string[] | undefined) => (Array.isArray(value) ? value[0] : value) || undefined;
@@ -43,7 +46,10 @@ export default async function OpportunitiesPage(props: PageProps<"/">) {
 
 async function loadFeed(params: Awaited<PageProps<"/">["searchParams"]>): Promise<React.ComponentProps<typeof OpportunityFeed>> {
   const tab = first(params.tab) === "all" ? "all" : "you";
-  const chip = TYPE_CHIPS.find((c) => c.label === first(params.type)) ?? TYPE_CHIPS[0];
+  // A column group ("Graduate jobs"), or one of the older, finer types still used in links ("Placement")
+  const chip: { label: string; kinds: string[]; title?: "hack" | "not-hack" } =
+    TYPE_COLUMNS.find((c) => c.label === first(params.type)) ?? TYPE_CHIPS.find((c) => c.label === first(params.type)) ?? TYPE_CHIPS[0];
+  const openId = first(params.open);
   const q = safeSearch(first(params.q));
   const limit = Math.min(400, Math.max(PAGE_SIZE, Number(first(params.n)) || PAGE_SIZE));
 
@@ -58,7 +64,6 @@ async function loadFeed(params: Awaited<PageProps<"/">["searchParams"]>): Promis
     supabase.from("notification_channels").select("id").eq("channel", "telegram").eq("enabled", true).limit(1),
   ]);
   const hidden = (hiddenRows ?? []).map((h) => h.opportunity_id as string);
-  const extras = { cvSkills: ((profile?.cv_details as { skills?: string[] } | null)?.skills ?? []) };
   const prefs = withDefaults(profile?.preferences);
   const filters = matchFilters(prefs);
 
@@ -77,11 +82,16 @@ async function loadFeed(params: Awaited<PageProps<"/">["searchParams"]>): Promis
   if (chip.kinds.length) list = list.in("kind", chip.kinds);
   if (chip.title === "hack") list = list.ilike("title", "%hack%");
   if (chip.title === "not-hack") list = list.not("title", "ilike", "%hack%");
-  if (q) list = list.or(`title.ilike.%${q}%,company_name.ilike.%${q}%,location_text.ilike.%${q}%`);
+  const search = <Q extends { or: (filters: string) => Q }>(query: Q) =>
+    q ? query.or(`title.ilike.%${q}%,company_name.ilike.%${q}%,location_text.ilike.%${q}%`) : query;
+  list = search(list);
+  // One column per type group: counts always (phone tabs, chips), cards only when shown side by side
+  const trial = accessState(profile) === "trial";
+  const columnsView = chip.label === "All types" && !trial;
 
   const nowIso = new Date().toISOString();
   const since = new Date(Date.now() - DAY).toISOString();
-  const [rows, forYou, all, fresh, today, closing, savedApps] = await Promise.all([
+  const [rows, forYou, all, fresh, today, closing, savedApps, opened, ...columnRows] = await Promise.all([
     list.order("first_seen_at", { ascending: false }).limit(limit),
     matched("id", true),
     open("id", true),
@@ -99,12 +109,20 @@ async function loadFeed(params: Awaited<PageProps<"/">["searchParams"]>): Promis
       .eq("stage", "saved")
       .order("created_at", { ascending: false })
       .limit(50),
+    // Opened from a Telegram alert: that role, whatever the filters
+    openId && UUID.test(openId)
+      ? supabase.from("opportunities").select(OPPORTUNITY_SELECT).eq("id", openId).maybeSingle()
+      : Promise.resolve({ data: null }),
+    ...TYPE_COLUMNS.map((col) =>
+      columnsView
+        ? search(scoped(OPPORTUNITY_SELECT)).in("kind", col.kinds).order("first_seen_at", { ascending: false }).limit(COLUMN_SIZE)
+        : search(scoped("id", true)).in("kind", col.kinds),
+    ),
   ]);
 
   const now = Date.now();
-  const view = (list: unknown) => ((list ?? []) as OpportunityRow[]).map((row) => toView(row, prefs, filters, now, extras));
+  const view = (list: unknown) => ((list ?? []) as OpportunityRow[]).map((row) => toView(row, prefs, filters, now));
   // Free trial: the first few roles; the rest wait behind the paywall
-  const trial = accessState(profile) === "trial";
   const allCards = collapse(view(rows.data));
   const opportunities = trial ? allCards.slice(0, TRIAL_JOBS) : allCards;
   const closingSoon = trial ? collapse(view(closing.data)).slice(0, 2) : collapse(view(closing.data));
@@ -139,6 +157,13 @@ async function loadFeed(params: Awaited<PageProps<"/">["searchParams"]>): Promis
     find: first(params.find) === "1",
     telegramLinked: (telegram ?? []).length > 0,
     error: rows.error ? "Couldn't load opportunities just now. Try again in a moment." : null,
+    columns: TYPE_COLUMNS.map((col, i) => ({
+      label: col.label,
+      count: columnRows[i].count ?? 0,
+      items: columnsView ? collapse(view(columnRows[i].data)) : [],
+    })),
+    columnsView,
+    openRole: opened.data ? view([opened.data])[0] : null,
     trialLocked,
   };
 }

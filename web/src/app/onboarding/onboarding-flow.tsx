@@ -12,7 +12,6 @@ import {
   HEARD_FROM,
   SECTOR_GROUPS,
   SUGGEST,
-  TYPES,
   UK_LOCATIONS,
   YEARS,
 } from "@/lib/onboarding-data";
@@ -25,9 +24,8 @@ const STEPS = [
   { key: "field", label: "Field", title: "Start with your field.", sub: "Engineering, science, medical and computing are covered. Business is on the way." },
   { key: "deg", label: "Degree", title: "Which degree are you on?", sub: "Pick every one that fits. Joint honours count. Add yours if it is not listed." },
   { key: "year", label: "Year", title: "Where are you in your course?", sub: "Spring weeks, placements and grad schemes open to different years, so this filters a lot." },
-  { key: "plan", label: "Your plan", title: "How many applications are you planning this season?", sub: "Be honest: it sets how many alerts you get. Then one quick question about how you found us." },
+  { key: "plan", label: "Your plan", title: "How many applications are you planning this season?", sub: "It helps us make Nimbus better for you. Then one quick question about how you found us." },
   { key: "sec", label: "Industries", title: "Which industries pull you in?", sub: "The starred set is common for your degree. Pick as many as you like, or leave it empty to hear about all of them." },
-  { key: "types", label: "Opportunities", title: "What kind of opportunities do you want?", sub: "Roles, events and funding. Select everything you would say yes to." },
   { key: "loc", label: "Location", title: "Where would you go for the right role?", sub: "Most roles are UK based. Add any country or city you would move to." },
   { key: "cv", label: "CV", title: "Add your CV.", sub: "It stays private to you. CV studio will read it the way applicant tracking systems do and score it against each role." },
   { key: "alerts", label: "Alerts", title: "How should we reach you?", sub: "Telegram is fastest. Your alerts are only your matches, never anyone else's." },
@@ -37,7 +35,7 @@ const STEPS = [
 type StepKey = (typeof STEPS)[number]["key"];
 
 const OFFERS = [
-  { t: "Alerts within hours", d: "We check 2,900+ careers pages every 30 minutes and message you when something opens.", c: "#8FC7FF", on: true },
+  { t: "Alerts within hours", d: "We check 2,900+ careers pages every 15 minutes and message you when something opens.", c: "#8FC7FF", on: true },
   { t: "Where and how to apply", d: "A direct link to the employer’s own application, never a job board copy.", c: "#93E0C0", on: true },
   { t: "Published contacts", d: "The early-careers team or named contact the employer lists, plus LinkedIn.", c: "#C3B5FF", on: false },
   { t: "CV and ATS score", d: "A score for every role, with the exact keywords you are missing.", c: "#F3C38F", on: false },
@@ -299,7 +297,6 @@ export function OnboardingFlow({
     year: prefs.year,
     plan: prefs.applications ? `${prefs.applications} applications` : "Not set",
     sec: prefs.sectorsAll ? "Everything" : prefs.sectors.length ? `${prefs.sectors.length} picked` : "Not set",
-    types: `${prefs.types.length} types`,
     loc: locations.slice(0, 2).join(", ") + (locations.length > 2 ? ` +${locations.length - 2}` : ""),
     cv: prefs.cvName ? "Added" : "Not added",
     alerts: [telegram === "on" ? "Telegram" : telegram === "waiting" ? "Telegram (pending)" : "", prefs.emailDigest ? "Email" : ""].filter(Boolean).join(", ") || "None yet",
@@ -575,33 +572,6 @@ export function OnboardingFlow({
                 </div>
               ))}
               <AddRow placeholder="Other industry, e.g. Theme park rides" value={drafts.sec} onChange={(v) => setDrafts((d) => ({ ...d, sec: v }))} onAdd={() => addExtra("sec")} />
-            </>
-          )}
-
-          {S.key === "types" && (
-            <>
-              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                {[...TYPES, ...prefs.extra.types.map((t) => ({ t, d: "Added by you" }))].map((o, i) => {
-                  const on = prefs.types.includes(o.t);
-                  return (
-                    <button
-                      key={o.t}
-                      type="button"
-                      aria-pressed={on}
-                      onClick={() => toggle("types", o.t)}
-                      className="animate-fade-up grid grid-cols-[minmax(0,1fr)_20px] items-center gap-2.5 rounded-xl border px-4 py-3.5 text-left transition-[transform,border-color,background-color] duration-200 active:scale-[.98]"
-                      style={{ borderColor: on ? "var(--l-sky)" : "var(--line2)", background: on ? "var(--b-sky)" : "transparent", ...stagger(i) }}
-                    >
-                      <span className="flex min-w-0 flex-col gap-[3px]">
-                        <span className="text-[15px] font-medium">{o.t}</span>
-                        <span className="text-[13px] text-tx3">{o.d}</span>
-                      </span>
-                      <Tick on={on} size={18} />
-                    </button>
-                  );
-                })}
-              </div>
-              <AddRow placeholder="Something else, e.g. Formula Student team roles" value={drafts.types} onChange={(v) => setDrafts((d) => ({ ...d, types: v }))} onAdd={() => addExtra("types")} />
             </>
           )}
 

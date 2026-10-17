@@ -5,7 +5,7 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { disconnectTelegram, savePreferences, signOut, telegramLinkCode, telegramStatus } from "@/app/(app)/profile/actions";
 import { TELEGRAM_BOT_URL } from "@/components/brand";
-import { ABROAD_LOCATIONS, DEGREES_BY_FIELD, FIELDS, SECTOR_GROUPS, TYPES, UK_LOCATIONS, YEARS } from "@/lib/onboarding-data";
+import { ABROAD_LOCATIONS, DEGREES_BY_FIELD, FIELDS, SECTOR_GROUPS, UK_LOCATIONS, YEARS } from "@/lib/onboarding-data";
 import type { Preferences } from "@/lib/preferences";
 
 const SERIF = "var(--font-newsreader), Georgia, serif";
@@ -84,7 +84,6 @@ export function ProfileView(props: Props) {
     { key: "deg", title: "Degree", opts: DEGREES_BY_FIELD[prefs.field] ?? [], value: prefs.degrees },
     { key: "year", title: "Year", single: true, opts: YEARS, value: [prefs.year] },
     { key: "sec", title: "Industries", opts: SECTOR_GROUPS.flatMap((g) => g.items), value: prefs.sectors },
-    { key: "types", title: "Looking for", opts: TYPES.map((t) => t.t), value: prefs.types },
     { key: "loc", title: "Location", opts: [...UK_LOCATIONS, ...ABROAD_LOCATIONS], value: locations },
   ];
 
@@ -133,7 +132,7 @@ export function ProfileView(props: Props) {
         <h1 className="m-0 text-[44px] font-normal leading-[1.02] tracking-[-.035em] sm:text-[52px]" style={{ fontFamily: SERIF }}>
           Tune your <span className="text-t-sky">radar.</span>
         </h1>
-        <p className="m-0 text-base leading-[1.55] text-tx2">Changes apply to the next check, within 30 minutes.</p>
+        <p className="m-0 text-base leading-[1.55] text-tx2">Changes apply to the next check, within 15 minutes.</p>
       </div>
 
       <div className="animate-fade-up flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-line bg-s1 p-6" style={{ animationDelay: "80ms" }}>

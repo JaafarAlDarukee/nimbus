@@ -13,6 +13,7 @@ import { EXAMPLE_CV, EXAMPLE_NOTES } from "../src/lib/cv-example";
 import { keywordsIn } from "../src/lib/keywords";
 import { peopleToFind, shortDegree } from "../src/components/apply-tips";
 import { PRICE, TRIAL_CVS, TRIAL_JOBS, accessState, payLink, timeLeft } from "../src/lib/access";
+import { safeNext } from "../src/lib/next-path";
 
 let ok = 0;
 let fail = 0;
@@ -81,19 +82,26 @@ check("short degree", shortDegree("BEng (Hons) Mechanical Engineering (with Foun
 check("LinkedIn searches", peopleToFind("Jaguar Land Rover", "Industrial Placement 2027: Mechanical", "University of Leeds").length === 4);
 check("card labels", kindView({ kind: "event", title: "DurHack" }).type === "Hackathon" && kindView({ kind: "event", title: "Lab Innovations 2026 (expo)" }).type === "Expo");
 
-// Match: facts, not a made-up % (owner, 17 Oct), and each role once
+// Match: facts only (no % or label, no CV skills), every type and the whole field (owner, 17 Oct), each role once
 const mechPrefs = withDefaults({ field: "Engineering", degrees: ["Mechanical Engineering"], types: ["Placement"], sectors: ["Automotive"] });
 const mechFilters = matchFilters(mechPrefs);
 const role = (title: string, disciplines: string[], extra: Partial<OpportunityRow> = {}) =>
   ({ id: "r", title, company_name: "Jaguar Land Rover", kind: "placement", disciplines, skills: ["CAD", "MATLAB"], country: "GB", ...extra }) as OpportunityRow;
-const top = fitRole(role("Industrial Placement 2027: Mechanical", ["mechanical"]), mechPrefs, mechFilters, { cvSkills: ["CAD", "MATLAB"] });
-check("fit: top with ticks", top.fit === "top" && top.ticks[0] === "Mechanical in the title" && top.ticks.includes("CAD, MATLAB on your CV"), `${top.fit} ${top.ticks}`);
+check("every type shows", ["placement", "apprenticeship", "grad_scheme", "graduate_job", "event"].every((k) => mechFilters.kinds.includes(k)));
+check("the whole field shows", ["chemical", "civil", "electrical", "engineering"].every((d) => mechFilters.disciplines.includes(d)) && !mechFilters.disciplines.includes("software"));
+const own = fitRole(role("Industrial Placement 2027: Mechanical", ["mechanical"]), mechPrefs, mechFilters);
+check("fit: your degree in the title", own.rank === 2 && own.ticks[0] === "Mechanical in the title" && !own.ticks.some((t) => t.includes("CV")), `${own.rank} ${own.ticks}`);
+check("fit: another subject in your field", fitRole(role("Chemical Engineer Placement", ["chemical"], { company_name: "Acme Ltd" }), mechPrefs, mechFilters).ticks[0] === "Chemical engineering");
 const generic = fitRole(role("Placement Student - Quality", ["engineering"], { company_name: "Acme Ltd", skills: [] }), mechPrefs, mechFilters);
-check("fit: generic engineering is worth a look", generic.fit === "look" && generic.ticks[0] === "Engineering role", `${generic.fit} ${generic.ticks}`);
-check("fit: other subject is no fit", fitRole(role("Cyber Security Placement", ["software"]), mechPrefs, mechFilters).fit === null);
+check("fit: general engineering role", generic.rank === 0 && generic.ticks[0] === "Engineering role", `${generic.rank} ${generic.ticks}`);
+check("fit: outside your field has no subject tick", fitRole(role("Cyber Security Placement", ["software"], { company_name: "Acme Ltd" }), mechPrefs, mechFilters).ticks.length === 0);
 check("fit: film production isn't manufacturing in the title", fitRole(role("Post Production Technology Internship", ["manufacturing"]), withDefaults({ degrees: ["Mechanical Engineering"] }), matchFilters(withDefaults({ degrees: ["Mechanical Engineering"] }))).ticks[0] !== "Manufacturing in the title");
 check("same role from two places", isSameRole(sameRoleKey("Industrial Placement - Vehicle Motion", "Bentley Motors Ltd"), sameRoleKey("Industrial Placement Vehicle Motion 2027", "via Bright Network")));
 check("same title, other employer is new", !isSameRole(sameRoleKey("Mechanical Engineering Industrial Placement", "Phillips 66"), sameRoleKey("Mechanical Engineering Industrial Placement", "Cummins")));
+
+// After signing in: back to the role a Telegram alert opened, never to another site
+check("return to the role", safeNext("/?open=abc") === "/?open=abc");
+check("never another site", [null, "", "//evil.example", "/\\evil.example", "https://evil.example", "/login?next=/", "/auth/callback"].every((v) => safeNext(v) === null));
 
 // Paid access: 2 days free with 5 jobs and 2 CVs, then £5 once
 const HOUR = 3_600_000;

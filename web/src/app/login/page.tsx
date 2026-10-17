@@ -1,9 +1,10 @@
 import { Brand, Sparkle, StarField, TelegramFab } from "@/components/brand";
+import { safeNext } from "@/lib/next-path";
 import { LoginForm } from "./login-form";
 
 const STATS = [
   { value: "2,900+", label: "employers watched" },
-  { value: "30 min", label: "between checks" },
+  { value: "15 min", label: "between checks" },
   { value: "under 3 h", label: "from posted to your phone" },
 ];
 
@@ -54,7 +55,7 @@ export default async function LandingPage(props: PageProps<"/login">) {
         </p>
 
         <div id="signin" className="animate-fade-up flex w-full max-w-[460px] flex-col gap-3 pt-2" style={{ animationDelay: "0.28s" }}>
-          <LoginForm linkError={searchParams.error === "link"} />
+          <LoginForm linkError={searchParams.error === "link"} next={safeNext(typeof searchParams.next === "string" ? searchParams.next : null)} />
           <span className="text-[13px] text-tx3">Enter your email to sign up or sign in. 2 days free, then £5 once for lifetime access.</span>
         </div>
 

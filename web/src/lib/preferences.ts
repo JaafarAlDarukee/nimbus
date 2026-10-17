@@ -159,6 +159,15 @@ const COUNTRY_CODES: Record<string, string> = {
 
 const EUROPE = ["IE", "DE", "NL", "BE", "LU", "FR", "CH", "AT", "IT", "ES", "PT", "DK", "SE", "NO", "FI", "PL", "CZ", "GR", "HU", "RO"];
 
+/** Every student opportunity type. For you and personal alerts show them all, grouped by type,
+ *  whatever the user ticked (owner, 17 Oct: "I want to show everything, not hide"). */
+export const STUDENT_KINDS = [...new Set(Object.values(TYPE_KINDS).flat())];
+
+/** The subjects of the user's own degree(s): "Mechanical in the title" ticks. */
+export function degreeDisciplines(p: Pick<Preferences, "degrees" | "field">): string[] {
+  return disciplinesFor(p);
+}
+
 export type MatchFilters = {
   kinds: string[];
   disciplines: string[];
@@ -167,8 +176,9 @@ export type MatchFilters = {
 };
 
 export function matchFilters(p: Preferences): MatchFilters {
-  const kinds = [...new Set(p.types.flatMap((t) => TYPE_KINDS[t] ?? []))];
-  const disciplines = disciplinesFor(p);
+  // Every type, and every subject in the user's field (a Mechanical student sees Chemical roles too)
+  const kinds = STUDENT_KINDS;
+  const disciplines = [...new Set([...disciplinesFor(p), ...(FIELD_DISCIPLINES[p.field] ?? [])])];
 
   let countries: string[] | null = [];
   if (p.abroad.includes("Worldwide")) {

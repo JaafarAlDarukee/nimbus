@@ -23,7 +23,6 @@ export default async function PayPage(props: PageProps<"/pay">) {
       justPaid={params.paid === "1"}
       left={timeLeft(profile?.trial_ends_at)}
       link={payLink(setting("stripe_link"), user.id, user.email)}
-      invite={setting("channel_invite")}
       home={profile?.onboarded_at ? "/" : "/onboarding"}
     />
   );

@@ -1,10 +1,10 @@
-import type { MatchFilters, Preferences } from "@/lib/preferences";
+import { degreeDisciplines, type MatchFilters, type Preferences } from "@/lib/preferences";
 import { timeAgo } from "@/lib/time";
 import { industryMatch } from "@/lib/industries";
-import type { Fit, OpportunityView, Tone } from "@/lib/opportunity-types";
+import type { OpportunityView, Tone } from "@/lib/opportunity-types";
 
 export type { OpportunityView, Tone } from "@/lib/opportunity-types";
-export { TYPE_CHIPS } from "@/lib/opportunity-types";
+export { TYPE_CHIPS, TYPE_COLUMNS } from "@/lib/opportunity-types";
 
 /** A database opportunity row (the columns the Opportunities page selects). */
 export type OpportunityRow = {
@@ -117,8 +117,6 @@ const TITLE_DISCIPLINE: Record<string, RegExp> = {
   environmental: /\b(environment(al)?|ecolog\w*|marine (biolog|scien|conservation|environment|survey)\w*|conservation|sustainab\w*|climate|wildlife|ocean\w*|geolog\w*|geoscien\w*|earth scien\w*|hydrolog\w*|water (science|quality|resources)|fisheries|aquacult\w*|biodiversity|zoolog\w*|net zero)\b/i,
 };
 
-export type MatchExtras = { cvSkills?: string[] };
-
 const SHORT_WORD: Record<string, string> = {
   mechanical: "Mechanical", manufacturing: "Manufacturing", robotics: "Robotics", electrical: "Electrical", aerospace: "Aerospace",
   automotive: "Automotive", materials: "Materials", civil: "Civil", chemical: "Chemical", software: "Computing", business: "Business",
@@ -128,57 +126,48 @@ const SHORT_WORD: Record<string, string> = {
 const GENERIC = new Set(["engineering", "science"]);
 
 /**
- * How well a role fits, from facts only: no made-up score. `ticks` are the facts ("Mechanical in the
- * title", "Placement", "Automotive", "CAD, MATLAB on your CV"); `fit` is top (your subject in the
- * title plus your industry or 2+ CV skills), good (your subject in the title, or a broader subject
- * match plus one of those), look (the rest), or null (not your subject). `why` explains it in
- * sentences for the drawer. Mirrored in radar/match.py `fit`.
+ * Facts about how a role fits, no score or label (owner, 17 Oct). Ticks: "Mechanical in the title"
+ * (your degree), "Asks for mechanical engineering", "Chemical engineering" (another subject in your
+ * field), "Engineering role" (no field named), "Any subject", your industry. CV skills aren't used:
+ * most adverts don't list them. `why` says the same in sentences for the drawer. `rank` only orders
+ * things: 2 = your degree in the title, 1 = your degree in the advert or your industry, 0 = the rest.
+ * Mirrored in radar/match.py `fit`.
  */
-export function fitRole(row: OpportunityRow, prefs: Preferences, filters: MatchFilters, extras: MatchExtras = {}) {
-  const kind = kindView(row);
+export function fitRole(row: OpportunityRow, prefs: Preferences, filters: MatchFilters) {
   const degree = prefs.degrees[0] ?? "degree";
+  const mine = new Set(degreeDisciplines(prefs));
+  const tags = row.disciplines ?? [];
+  const own = tags.filter((d) => mine.has(d) && !GENERIC.has(d));
+  const other = tags.filter((d) => filters.disciplines.includes(d) && !mine.has(d) && !GENERIC.has(d));
+  const inTitle = own.find((d) => TITLE_DISCIPLINE[d]?.test(row.title));
   const ticks: string[] = [];
   const why: string[] = [];
-  const tags = row.disciplines ?? [];
-  const overlap = tags.filter((d) => filters.disciplines.includes(d));
-  const inTitle = overlap.find((d) => !GENERIC.has(d) && TITLE_DISCIPLINE[d]?.test(row.title));
   if (inTitle) {
     ticks.push(`${SHORT_WORD[inTitle] ?? inTitle} in the title`);
-    why.push(`${DISCIPLINE_WORD[inTitle] ?? inTitle} is in the title, and it fits your ${degree}`);
-  } else if (overlap.length) {
-    const subject = overlap.find((d) => !GENERIC.has(d)) ?? overlap[0];
-    ticks.push(GENERIC.has(subject) ? `${SHORT_WORD[subject]} role` : `Asks for ${(DISCIPLINE_WORD[subject] ?? subject).toLowerCase()}`);
-    why.push(
-      GENERIC.has(subject)
-        ? `A general ${subject} role: the title doesn't name a field, so check it suits your ${degree}`
-        : `The advert asks for ${(DISCIPLINE_WORD[subject] ?? subject).toLowerCase()}, part of your ${degree}`,
-    );
+    why.push(`${DISCIPLINE_WORD[inTitle] ?? inTitle} is in the title, and it's part of your ${degree}`);
+  } else if (own.length) {
+    ticks.push(`Asks for ${(DISCIPLINE_WORD[own[0]] ?? own[0]).toLowerCase()}`);
+    why.push(`The advert asks for ${(DISCIPLINE_WORD[own[0]] ?? own[0]).toLowerCase()}, part of your ${degree}`);
+  } else if (other.length) {
+    ticks.push(DISCIPLINE_WORD[other[0]] ?? other[0]);
+    why.push(`${DISCIPLINE_WORD[other[0]] ?? other[0]}: another subject in your field, outside your ${degree}`);
+  } else if (tags.some((d) => GENERIC.has(d) && filters.disciplines.includes(d))) {
+    const general = tags.find((d) => GENERIC.has(d)) ?? "engineering";
+    ticks.push(`${SHORT_WORD[general]} role`);
+    why.push(`A general ${general} role: the title doesn't name a field, so check what it involves`);
   } else if (row.kind === "event" && !tags.length) {
     ticks.push("Any subject");
-  }
-  if (filters.kinds.includes(row.kind)) {
-    ticks.push(kind.type);
-    if (kind.plural) why.push(`${kind.plural} one of the types you picked`);
+    why.push("Open to students of any subject");
   }
   const industry = prefs.sectors.length ? industryMatch(prefs.sectors, row.company_name, `${row.title} ${row.company_name} ${(row.description ?? "").slice(0, 800)}`) : null;
   if (industry) {
     ticks.push(industry);
     why.push(`${industry} is one of your industries`);
   }
-  const mine = new Set((extras.cvSkills ?? []).map((s) => s.toLowerCase()));
-  const shared = (row.skills ?? []).filter((s) => mine.has(s.toLowerCase()));
-  if (shared.length) {
-    ticks.push(`${shared.slice(0, 2).join(", ")}${shared.length > 2 ? ` +${shared.length - 2}` : ""} on your CV`);
-    why.push(`Asks for ${shared.slice(0, 3).join(", ")}, ${shared.length > 1 ? "all" : "also"} on your CV`);
-  } else if (row.skills?.length) {
-    why.push(`Asks for ${row.skills.slice(0, 3).join(", ")}`);
-  }
+  if (row.skills?.length) why.push(`Asks for ${row.skills.slice(0, 3).join(", ")}`);
   if (row.rolling) why.push("Rolling applications, so applying early matters");
   if (!why.length) why.push("Posted on the employer's own site");
-
-  const extra = !!industry || shared.length >= 2;
-  const fit: Fit | null = inTitle ? (extra ? "top" : "good") : overlap.length ? (extra ? "good" : "look") : row.kind === "event" && !tags.length ? "look" : null;
-  return { fit, ticks, why: why.slice(0, 4) };
+  return { rank: inTitle ? 2 : own.length || industry ? 1 : 0, ticks, why: why.slice(0, 4) };
 }
 
 const YEARS = /\b20\d\d\b/g;
@@ -196,9 +185,9 @@ export function isSameRole([title, company]: [string, string], [t, c]: [string, 
   return t === title && (!c || !company || c.startsWith(company) || company.startsWith(c));
 }
 
-export function toView(row: OpportunityRow, prefs: Preferences, filters: MatchFilters, now: number, extras: MatchExtras = {}): OpportunityView {
+export function toView(row: OpportunityRow, prefs: Preferences, filters: MatchFilters, now: number): OpportunityView {
   const kind = kindView(row);
-  const { fit, ticks, why } = fitRole(row, prefs, filters, extras);
+  const { ticks, why } = fitRole(row, prefs, filters);
 
   const source = host(row.apply_url);
   const contact = row.published_contacts?.[0];
@@ -219,7 +208,6 @@ export function toView(row: OpportunityRow, prefs: Preferences, filters: MatchFi
     // Job-board copies appear days after the employer posts them: never "just opened"
     isNew: age < 6 * HOUR && row.source_kind !== "adzuna",
     via: row.source_kind === "adzuna" ? "Adzuna" : null,
-    fit,
     ticks,
     why,
     deadline: row.closes_at

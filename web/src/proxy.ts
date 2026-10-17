@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { safeNext } from "@/lib/next-path";
 
 const PUBLIC_PATHS = ["/login", "/auth"];
 
@@ -36,16 +37,16 @@ export async function proxy(request: NextRequest) {
   const isPublic = PUBLIC_PATHS.some((p) => path === p || path.startsWith(`${p}/`));
 
   if (!user && !isPublic) {
+    // Remember where they were going (a role opened from a Telegram alert) for after signing in
+    const next = safeNext(path + request.nextUrl.search);
     const login = request.nextUrl.clone();
     login.pathname = "/login";
-    login.search = "";
+    login.search = next && next !== "/" ? `?next=${encodeURIComponent(next)}` : "";
     return NextResponse.redirect(login);
   }
   if (user && path === "/login") {
-    const home = request.nextUrl.clone();
-    home.pathname = "/";
-    home.search = "";
-    return NextResponse.redirect(home);
+    const next = safeNext(request.nextUrl.searchParams.get("next"));
+    return NextResponse.redirect(new URL(next ?? "/", request.url));
   }
   return response;
 }

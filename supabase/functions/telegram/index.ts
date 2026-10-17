@@ -17,10 +17,10 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 const TUTORIAL = [
   "<b>How Nimbus works here</b>",
   "",
-  "🔭 When a role that fits <b>your</b> radar opens (your degree, types, industries and places), I message you, usually within 30 minutes of it appearing on the employer's site.",
+  "🔭 Every new placement, internship, graduate job, apprenticeship and event in <b>your</b> field and places: one message each, the type on top, usually within 15 to 30 minutes of it appearing on the employer's site.",
   "",
   "Under each alert:",
-  "• <b>Open and apply</b> goes straight to the employer's page",
+  "• <b>Open on Nimbus</b> opens the role on the Nimbus website, with the employer's apply link",
   "• <b>Save</b> puts it in your tracker",
   "• <b>Applied</b> marks it applied, and I remind you to follow up in 14 days",
   "• <b>Not for me</b> hides it everywhere",
