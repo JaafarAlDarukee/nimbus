@@ -56,6 +56,8 @@ const DISCIPLINE_WORD: Record<string, string> = {
   life_sciences: "Life sciences",
   healthcare: "Healthcare",
   environmental: "Environmental science",
+  engineering: "Engineering",
+  science: "Science",
 };
 
 /** Hosts that belong to hiring systems or job boards rather than the employer: no useful logo there. */

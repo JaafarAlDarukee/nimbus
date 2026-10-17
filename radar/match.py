@@ -53,7 +53,7 @@ DISCIPLINE_WORDS = {
     "electrical": "Electrical engineering", "aerospace": "Aerospace", "automotive": "Automotive", "materials": "Materials",
     "civil": "Civil engineering", "chemical": "Chemical engineering", "software": "Software", "business": "Business",
     "biomedical": "Biomedical", "life_sciences": "Life sciences", "healthcare": "Healthcare",
-    "environmental": "Environmental science",
+    "environmental": "Environmental science", "engineering": "Engineering", "science": "Science",
 }
 # A discipline named in the title itself: the classifier's own title patterns
 TITLE_DISCIPLINE = DISCIPLINES

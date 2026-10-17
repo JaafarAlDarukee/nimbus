@@ -252,13 +252,32 @@ def fingerprint(company: str, title: str, place: str) -> str:
     return hashlib.sha1(key.encode()).hexdigest()
 
 
+# Titles that are clearly engineering or science but don't name a field ("Graduate Engineer",
+# "Engineering Placement 2027", "Technical Apprentice", "Laboratory Assistant"): a general tag that
+# every engineering (or science) degree includes, so they still reach For you and personal alerts
+GENERIC_ENGINEERING = _rx(
+    r"\bengineer", r"\btechnical\b", r"\btechnician", r"\bmaintenance\b", r"\br&d\b", r"\bquality\b", r"\bproduction\b",
+    r"\bstem\b", r"\bmechanic",
+)
+GENERIC_SCIENCE = _rx(r"\bscien", r"\blab(oratory)?\b", r"\bresearch\b")
+
+
 def disciplines_for(title: str, description: str) -> list[str]:
     """From the title when it names a field; otherwise from the description's own wording (said at
-    least twice), and only when the title sounds technical."""
+    least twice), and only when the title sounds technical; otherwise a general engineering or
+    science tag when the title is clearly one of those."""
     found = [name for name, pattern in DISCIPLINES.items() if pattern.search(title)]
-    if found or not TECHNICAL_TITLE.search(title):
+    if found:
         return found
-    return [name for name, pattern in DESCRIPTION_DISCIPLINES.items() if len(pattern.findall(description)) >= 2]
+    if TECHNICAL_TITLE.search(title):
+        found = [name for name, pattern in DESCRIPTION_DISCIPLINES.items() if len(pattern.findall(description)) >= 2]
+    if found:
+        return found
+    if GENERIC_ENGINEERING.search(title):
+        return ["engineering"]
+    if GENERIC_SCIENCE.search(title):
+        return ["science"]
+    return []
 
 
 def kind_for(title: str, hint: str | None = None) -> str | None:
