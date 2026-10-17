@@ -43,3 +43,6 @@ Back to [[00 Start Here]]
 - Until 1 Oct 2026 the store didn't save the hiring system's type fields, so `radar.reclassify` closed 1,190 roles whose type came from those fields (SmartRecruiters "intern", Devpost hackathons). Fixed in code. Rows still to reopen (owner approval needed for the bulk update): `status='closed' and last_seen_at > now()-3 days and (closes_at is null or closes_at > now()-1 day)` where `kind_for(title, None)` is None, not staff, not excluded.
 - Bulk `update` statements on the live database are blocked by the safety check unless the owner approves; ask first.
 - Shell heredocs on this PC still turn `\b` into a backspace character inside Python strings: write patch scripts with the Write tool, then grep for `\x08`.
+
+## Supabase hiccups
+- Supabase occasionally returns a 5xx (e.g. 555) mid-run; two priority runs failed this way (5 and 14 Oct 2026) and GitHub emailed the owner. Nothing was lost: the next run re-saves. Since 17 Oct `radar/store.py` retries every call up to 3 times (`_Retry` transport). A single failure email is not a worry; several in a row is.
