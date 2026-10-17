@@ -17,6 +17,9 @@ Live site: **https://nimbus-pi-three.vercel.app** (invite by approval) · Repo: 
 - **Users:** only the owner (two accounts: their main one and a second test account). Friends were invited but didn't sign up; owner is now thinking of charging classmates a **one-time £3** (see [[13 Ideas backlog#Paid version (owner, 17 Oct)]]).
 - **Checks:** `python -m radar.checks` (124 pass) and `cd web && npx tsx scripts/checks.ts` (136 pass). Run both after any change to matching, tagging, readers or CV logic.
 
+## IN PROGRESS (17 Oct): going paid and public
+Plan approved by the owner (full text in [[13 Ideas backlog#Paid version (owner, 17 Oct)]] and the session log): **Phase 1 money** (open sign-ups, 2-day free trial limited to 5 jobs and 2 CVs, then **£5 one-off** via a **Stripe** payment link shown as "NIMBUS"; webhook unlocks; Admin members + settings; sign-up questions "applications planned" and "how did you hear"); **Phase 2 public website** (landing with animations, privacy/terms, app icons, free commercial hosting); **Phase 3 ads** (Remotion motion graphics, posters, daily "opened today" story, growth plan). Owner stays anonymous as "Nimbus".
+
 ## Open items (in order)
 1. **Paid access (waiting on the owner):** offered to show the owner's payment link on the "Request sent" screen and add a **Paid** tick on Admin. Owner must send their Monzo/PayPal link first (keep it out of the repo: use a Vercel env var). Owner to make the Telegram channel **private with join requests** (steps in [[Sessions/2026-10-01 to 17#17 Oct]]).
 2. **Coverage gaps:** Haleon, Reckitt, Johnson Matthey, Takeda, Lilly, Boston Scientific, Novo Nordisk, Charles River, Arm, BT, HSBC, Vodafone, Sage, Dell, Goldman (no obvious Workday board); Google, Microsoft, Amazon, Apple, Meta (own career sites, not read yet).
