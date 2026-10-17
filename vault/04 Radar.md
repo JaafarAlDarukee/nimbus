@@ -79,3 +79,7 @@ Back to [[00 Start Here]] · code in `radar/`
 - Devpost: hackathons with no engineering/science theme are kept and tagged `["software"]` (computing degrees only).
 - Boards: probe found Cloudflare, Monzo, Graphcore, Wayve, Quantexa, Faculty, Synthesia, Sophos, Thoughtworks, dunnhumby, GoCardless, PolyAI, Dexory, Carbon Clean, Ashfield MedComms; Workday: Nvidia, Cisco, Mastercard, PayPal, Lloyds (lbg), NatWest (rbs), Citi, Morgan Stanley, Deutsche Bank, Kainos, Broadcom, Workday. Not found: Arm, BT, Capgemini, Dell, Goldman, HSBC, Sage, Siemens, Vodafone; big tech (Google, Microsoft, Amazon, Apple, Meta) use their own sites (not read yet).
 - Gotcha: `companies-data.ts` keys must be double-quoted, or `match.DIRECTORY` silently becomes empty (radar_checks now asserts it parses).
+
+## Changes 2026-10-17
+- Owner: personal bot felt "slow and shit" next to the channel. Both send in the same run; the difference was (1) types: the channel posts every kind (most are apprenticeships and graduate roles), personal only the types the user picked; (2) ~half of new UK roles had no discipline tag, which the channel took by technical title but For you/personal never matched. Fix: `GENERIC_ENGINEERING` / `GENERIC_SCIENCE` in `classify.py` give untagged technical titles an `engineering` or `science` tag; every engineering degree (and Computer Engineering, Materials Science, Physics) includes `engineering`, every science degree `science`; the channel set includes both so it is unchanged.
+- `store.py` retries Supabase calls on 5xx (see [[11 Gotchas#Supabase hiccups]]).
