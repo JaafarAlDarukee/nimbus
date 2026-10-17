@@ -72,7 +72,11 @@ export default async function LandingPage(props: PageProps<"/login">) {
       </main>
 
       <TelegramFab />
-      <footer className="relative p-6 text-[13px] text-tx3">Nimbus never applies or messages employers for you.</footer>
+      <footer className="relative flex flex-wrap justify-center gap-x-4 gap-y-1 p-6 text-[13px] text-tx3">
+        <span>Nimbus never applies or messages employers for you.</span>
+        <a href="/privacy" className="!text-tx3 hover:!text-tx">Privacy</a>
+        <a href="/terms" className="!text-tx3 hover:!text-tx">Terms</a>
+      </footer>
     </div>
   );
 }

@@ -117,13 +117,17 @@ export default async function AdminPage(props: PageProps<"/admin">) {
       </div>
       {heard.length > 0 && <p className="mt-2 text-xs text-tx3">Heard from: {heard.map(([h, n]) => `${h} ${n}`).join(" · ")}</p>}
 
-      <h2 className="mb-3 mt-10 text-xs font-semibold uppercase tracking-[0.08em] text-tx3">Payment link</h2>
+      <h2 className="mb-3 mt-10 text-xs font-semibold uppercase tracking-[0.08em] text-tx3">Payment link and contact</h2>
       <form action={saveSettings} className="flex flex-col gap-3 rounded-2xl border border-line bg-s1 p-5">
         <label className="flex flex-col gap-1.5 text-sm text-tx2">
           Stripe payment link ({PRICE} once). People are sent here from the lock screen.
           <input name="stripe_link" defaultValue={setting("stripe_link")} placeholder="https://buy.stripe.com/..." className="h-11 rounded-[10px] border border-line2 bg-bg px-3 font-mono text-[13px] text-tx outline-none focus:border-l-sky" />
         </label>
-        <button className="h-10 self-start rounded-[10px] bg-sky px-4 text-sm font-medium text-on-sky hover:brightness-105">Save link</button>
+        <label className="flex flex-col gap-1.5 text-sm text-tx2">
+          Contact email, shown on the Privacy and Terms pages (use the Nimbus brand email, not your own).
+          <input name="support_email" type="email" defaultValue={setting("support_email")} placeholder="hello.nimbus@..." className="h-11 rounded-[10px] border border-line2 bg-bg px-3 font-mono text-[13px] text-tx outline-none focus:border-l-sky" />
+        </label>
+        <button className="h-10 self-start rounded-[10px] bg-sky px-4 text-sm font-medium text-on-sky hover:brightness-105">Save</button>
       </form>
 
       <h2 className="mb-3 mt-10 text-xs font-semibold uppercase tracking-[0.08em] text-tx3">Members ({members.length})</h2>

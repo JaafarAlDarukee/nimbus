@@ -15,11 +15,13 @@ from zoneinfo import ZoneInfo
 
 import httpx
 
-from ..match import filters_for, fit, is_match, with_defaults
+from ..match import filters_for, fit, is_match, is_muted, with_defaults
 from ..store import _fetch_all, client
 from ..sources.inbox import SITES
-from .telegram import KIND_LABELS
+from .telegram import ALERT_COUNTRIES, KIND_LABELS, is_engineering
 
+# "Your free trial ends soon" this many hours before it does (once)
+TRIAL_REMIND_HOURS = 12
 # One message per role, as soon as it's found (owner, 17 Oct); more than this in one check get a link instead
 MAX_PER_PERSON = 30
 # The same role from several places (employer, Gradcracker, Bright Network, Adzuna) is sent once
@@ -101,6 +103,14 @@ def _seen_roles(db: httpx.Client, ids: str) -> dict[str, list[tuple[str, str]]]:
 # The type on top, in the colours of the website's type pills
 TYPE_ICONS = {"placement": "🟦", "internship": "🟪", "spring_week": "🟨", "insight": "🟨", "grad_scheme": "🟫",
               "graduate_job": "🟫", "apprenticeship": "🟩", "research": "🟥", "scholarship": "🟥", "event": "🟧"}
+
+
+def wanted(row: dict, prefs: dict, filters: tuple) -> bool:
+    """Their own matches, plus, for engineering students, everything the main channel posts (UK and
+    Ireland, engineering, computing and science, any type): the bot never has less than the channel."""
+    if is_match(row, prefs, filters):
+        return True
+    return prefs.get("field") == "Engineering" and row.get("country") in ALERT_COUNTRIES and is_engineering(row) and not is_muted(row, prefs)
 
 
 def open_on_nimbus(row: dict) -> str:
@@ -258,7 +268,7 @@ def send_matches(rows: list[dict]) -> None:
             filters = filters_for(prefs)
             fits = []
             for row in rows:
-                if row["id"] in hidden.get(person["user_id"], set()) or not is_match(row, prefs, filters):
+                if row["id"] in hidden.get(person["user_id"], set()) or not wanted(row, prefs, filters):
                     continue
                 rank, ticks, _ = fit(row, prefs, filters)
                 fits.append((rank, ticks, row))
@@ -384,3 +394,31 @@ def send_reminders() -> None:
                            f"📬 <b>Time to follow up</b>\n{name}\nIt's been 14 days since you applied. A short, polite email to their "
                            "early-careers team is fine. Still nothing after 21 days? Mark it ghosted in your tracker.")
     print(f"Reminders: {telegram.sent} messages")
+
+
+def send_trial_reminders() -> None:
+    """Once, about TRIAL_REMIND_HOURS before a free trial ends: what stops, and the £5 link."""
+    token = os.environ.get("TELEGRAM_BOT_TOKEN")
+    if not token:
+        return
+    now = datetime.now(timezone.utc)
+    stamp = lambda t: t.strftime("%Y-%m-%dT%H:%M:%SZ")  # noqa: E731
+    with client() as db:
+        due = _fetch_all(db, "/profiles", {
+            "select": "id,trial_ends_at", "paid_at": "is.null", "is_admin": "not.is.true", "trial_reminder_at": "is.null",
+            "and": f"(trial_ends_at.gt.{stamp(now)},trial_ends_at.lt.{stamp(now + timedelta(hours=TRIAL_REMIND_HOURS))})",
+        })
+        if not due:
+            return
+        chats = {p["user_id"]: p["config"]["chat_id"] for p in _linked(db)}
+        telegram = _Telegram(token)
+        for profile in due:
+            chat = chats.get(profile["id"])
+            if not chat:
+                continue  # no Telegram: the website's banner says it instead
+            hours = max(1, round((datetime.fromisoformat(profile["trial_ends_at"]) - now).total_seconds() / 3600))
+            note = (f"⏳ <b>Your free Nimbus trial ends in about {hours} hour{'s' if hours != 1 else ''}.</b>\n"
+                    f"After that, alerts and the full list of roles stop. Keep everything for {PRICE}, once (no subscription): {SITE_URL}/pay")
+            if telegram.send(chat, note):
+                db.patch("/profiles", params={"id": f"eq.{profile['id']}"}, json={"trial_reminder_at": now.isoformat()}).raise_for_status()
+    print(f"Trial reminders: {telegram.sent} sent")

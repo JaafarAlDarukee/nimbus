@@ -163,6 +163,10 @@ const EUROPE = ["IE", "DE", "NL", "BE", "LU", "FR", "CH", "AT", "IT", "ES", "PT"
  *  whatever the user ticked (owner, 17 Oct: "I want to show everything, not hide"). */
 export const STUDENT_KINDS = [...new Set(Object.values(TYPE_KINDS).flat())];
 
+/** The main Telegram channel posts computing and science roles too (radar/notify/telegram.py
+ *  ENGINEERING): engineering students get everything it posts (owner, 17 Oct). */
+const CHANNEL_EXTRA: Record<string, string[]> = { Engineering: ["software", "science"] };
+
 /** The subjects of the user's own degree(s): "Mechanical in the title" ticks. */
 export function degreeDisciplines(p: Pick<Preferences, "degrees" | "field">): string[] {
   return disciplinesFor(p);
@@ -178,7 +182,7 @@ export type MatchFilters = {
 export function matchFilters(p: Preferences): MatchFilters {
   // Every type, and every subject in the user's field (a Mechanical student sees Chemical roles too)
   const kinds = STUDENT_KINDS;
-  const disciplines = [...new Set([...disciplinesFor(p), ...(FIELD_DISCIPLINES[p.field] ?? [])])];
+  const disciplines = [...new Set([...disciplinesFor(p), ...(FIELD_DISCIPLINES[p.field] ?? []), ...(CHANNEL_EXTRA[p.field] ?? [])])];
 
   let countries: string[] | null = [];
   if (p.abroad.includes("Worldwide")) {

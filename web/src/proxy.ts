@@ -2,7 +2,8 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { safeNext } from "@/lib/next-path";
 
-const PUBLIC_PATHS = ["/login", "/auth"];
+// Signed-out visitors may see these: sign-in, the legal pages, and the app icons and manifest
+const PUBLIC_PATHS = ["/login", "/auth", "/privacy", "/terms", "/icon", "/apple-icon", "/manifest.webmanifest"];
 
 /**
  * Runs before every page: keeps the Supabase login session fresh and sends anyone who isn't

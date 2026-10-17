@@ -88,13 +88,14 @@ const mechFilters = matchFilters(mechPrefs);
 const role = (title: string, disciplines: string[], extra: Partial<OpportunityRow> = {}) =>
   ({ id: "r", title, company_name: "Jaguar Land Rover", kind: "placement", disciplines, skills: ["CAD", "MATLAB"], country: "GB", ...extra }) as OpportunityRow;
 check("every type shows", ["placement", "apprenticeship", "grad_scheme", "graduate_job", "event"].every((k) => mechFilters.kinds.includes(k)));
-check("the whole field shows", ["chemical", "civil", "electrical", "engineering"].every((d) => mechFilters.disciplines.includes(d)) && !mechFilters.disciplines.includes("software"));
+check("the whole field shows, plus the channel's computing and science", ["chemical", "civil", "electrical", "engineering", "software", "science"].every((d) => mechFilters.disciplines.includes(d)) && !mechFilters.disciplines.includes("healthcare"));
 const own = fitRole(role("Industrial Placement 2027: Mechanical", ["mechanical"]), mechPrefs, mechFilters);
 check("fit: your degree in the title", own.rank === 2 && own.ticks[0] === "Mechanical in the title" && !own.ticks.some((t) => t.includes("CV")), `${own.rank} ${own.ticks}`);
 check("fit: another subject in your field", fitRole(role("Chemical Engineer Placement", ["chemical"], { company_name: "Acme Ltd" }), mechPrefs, mechFilters).ticks[0] === "Chemical engineering");
 const generic = fitRole(role("Placement Student - Quality", ["engineering"], { company_name: "Acme Ltd", skills: [] }), mechPrefs, mechFilters);
 check("fit: general engineering role", generic.rank === 0 && generic.ticks[0] === "Engineering role", `${generic.rank} ${generic.ticks}`);
-check("fit: outside your field has no subject tick", fitRole(role("Cyber Security Placement", ["software"], { company_name: "Acme Ltd" }), mechPrefs, mechFilters).ticks.length === 0);
+check("fit: computing for an engineer says so", fitRole(role("Cyber Security Placement", ["software"], { company_name: "Acme Ltd" }), mechPrefs, mechFilters).ticks[0] === "Software");
+check("fit: outside the field has no subject tick", fitRole(role("Staff Nurse Placement", ["healthcare"], { company_name: "Acme Ltd" }), mechPrefs, mechFilters).ticks.length === 0);
 check("fit: film production isn't manufacturing in the title", fitRole(role("Post Production Technology Internship", ["manufacturing"]), withDefaults({ degrees: ["Mechanical Engineering"] }), matchFilters(withDefaults({ degrees: ["Mechanical Engineering"] }))).ticks[0] !== "Manufacturing in the title");
 check("same role from two places", isSameRole(sameRoleKey("Industrial Placement - Vehicle Motion", "Bentley Motors Ltd"), sameRoleKey("Industrial Placement Vehicle Motion 2027", "via Bright Network")));
 check("same title, other employer is new", !isSameRole(sameRoleKey("Mechanical Engineering Industrial Placement", "Phillips 66"), sameRoleKey("Mechanical Engineering Industrial Placement", "Cummins")));

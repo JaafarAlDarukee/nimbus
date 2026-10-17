@@ -104,6 +104,9 @@ export function PayView({ access, justPaid, left, link, home }: Props) {
           </section>
         )}
 
+        <p className="m-0 text-center text-[13px] text-tx3">
+          <Link href="/terms" className="!text-tx3 underline">Terms and refunds</Link> · <Link href="/privacy" className="!text-tx3 underline">Privacy</Link>
+        </p>
         <form action={signOut} className="text-center">
           <button type="submit" className="cursor-pointer text-[13px] text-tx3 hover:text-tx">
             Sign out

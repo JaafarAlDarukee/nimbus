@@ -91,7 +91,8 @@ def main() -> None:
     check("mech gets mechanical", m.is_match(row("placement", ["mechanical"]), mech, fm))
     check("mech gets generic engineering", m.is_match(row("placement", ["engineering"]), mech, fm))
     check("data science gets software grad scheme", m.is_match(row("grad_scheme", ["software"]), cs, fc))
-    check("mech skips software", not m.is_match(row("placement", ["software"]), mech, fm))
+    check("mech gets the channel's computing roles", m.is_match(row("placement", ["software"]), mech, fm))
+    check("mech skips nursing", not m.is_match(row("placement", ["healthcare"]), mech, fm))
     check("subject-free event for everyone", m.is_match(row("event", [], None, True), bio, fb) and m.is_match(row("event", [], None, True), mech, fm))
     check("lab expo only for science", m.is_match(row("event", ["life_sciences"]), bio, fb) and not m.is_match(row("event", ["life_sciences"]), mech, fm))
     check("abroad role hidden", not m.is_match(row("placement", ["mechanical"], "US"), mech, fm))
@@ -181,7 +182,7 @@ def main() -> None:
     mech = m.with_defaults({"field": "Engineering", "degrees": ["Mechanical Engineering"], "types": ["Placement"], "sectors": ["Automotive"]})
     fm = m.filters_for(mech)
     check("every type shows", {"placement", "apprenticeship", "grad_scheme", "graduate_job", "event"} <= fm[0])
-    check("the whole field shows", {"chemical", "civil", "electrical", "engineering"} <= fm[1] and "software" not in fm[1])
+    check("the whole field shows, plus the channel's computing and science", {"chemical", "civil", "electrical", "engineering", "software", "science"} <= fm[1] and "healthcare" not in fm[1])
     jlr = {"id": "abc", "title": "Industrial Placement 2027: Mechanical", "company_name": "Jaguar Land Rover", "kind": "placement",
            "disciplines": ["mechanical"], "skills": ["CAD", "MATLAB"], "country": "GB", "apply_url": "https://example.com"}
     rank, ticks, _ = m.fit(jlr, mech, fm)
@@ -189,6 +190,14 @@ def main() -> None:
     check("fit: another subject in your field", m.fit({**jlr, "title": "Chemical Engineer Placement", "disciplines": ["chemical"], "company_name": "Acme Ltd"}, mech, fm)[1][0] == "Chemical engineering")
     rank, ticks, _ = m.fit({**jlr, "title": "Placement Student - Quality", "disciplines": ["engineering"], "company_name": "Acme Ltd"}, mech, fm)
     check("fit: general engineering role", rank == 0 and ticks[0] == "Engineering role", f"{rank} {ticks}")
+    from .notify.personal import wanted
+    from .notify.telegram import ALERT_COUNTRIES
+    channel_rows = [{**jlr, "title": "Software Developer Graduate", "kind": "graduate_job", "disciplines": ["software"]},
+                    {**jlr, "title": "Research & Development Placement", "disciplines": ["science"]},
+                    {**jlr, "title": "Design Intern", "kind": "internship", "disciplines": []},
+                    {**jlr, "title": "Mechanical Engineering Placement", "country": "IE"}]
+    check("the bot gets everything the channel posts", all(wanted(r, mech, fm) for r in channel_rows if r.get("country") in ALERT_COUNTRIES and is_engineering(r)))
+    check("muted employers stay muted", not wanted({**channel_rows[3], "company_name": "Muted Co"}, {**mech, "muted": ["Muted Co"]}, fm))
     check("apprenticeships reach a mechanical student", m.is_match({**jlr, "kind": "apprenticeship", "title": "Engineering Apprentice", "disciplines": ["engineering"]}, mech, fm))
     msg = format_match({**jlr, "posted_at": None, "first_seen_at": "2026-10-17T09:00:00+00:00"}, ["Mechanical in the title"])
     check("alert: type on top, ticks, no score", msg.startswith("🟦 <b>PLACEMENT</b>") and "✓ Mechanical in the title" in msg and "%" not in msg and "match" not in msg.lower(), msg)

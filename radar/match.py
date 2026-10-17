@@ -135,6 +135,9 @@ def with_defaults(stored: dict | None) -> dict:
 
 
 STUDENT_KINDS = {k for kinds in TYPE_KINDS.values() for k in kinds}
+# The main channel posts computing and science roles too (notify/telegram.py ENGINEERING): engineering
+# students get everything it posts (owner, 17 Oct). Same as preferences.ts CHANNEL_EXTRA.
+CHANNEL_EXTRA = {"Engineering": {"software", "science"}}
 
 
 def degree_disciplines(prefs: dict) -> set[str]:
@@ -150,7 +153,8 @@ def filters_for(prefs: dict) -> tuple[set[str], set[str], set[str] | None]:
     """Every student type and every subject in the user's field (owner, 17 Oct: show everything,
     grouped by type; a Mechanical student sees Chemical roles too). Same as preferences.ts matchFilters."""
     kinds = set(STUDENT_KINDS)
-    disciplines = degree_disciplines(prefs) | set(FIELD_DISCIPLINES.get(prefs.get("field", ""), []))
+    field = prefs.get("field", "")
+    disciplines = degree_disciplines(prefs) | set(FIELD_DISCIPLINES.get(field, [])) | CHANNEL_EXTRA.get(field, set())
     abroad = prefs.get("abroad", [])
     if "Worldwide" in abroad:
         return kinds, disciplines, None
@@ -172,6 +176,11 @@ def industry_match(sectors: list[str], company: str, text: str) -> str | None:
         if pattern and re.search(pattern, text, re.I):
             return sector
     return None
+
+
+def is_muted(row: dict, prefs: dict) -> bool:
+    company = (row.get("company_name") or "").lower()
+    return any(company.startswith(m.lower()) for m in prefs.get("muted", []))
 
 
 def is_match(row: dict, prefs: dict, filters: tuple) -> bool:
