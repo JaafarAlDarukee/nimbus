@@ -65,6 +65,9 @@ export const DEGREE_NOTES: Record<string, string> = {
   Pharmacy: "Community, hospital and industry pharmacy",
 };
 
+export const APPLICATION_PLANS = ["1 to 5", "5 to 15", "15 to 30", "30 or more"];
+export const HEARD_FROM = ["A friend", "A poster", "TikTok", "Instagram", "A society or course chat", "Somewhere else"];
+
 export const YEARS = [
   "Foundation year", "1st year", "2nd year", "3rd year", "Final year", "Integrated Masters", "MSc", "PhD",
   "Recent graduate",

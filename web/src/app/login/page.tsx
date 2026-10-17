@@ -55,7 +55,7 @@ export default async function LandingPage(props: PageProps<"/login">) {
 
         <div id="signin" className="animate-fade-up flex w-full max-w-[460px] flex-col gap-3 pt-2" style={{ animationDelay: "0.28s" }}>
           <LoginForm linkError={searchParams.error === "link"} />
-          <span className="text-[13px] text-tx3">Invite only, for the Children of Khan. Not in yet? Enter your email and ask for access.</span>
+          <span className="text-[13px] text-tx3">Enter your email to sign up or sign in. 2 days free, then £5 once for lifetime access.</span>
         </div>
 
         <div className="animate-fade-up mt-[72px] grid w-full grid-cols-3 border-t border-line" style={{ animationDelay: "0.4s" }}>

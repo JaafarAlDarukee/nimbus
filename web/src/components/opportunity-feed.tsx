@@ -7,6 +7,7 @@ import { track } from "@/app/(app)/actions";
 import { telegramLinkCode } from "@/app/(app)/profile/actions";
 import { peopleToFind } from "@/components/apply-tips";
 import { SPARKLE, StarField, TELEGRAM_BOT_URL, TelegramFab } from "@/components/brand";
+import { PRICE, TRIAL_JOBS } from "@/lib/access";
 import { TYPE_CHIPS, type OpportunityView } from "@/lib/opportunity-types";
 
 type Props = {
@@ -25,6 +26,8 @@ type Props = {
   /** Linked to the bot already? If not, "Open in Telegram" links the account on the way */
   telegramLinked: boolean;
   error: string | null;
+  /** Free trial: how many more roles are hidden behind the paywall (0 when paid) */
+  trialLocked: number;
 };
 
 const SERIF = "var(--font-newsreader), Georgia, serif";
@@ -254,6 +257,7 @@ export function OpportunityFeed(props: Props) {
               <MatchRing match={o.match} />
             </button>
           ))}
+          {props.trialLocked > 0 && <TrialLock count={props.trialLocked} />}
           {!error && opportunities.length === 0 && (
             <div className="rounded-[14px] border border-dashed border-line2 px-5 py-12 text-center text-tx3">
               Nothing matches. Try fewer filters.
@@ -826,6 +830,7 @@ function PhoneFeed(
                 : "Nothing matches yet."}
           </div>
         )}
+        {tab === "New" && props.trialLocked > 0 && <TrialLock count={props.trialLocked} />}
         {tab === "New" && props.hasMore && (
           <a href={`/?n=${props.limit + 40}`} className="mx-auto mt-2 flex h-[38px] items-center rounded-full border border-line px-4 text-[13px] font-medium !text-tx2">
             Show more
@@ -833,6 +838,24 @@ function PhoneFeed(
         )}
       </div>
     </div>
+  );
+}
+
+/** Free trial: the roles past the first 5, behind a big unlock button. */
+function TrialLock({ count }: { count: number }) {
+  return (
+    <Link
+      href="/pay"
+      className="flex flex-col items-center gap-3 rounded-2xl border-2 px-6 py-8 text-center !text-tx"
+      style={{ borderColor: "#C3B5FF", background: "rgba(195,181,255,.1)" }}
+    >
+      <span className="text-[34px] leading-none">🔒</span>
+      <span className="text-[22px] font-semibold leading-tight">
+        {count.toLocaleString("en-GB")} more {count === 1 ? "role" : "roles"} for you
+      </span>
+      <span className="text-[15px] text-tx2">The free trial shows {TRIAL_JOBS}. Unlock every job and instant alerts for {PRICE}, once.</span>
+      <span className="mt-1 flex h-12 items-center rounded-xl bg-[#C3B5FF] px-6 text-[16px] font-semibold text-[#120B2A]">Unlock everything for {PRICE}</span>
+    </Link>
   );
 }
 

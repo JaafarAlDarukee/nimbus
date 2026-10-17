@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { aiReview, createJob, deleteJob, ideas as getIdeas, popularSkills, readFile, readJobLink, readSignupCv, saveDetails, saveJob } from "@/app/(app)/cv-studio/actions";
 import { ApplyTips } from "@/components/apply-tips";
@@ -22,6 +23,7 @@ const INPUT = "h-11 min-w-0 rounded-[10px] border border-line2 bg-bg px-3 text-s
 const CARD = "flex flex-col rounded-2xl border border-line bg-s1 p-5";
 
 export function CvStudio(props: Props) {
+  const router = useRouter();
   const [jobs, setJobs] = useState(props.jobs);
   const [selId, setSelId] = useState(props.selectedId ?? props.jobs[props.jobs.length - 1]?.id ?? null);
   const [saved, setSaved] = useState(props.saved);
@@ -127,6 +129,10 @@ export function CvStudio(props: Props) {
   const newJob = () =>
     startCreating(async () => {
       const id = await createJob();
+      if (id === "limit") {
+        router.push("/pay");
+        return;
+      }
       if (!id) return;
       setJobs((list) => [...list, { id, title: "", company: "", link: "", jd: "", jdName: null, mode: null, cvName: null, cvText: null, cvMeta: null, cv: null, step: 1 }]);
       select(id);

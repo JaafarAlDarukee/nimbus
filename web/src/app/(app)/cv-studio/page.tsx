@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { cvLimitReached } from "@/app/(app)/cv-studio/actions";
 import { CvStudio } from "@/components/cv-studio";
 import { blankCv, type BuiltCv, type CvJob } from "@/lib/cv";
 import { withDefaults } from "@/lib/preferences";
@@ -33,6 +34,7 @@ export default async function CvStudioPage(props: PageProps<"/cv-studio">) {
   if (opportunityId) {
     const { data: existing } = await supabase.from("cv_jobs").select("id").eq("opportunity_id", opportunityId).maybeSingle();
     let id = existing?.id as string | undefined;
+    if (!id && (await cvLimitReached())) redirect("/pay");
     if (!id) {
       const { data: o } = await supabase.from("opportunities").select("title,company_name,apply_url,description").eq("id", opportunityId).maybeSingle();
       if (o) {

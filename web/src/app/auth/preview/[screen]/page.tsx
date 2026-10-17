@@ -9,6 +9,7 @@ export default async function PreviewPage(props: PageProps<"/auth/preview/[scree
   const { screen } = await props.params;
   const sample = SAMPLES[screen];
   if (!sample) notFound();
+  if (sample.bare) return sample.render();
   return (
     <AppShell lastChecked={CHECKED_AT} telegramOn isAdmin={false} initial="S" previewPath={sample.path}>
       {sample.render()}

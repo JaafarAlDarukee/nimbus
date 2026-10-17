@@ -5,9 +5,11 @@ import { useRouter } from "next/navigation";
 import { LogoMark, Sparkle, StarField, TELEGRAM_BOT_URL, Wordmark } from "@/components/brand";
 import {
   ABROAD_LOCATIONS,
+  APPLICATION_PLANS,
   DEGREE_NOTES,
   DEGREES_BY_FIELD,
   FIELDS,
+  HEARD_FROM,
   SECTOR_GROUPS,
   SUGGEST,
   TYPES,
@@ -23,6 +25,7 @@ const STEPS = [
   { key: "field", label: "Field", title: "Start with your field.", sub: "Engineering, science, medical and computing are covered. Business is on the way." },
   { key: "deg", label: "Degree", title: "Which degree are you on?", sub: "Pick every one that fits. Joint honours count. Add yours if it is not listed." },
   { key: "year", label: "Year", title: "Where are you in your course?", sub: "Spring weeks, placements and grad schemes open to different years, so this filters a lot." },
+  { key: "plan", label: "Your plan", title: "How many applications are you planning this season?", sub: "Be honest: it sets how many alerts you get. Then one quick question about how you found us." },
   { key: "sec", label: "Industries", title: "Which industries pull you in?", sub: "The starred set is common for your degree. Pick as many as you like, or leave it empty to hear about all of them." },
   { key: "types", label: "Opportunities", title: "What kind of opportunities do you want?", sub: "Roles, events and funding. Select everything you would say yes to." },
   { key: "loc", label: "Location", title: "Where would you go for the right role?", sub: "Most roles are UK based. Add any country or city you would move to." },
@@ -294,6 +297,7 @@ export function OnboardingFlow({
     field: prefs.field,
     deg: prefs.degrees.join(", ") || "Not set",
     year: prefs.year,
+    plan: prefs.applications ? `${prefs.applications} applications` : "Not set",
     sec: prefs.sectorsAll ? "Everything" : prefs.sectors.length ? `${prefs.sectors.length} picked` : "Not set",
     types: `${prefs.types.length} types`,
     loc: locations.slice(0, 2).join(", ") + (locations.length > 2 ? ` +${locations.length - 2}` : ""),
@@ -479,6 +483,48 @@ export function OnboardingFlow({
                   </button>
                 );
               })}
+            </div>
+          )}
+
+          {S.key === "plan" && (
+            <div className="flex flex-col gap-6">
+              <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+                {APPLICATION_PLANS.map((a, i) => {
+                  const on = prefs.applications === a;
+                  return (
+                    <button
+                      key={a}
+                      type="button"
+                      aria-pressed={on}
+                      onClick={() => update({ applications: a })}
+                      className="animate-fade-up h-16 rounded-xl border px-[18px] text-left text-[15px] font-medium transition-[transform,border-color,background-color,color] duration-200 active:scale-[.98]"
+                      style={{ borderColor: on ? "var(--l-sky)" : "var(--line2)", background: on ? "var(--b-sky)" : "transparent", color: on ? "var(--t-sky)" : "var(--tx2)", ...stagger(i) }}
+                    >
+                      {a}
+                    </button>
+                  );
+                })}
+              </div>
+              <div className="flex flex-col gap-2.5">
+                <span className="text-[15px] text-tx2">How did you hear about Nimbus?</span>
+                <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
+                  {HEARD_FROM.map((h, i) => {
+                    const on = prefs.heardFrom === h;
+                    return (
+                      <button
+                        key={h}
+                        type="button"
+                        aria-pressed={on}
+                        onClick={() => update({ heardFrom: h })}
+                        className="animate-fade-up h-14 rounded-xl border px-[18px] text-left text-[14px] font-medium transition-[transform,border-color,background-color,color] duration-200 active:scale-[.98]"
+                        style={{ borderColor: on ? "var(--l-sky)" : "var(--line2)", background: on ? "var(--b-sky)" : "transparent", color: on ? "var(--t-sky)" : "var(--tx2)", ...stagger(i) }}
+                      >
+                        {h}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
           )}
 

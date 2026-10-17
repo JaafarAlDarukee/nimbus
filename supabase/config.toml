@@ -283,7 +283,7 @@ max_frequency = "5s"
 # Invite by approval: refuse to create any account whose email hasn't been approved
 # (see supabase/migrations/*_access_requests.sql)
 [auth.hook.before_user_created]
-enabled = true
+enabled = false
 uri = "pg-functions://postgres/public/hook_before_user_created"
 
 # This hook runs before a token is issued and allows you to add additional claims based on the authentication method used.
@@ -423,4 +423,8 @@ enabled = true
 
 # The Nimbus bot: Telegram calls it directly and proves itself with a secret header instead of a JWT
 [functions.telegram]
+verify_jwt = false
+
+# Payments: Stripe calls it directly and proves itself with the Stripe-Signature header instead of a JWT
+[functions.stripe-webhook]
 verify_jwt = false

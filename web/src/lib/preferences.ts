@@ -16,6 +16,9 @@ export type Preferences = {
   emailDigest: boolean;
   /** Companies muted on the Companies page: kept out of For you */
   muted: string[];
+  /** Sign-up answers: how many applications this season, and how they heard about Nimbus */
+  applications: string;
+  heardFrom: string;
 };
 
 export const DEFAULT_PREFERENCES: Preferences = {
@@ -32,6 +35,8 @@ export const DEFAULT_PREFERENCES: Preferences = {
   cvName: null,
   emailDigest: true,
   muted: [],
+  applications: "",
+  heardFrom: "",
 };
 
 export function withDefaults(stored: unknown): Preferences {

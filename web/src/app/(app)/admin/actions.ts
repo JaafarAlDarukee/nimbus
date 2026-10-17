@@ -40,3 +40,20 @@ export async function decide(formData: FormData) {
   revalidatePath("/admin");
   redirect(`/admin?notice=${encodeURIComponent(notice)}`);
 }
+
+/** Mark someone as paid (cash, a friend) or undo it. The database checks the caller is an admin. */
+export async function setPaid(formData: FormData) {
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("admin_set_paid", { target: String(formData.get("id")), paid: formData.get("paid") === "1" });
+  revalidatePath("/admin");
+  redirect(`/admin?notice=${encodeURIComponent(error ? "Couldn't change that." : "Saved.")}`);
+}
+
+/** The Stripe payment link and the private channel's invite link. */
+export async function saveSettings(formData: FormData) {
+  const supabase = await createClient();
+  const rows = ["stripe_link", "channel_invite"].map((key) => ({ key, value: String(formData.get(key) ?? "").trim(), updated_at: new Date().toISOString() }));
+  const { error } = await supabase.from("app_settings").upsert(rows);
+  revalidatePath("/admin");
+  redirect(`/admin?notice=${encodeURIComponent(error ? "Couldn't save the links." : "Links saved.")}`);
+}

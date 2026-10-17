@@ -3,6 +3,7 @@ import { CalendarView, type CalendarEvent } from "@/components/calendar-view";
 import { CompaniesView } from "@/components/companies-view";
 import { CvStudio } from "@/components/cv-studio";
 import { OpportunityFeed } from "@/components/opportunity-feed";
+import { PayView } from "@/components/pay-view";
 import type { OpportunityView } from "@/lib/opportunity-view";
 import { ProfileView } from "@/components/profile-view";
 import { COMPANIES } from "@/lib/companies-data";
@@ -15,7 +16,12 @@ const row = (id: number, stage: string, group: string, role: string, company: st
   id: String(id), stage, group, role, company, initial: company[0], type, applied, next, due, dueAt: id * DAY, urgent, fresh, ghosted: next.startsWith("Ghosted"), nextStep: null, dueOn: null, notes: null, url: null, manual: false,
 });
 
-export const SAMPLES: Record<string, { path: string; render: () => React.ReactNode }> = {
+const payLinkSample = "https://buy.stripe.com/test_sample";
+
+export const SAMPLES: Record<string, { path: string; bare?: boolean; render: () => React.ReactNode }> = {
+  "pay-trial": { path: "/pay", bare: true, render: () => <PayView access="trial" justPaid={false} left="1 day 4 hours" link={payLinkSample} invite="" home="/" /> },
+  "pay-locked": { path: "/pay", bare: true, render: () => <PayView access="locked" justPaid={false} left="no time" link={payLinkSample} invite="" home="/" /> },
+  "pay-paid": { path: "/pay", bare: true, render: () => <PayView access="paid" justPaid={false} left="" link={null} invite="https://t.me/+sample" home="/" /> },
   tracker: {
     path: "/tracker",
     render: () => (
@@ -144,6 +150,7 @@ export const SAMPLES: Record<string, { path: string; render: () => React.ReactNo
         <OpportunityFeed
           tab="you" type="All types" q="" limit={40} opportunities={list} hasMore={false} counts={{ you: 9, all: 1284 }} newCount={8}
           tracked={{ "2": "saved" }} phone={{ closingSoon: [list[1], list[4]], saved: [list[1]], today: 3, weekday: "Tuesday" }} find={false} telegramLinked error={null}
+          trialLocked={37}
         />
       );
     },

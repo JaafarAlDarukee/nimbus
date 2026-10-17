@@ -21,6 +21,10 @@ from .telegram import KIND_LABELS
 
 MAX_PER_PERSON = 8
 MIN_SCORE = 60
+# Paid access (mirrors web/src/lib/access.ts): 2 days free with TRIAL_ALERTS alerts, then £5 once
+TRIAL_ALERTS = 5
+PRICE = "£5"
+SITE_URL = os.environ.get("NIMBUS_SITE_URL", "https://nimbus-pi-three.vercel.app").rstrip("/")
 UK = ZoneInfo("Europe/London")
 DAY = timedelta(days=1)
 
@@ -143,13 +147,53 @@ def _linked(db: httpx.Client) -> list[dict]:
     return [c for c in channels if (c.get("config") or {}).get("chat_id")]
 
 
+def access_state(profile: dict, now: datetime | None = None) -> str:
+    """paid | trial | locked: admins and payers always paid; otherwise free until trial_ends_at."""
+    now = now or datetime.now(timezone.utc)
+    if profile.get("is_admin") or profile.get("paid_at"):
+        return "paid"
+    ends = profile.get("trial_ends_at")
+    if ends and datetime.fromisoformat(ends) > now:
+        return "trial"
+    return "locked"
+
+
+def _gate(db: httpx.Client, telegram: "_Telegram | None", people: list[dict]) -> tuple[list[dict], dict[str, int | None]]:
+    """Who may get alerts now, and how many more each trial user may get (None = no limit).
+    Locked users get one message, once, saying their trial ended and how to unlock."""
+    if not people:
+        return [], {}
+    ids = ",".join(p["user_id"] for p in people)
+    profiles = {p["id"]: p for p in _fetch_all(db, "/profiles", {"select": "id,is_admin,paid_at,trial_ends_at,trial_notice_at", "id": f"in.({ids})"})}
+    now = datetime.now(timezone.utc)
+    allowed: list[dict] = []
+    budget: dict[str, int | None] = {}
+    for person in people:
+        profile = profiles.get(person["user_id"]) or {}
+        state = access_state(profile, now)
+        if state == "locked":
+            if telegram is not None and not profile.get("trial_notice_at"):
+                note = f"⏳ <b>Your free Nimbus trial has ended.</b>\nUnlock every job and instant alerts for {PRICE}, once: {SITE_URL}/pay"
+                if telegram.send(person["config"]["chat_id"], note):
+                    db.patch("/profiles", params={"id": f"eq.{person['user_id']}"}, json={"trial_notice_at": now.isoformat()}).raise_for_status()
+            continue
+        allowed.append(person)
+        budget[person["user_id"]] = TRIAL_ALERTS if state == "trial" else None
+    trial_ids = [uid for uid, left in budget.items() if left is not None]
+    if trial_ids:
+        for alert in _fetch_all(db, "/alerts_sent", {"select": "user_id", "user_id": f"in.({','.join(trial_ids)})", "channel": "eq.telegram"}):
+            budget[alert["user_id"]] = max(0, (budget[alert["user_id"]] or 0) - 1)
+    return allowed, budget
+
+
 def send_matches(rows: list[dict]) -> None:
     """New roles from this run, to everyone they fit."""
     token = os.environ.get("TELEGRAM_BOT_TOKEN")
     if not token or not rows:
         return
     with client() as db:
-        people = _linked(db)
+        telegram = _Telegram(token)
+        people, budget = _gate(db, telegram, _linked(db))
         if not people:
             return
         ids = ",".join(p["user_id"] for p in people)
@@ -158,7 +202,6 @@ def send_matches(rows: list[dict]) -> None:
         for h in _fetch_all(db, "/hidden_opportunities", {"select": "user_id,opportunity_id", "user_id": f"in.({ids})"}):
             hidden.setdefault(h["user_id"], set()).add(h["opportunity_id"])
 
-        telegram = _Telegram(token)
         reached = 0
         for person in people:
             profile = profiles.get(person["user_id"]) or {}
@@ -174,12 +217,18 @@ def send_matches(rows: list[dict]) -> None:
                     fits.append((points, industry, row))
             fits.sort(key=lambda f: -f[0])
             chat = person["config"]["chat_id"]
+            left = budget.get(person["user_id"])
+            limit = MAX_PER_PERSON if left is None else min(MAX_PER_PERSON, left)
+            if not fits or limit <= 0:
+                continue
             sent_here = 0
-            for points, industry, row in fits[:MAX_PER_PERSON]:
+            for points, industry, row in fits[:limit]:
                 if _send_once(db, telegram, person["user_id"], row["id"], "telegram", chat, format_match(row, points, industry), _buttons(row)):
                     sent_here += 1
-            if len(fits) > MAX_PER_PERSON:
-                telegram.send(chat, f"…and {len(fits) - MAX_PER_PERSON} more new matches. They're all in <b>For you</b> on the website.")
+            if len(fits) > limit and left is not None:
+                telegram.send(chat, f"🔒 {len(fits) - limit} more new matches for you. The free trial includes {TRIAL_ALERTS} alerts: unlock every alert for {PRICE}, once: {SITE_URL}/pay")
+            elif len(fits) > limit:
+                telegram.send(chat, f"…and {len(fits) - limit} more new matches. They're all in <b>For you</b> on the website.")
             reached += sent_here > 0
     print(f"Personal alerts: {telegram.sent} messages to {reached} people")
 
@@ -194,7 +243,7 @@ def send_welcome() -> None:
     if not token:
         return
     with client() as db:
-        people = _linked(db)
+        people = _gate(db, None, _linked(db))[0]
         if not people:
             return
         ids = ",".join(p["user_id"] for p in people)
@@ -215,7 +264,7 @@ def send_welcome() -> None:
             fits = sorted(
                 ((score(r, prefs, filters, cv_skills), r) for r in recent if is_match(r, prefs, filters)),
                 key=lambda f: -f[0][0],
-            )[:3]
+            )[:3]  # newcomers have sent nothing yet, so this fits inside the trial's 5
             if not fits:
                 continue
             chat = person["config"]["chat_id"]
@@ -233,7 +282,7 @@ def send_reminders() -> None:
     now = datetime.now(timezone.utc)
     e = html.escape
     with client() as db:
-        chats = {p["user_id"]: p["config"]["chat_id"] for p in _linked(db)}
+        chats = {p["user_id"]: p["config"]["chat_id"] for p in _gate(db, None, _linked(db))[0]}
         if not chats:
             return
         ids = ",".join(chats)

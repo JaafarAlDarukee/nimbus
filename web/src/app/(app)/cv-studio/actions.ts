@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { fallbackIdeas, type BuiltCv, type CvJob, type Experience } from "@/lib/cv";
+import { TRIAL_CVS, accessState } from "@/lib/access";
 import { SOFT, keywordsIn } from "@/lib/keywords";
 import { matchFilters, withDefaults } from "@/lib/preferences";
 import { createClient } from "@/lib/supabase/server";
@@ -20,7 +21,23 @@ const COLUMNS: Record<string, string> = {
   step: "step",
 };
 
-export async function createJob(): Promise<string | null> {
+/** Free trial: up to TRIAL_CVS CV jobs (lib/access.ts). "limit" means the trial is full. */
+export async function cvLimitReached(): Promise<boolean> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return true;
+  const [{ data: profile }, { count }] = await Promise.all([
+    supabase.from("profiles").select("is_admin,paid_at,trial_ends_at").eq("id", user.id).maybeSingle(),
+    supabase.from("cv_jobs").select("id", { count: "exact", head: true }),
+  ]);
+  const access = accessState(profile);
+  return access === "locked" || (access === "trial" && (count ?? 0) >= TRIAL_CVS);
+}
+
+export async function createJob(): Promise<string | "limit" | null> {
+  if (await cvLimitReached()) return "limit";
   const supabase = await createClient();
   const { data } = await supabase.from("cv_jobs").insert({}).select("id").single();
   revalidatePath("/cv-studio");

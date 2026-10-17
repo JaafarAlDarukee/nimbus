@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 
-type Status = "idle" | "sending" | "sent" | "not-approved" | "requesting" | "requested" | "error";
+type Status = "idle" | "sending" | "sent" | "error";
 
 export function LoginForm({ linkError }: { linkError: boolean }) {
   const [email, setEmail] = useState("");
@@ -18,34 +18,22 @@ export function LoginForm({ linkError }: { linkError: boolean }) {
     const { error } = await createClient().auth.signInWithOtp({
       email: email.trim(),
       options: {
-        // Accounts are only created for approved emails: Supabase checks the approval list
-        // itself (hook_before_user_created) and refuses everyone else
+        // Anyone can sign up: new accounts start a 2-day free trial (see lib/access.ts)
         shouldCreateUser: true,
         emailRedirectTo: `${window.location.origin}/auth/callback`,
       },
     });
     if (!error) {
       setStatus("sent");
-    } else if (/not been approved|signups not allowed|403/i.test(error.message)) {
-      setStatus("not-approved");
+    } else if (/signups not allowed|not been approved/i.test(error.message)) {
+      setStatus("error");
+      setMessage("New sign-ups are paused for a moment. Try again soon.");
     } else if (/rate|seconds|too many/i.test(error.message)) {
       setStatus("error");
       setMessage("Too many login emails just now. Wait a minute and try again.");
     } else {
       setStatus("error");
       setMessage(error.message);
-    }
-  }
-
-  async function requestAccess() {
-    setStatus("requesting");
-    const { error } = await createClient().from("access_requests").insert({ email: email.trim() });
-    // A duplicate means they already asked; treat it the same as a fresh request
-    if (!error || error.code === "23505") {
-      setStatus("requested");
-    } else {
-      setStatus("error");
-      setMessage("Couldn't send your request. Check the email and try again.");
     }
   }
 
@@ -61,35 +49,6 @@ export function LoginForm({ linkError }: { linkError: boolean }) {
         <button type="button" onClick={() => setStatus("idle")} className="h-11 shrink-0 px-1 text-sm font-medium text-t-sky">
           Change
         </button>
-      </div>
-    );
-  }
-
-  if (status === "not-approved" || status === "requesting") {
-    return (
-      <div className={box}>
-        <span className="text-sm leading-normal text-tx2">
-          <span className="text-tx">{email}</span> isn&apos;t on Nimbus yet. Ask for access and you&apos;ll get an email
-          once you&apos;re approved.
-        </span>
-        <button
-          type="button"
-          onClick={requestAccess}
-          disabled={status === "requesting"}
-          className="h-11 shrink-0 whitespace-nowrap rounded-[10px] bg-sky px-4 text-sm font-medium text-on-sky disabled:opacity-60"
-        >
-          {status === "requesting" ? "Sending…" : "Request access"}
-        </button>
-      </div>
-    );
-  }
-
-  if (status === "requested") {
-    return (
-      <div className={box}>
-        <span className="text-sm leading-normal text-tx2">
-          Request sent for <span className="text-tx">{email}</span>. You&apos;ll get an email as soon as it&apos;s approved.
-        </span>
       </div>
     );
   }

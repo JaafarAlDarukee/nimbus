@@ -12,6 +12,7 @@ import { cvFromText, tailorCv } from "../src/lib/cv-tailor";
 import { EXAMPLE_CV, EXAMPLE_NOTES } from "../src/lib/cv-example";
 import { keywordsIn } from "../src/lib/keywords";
 import { peopleToFind, shortDegree } from "../src/components/apply-tips";
+import { PRICE, TRIAL_CVS, TRIAL_JOBS, accessState, payLink, timeLeft } from "../src/lib/access";
 
 let ok = 0;
 let fail = 0;
@@ -79,6 +80,20 @@ check("acronyms only in capitals", !keywordsIn("we sell spices").includes("SPICE
 check("short degree", shortDegree("BEng (Hons) Mechanical Engineering (with Foundation Year)") === "Mechanical Engineering");
 check("LinkedIn searches", peopleToFind("Jaguar Land Rover", "Industrial Placement 2027: Mechanical", "University of Leeds").length === 4);
 check("card labels", kindView({ kind: "event", title: "DurHack" }).type === "Hackathon" && kindView({ kind: "event", title: "Lab Innovations 2026 (expo)" }).type === "Expo");
+
+// Paid access: 2 days free with 5 jobs and 2 CVs, then £5 once
+const HOUR = 3_600_000;
+const soon = new Date(Date.now() + 28 * HOUR).toISOString();
+const past = new Date(Date.now() - HOUR).toISOString();
+check("trial rules", PRICE === "£5" && TRIAL_JOBS === 5 && TRIAL_CVS === 2);
+check("admin always paid", accessState({ is_admin: true, trial_ends_at: past }) === "paid");
+check("payer paid after trial", accessState({ paid_at: past, trial_ends_at: past }) === "paid");
+check("trial while it lasts", accessState({ trial_ends_at: soon }) === "trial");
+check("locked after trial", accessState({ trial_ends_at: past }) === "locked" && accessState(null) === "locked");
+check("time left wording", timeLeft(new Date(Date.now() + 28 * HOUR + 60_000).toISOString()) === "1 day 4 hours" && timeLeft(past) === "no time", timeLeft(soon));
+const link = payLink("https://buy.stripe.com/test_abc", "u-1", "a@example.com");
+check("pay link carries who pays", !!link && link.includes("client_reference_id=u-1") && link.includes("prefilled_email=a%40example.com"), String(link));
+check("pay link only to Stripe", payLink("https://evil.example.com/pay", "u-1") === null && payLink("", "u-1") === null);
 
 console.log(`${ok} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

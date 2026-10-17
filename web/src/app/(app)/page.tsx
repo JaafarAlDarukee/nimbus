@@ -1,4 +1,5 @@
 import { OpportunityFeed } from "@/components/opportunity-feed";
+import { TRIAL_JOBS, accessState } from "@/lib/access";
 import { OPPORTUNITY_SELECT, TYPE_CHIPS, toView, type OpportunityRow, type OpportunityView } from "@/lib/opportunity-view";
 import { applyMatch, matchFilters, withDefaults } from "@/lib/preferences";
 import { createClient } from "@/lib/supabase/server";
@@ -50,7 +51,7 @@ async function loadFeed(params: Awaited<PageProps<"/">["searchParams"]>): Promis
     data: { user },
   } = await supabase.auth.getUser();
   const [{ data: profile }, { data: hiddenRows }, { data: telegram }] = await Promise.all([
-    supabase.from("profiles").select("preferences,cv_details").eq("id", user!.id).maybeSingle(),
+    supabase.from("profiles").select("preferences,cv_details,is_admin,paid_at,trial_ends_at").eq("id", user!.id).maybeSingle(),
     // "Not for me" in Telegram
     supabase.from("hidden_opportunities").select("opportunity_id").limit(500),
     supabase.from("notification_channels").select("id").eq("channel", "telegram").eq("enabled", true).limit(1),
@@ -101,8 +102,12 @@ async function loadFeed(params: Awaited<PageProps<"/">["searchParams"]>): Promis
 
   const now = Date.now();
   const view = (list: unknown) => ((list ?? []) as OpportunityRow[]).map((row) => toView(row, prefs, filters, now, extras));
-  const opportunities = collapse(view(rows.data));
-  const closingSoon = collapse(view(closing.data));
+  // Free trial: the first few roles; the rest wait behind the paywall
+  const trial = accessState(profile) === "trial";
+  const allCards = collapse(view(rows.data));
+  const opportunities = trial ? allCards.slice(0, TRIAL_JOBS) : allCards;
+  const closingSoon = trial ? collapse(view(closing.data)).slice(0, 2) : collapse(view(closing.data));
+  const trialLocked = trial ? Math.max(0, (rows.count ?? allCards.length) - opportunities.length) : 0;
   const saved = view(((savedApps.data ?? []) as unknown as { opportunity: OpportunityRow | null }[]).map((a) => a.opportunity).filter(Boolean));
 
   const ids = [...new Set([...opportunities, ...closingSoon].map((o) => o.id))];
@@ -120,7 +125,7 @@ async function loadFeed(params: Awaited<PageProps<"/">["searchParams"]>): Promis
     q: q ?? "",
     limit,
     opportunities,
-    hasMore: (rows.count ?? 0) > (rows.data?.length ?? 0),
+    hasMore: !trial && (rows.count ?? 0) > (rows.data?.length ?? 0),
     counts: { you: forYou.count ?? 0, all: all.count ?? 0 },
     newCount: fresh.count ?? 0,
     tracked,
@@ -133,5 +138,6 @@ async function loadFeed(params: Awaited<PageProps<"/">["searchParams"]>): Promis
     find: first(params.find) === "1",
     telegramLinked: (telegram ?? []).length > 0,
     error: rows.error ? "Couldn't load opportunities just now. Try again in a moment." : null,
+    trialLocked,
   };
 }

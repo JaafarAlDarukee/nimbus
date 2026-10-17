@@ -8,9 +8,11 @@ export function InviteCard({ site }: { site: string }) {
   const message = `Made something for us 🫵 Nimbus finds engineering, science and computing placements, internships and grad jobs the moment they open, and pings you on Telegram. It also checks your CV for each job.
 
 1. Open ${site}
-2. Type your email, tap "Email me a login link", then "Request access"
-3. I approve you, you get an email from "Children of Khan" (check spam), tap it
+2. Type your email and tap "Email me a login link"
+3. Open the login email (check spam) and tap the link
 4. Pick your degree and what you want (2 mins), then connect Telegram
+
+2 days free, then £5 once and it's yours for good.
 
 On your phone: open the link, then browser menu → "Add to Home screen".`;
   return (
@@ -29,7 +31,7 @@ On your phone: open the link, then browser menu → "Add to Home screen".`;
         >
           {copied ? "Copied: paste it in your group chat" : "Copy the invite"}
         </button>
-        <span className="text-xs text-tx3">When they ask, they appear under Waiting below and you get a Telegram ping. Approve them here.</span>
+        <span className="text-xs text-tx3">They appear under Members below as soon as they sign up.</span>
       </div>
     </div>
   );

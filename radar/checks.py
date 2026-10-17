@@ -140,6 +140,17 @@ def main() -> None:
     check("nhs card parses", len(nhs) == 1 and nhs[0].title == "Trainee Biomedical Scientist" and nhs[0].company == "NHS Trust")
     check("nhs trainee kept", bool(nhs) and classify(nhs[0]) is not None)
 
+    # Paid access, the same rules as web/src/lib/access.ts
+    from datetime import datetime, timedelta, timezone
+    from .notify.personal import TRIAL_ALERTS, access_state
+    now = datetime.now(timezone.utc)
+    later, earlier = (now + timedelta(days=1)).isoformat(), (now - timedelta(hours=1)).isoformat()
+    check("admin always paid", access_state({"is_admin": True, "trial_ends_at": earlier}) == "paid")
+    check("payer paid after trial", access_state({"paid_at": earlier, "trial_ends_at": earlier}) == "paid")
+    check("trial while it lasts", access_state({"trial_ends_at": later}) == "trial")
+    check("locked after trial", access_state({"trial_ends_at": earlier}) == "locked" and access_state({}) == "locked")
+    check("trial alerts match the site's 5 jobs", TRIAL_ALERTS == 5)
+
     print(f"{ok} passed, {fail} failed")
     sys.exit(1 if fail else 0)
 
