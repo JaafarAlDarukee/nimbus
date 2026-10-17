@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import time
 from datetime import datetime, timedelta, timezone
 
 import httpx
@@ -19,6 +20,26 @@ def _explain_errors(response: httpx.Response) -> None:
         print(f"Supabase said {response.status_code} for {response.request.url.path}: {response.text[:500]}")
 
 
+class _Retry(httpx.HTTPTransport):
+    """Supabase now and then answers a request with a passing server error (5xx) or drops the
+    connection. Every call the radar makes is safe to repeat (reads, upserts, status updates),
+    so wait and try again, up to three times, instead of failing the whole run."""
+
+    def handle_request(self, request: httpx.Request) -> httpx.Response:
+        for attempt in range(3):
+            try:
+                response = super().handle_request(request)
+            except httpx.TransportError:
+                if attempt == 2:
+                    raise
+            else:
+                if response.status_code < 500 or attempt == 2:
+                    return response
+                response.close()
+            time.sleep(3 * (attempt + 1))
+        raise RuntimeError("unreachable")
+
+
 def client() -> httpx.Client:
     url = os.environ["SUPABASE_URL"].rstrip("/")
     key = os.environ["SUPABASE_SECRET_KEY"].strip()
@@ -32,6 +53,7 @@ def client() -> httpx.Client:
         base_url=f"{url}/rest/v1",
         headers={"apikey": key, "Content-Type": "application/json"},
         timeout=60,
+        transport=_Retry(),
         event_hooks={"response": [lambda r: (r.read(), _explain_errors(r))]},
     )
 
