@@ -3,7 +3,7 @@
 Back to [[00 Start Here]]
 
 ```
- Supabase pg_cron (every 30 min / 6 h) ──calls GitHub API──▶ GitHub Actions (public repo)
+ Supabase pg_cron (every 15 min / 6 h) ──calls GitHub API──▶ GitHub Actions (public repo)
                                                            │  radar-priority.yml / radar-full.yml
  Employers' boards, NHS Jobs, Devpost, MLH, Gmail ◀─reads─ │  python -m radar.run
                                                            ▼

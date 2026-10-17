@@ -7,11 +7,11 @@ Back to [[00 Start Here]] · updated 2026-10-17 · full history in [[Sessions/20
 - Readers: Workday, SuccessFactors, Greenhouse, Lever, Ashby, SmartRecruiters, Workable, RSS, sitemaps, Adzuna (labelled), Nimbus inbox (Gradcracker, Higherin, Bright Network, TARGETjobs, LinkedIn alerts…), **NHS Jobs**, **Devpost**, **MLH**, curated **events.csv** (16 UK + 10 international).
 - ~3,300 boards: Common Crawl discovery + probe + hand research (`data/discovered/research.csv`: AstraZeneca, Dyson, Mercedes F1, 28 pharma/medtech, ~27 tech/fintech/banks…).
 - Classification: kind, discipline tags (engineering fields, `software`, `biomedical`, `life_sciences`, `healthcare`, `environmental`, generic `engineering`/`science`, `business`, `creative`), skills, closing dates. Exclusions: no defence, nuclear, weapons, Airbus, BAE, Boeing…
-- Schedule: priority every 30 min, full every 6 h (Supabase pg_cron → GitHub Actions); Supabase calls retried on 5xx.
+- Schedule: priority every 15 min, full every 6 h (Supabase pg_cron → GitHub Actions); Supabase calls retried on 5xx.
 - Telegram: shared **Nimbus Alerts** channel (UK/IE engineering + computing roles); **personal alerts** per linked user (For you rules), welcome matches, deadline reminders, follow-up nudges.
 
 **Website** ([[06 Website]]) at nimbus-pi-three.vercel.app
-- Landing ("Welcome to Children of Khan, boy 🫵"), **open sign-ups with a 2-day free trial** (5 jobs, 2 CVs, 5 Telegram alerts), **/pay** (£5 once via Stripe), onboarding (4 fields: Engineering, Science, Medical and health, Computing; 50+ degrees), Opportunities (For you / All, drawer with LinkedIn people to find), Tracker, Calendar, Companies (by field/degree, routes for blocked employers), Profile, Admin (money, members with Mark paid, payment links, invite card, company suggestions, old access requests).
+- Landing ("Welcome to Children of Khan, boy 🫵"), **open sign-ups with a 2-day free trial** (5 jobs, 2 CVs, 5 Telegram alerts), **/pay** (£5 once via Stripe), onboarding (4 fields: Engineering, Science, Medical and health, Computing; 50+ degrees), Opportunities (For you / All; every type and the whole field, as 4 type columns on a computer and type tabs on a phone; drawer with LinkedIn people to find; `?open=<id>` from Telegram), Tracker, Calendar, Companies (by field/degree, routes for blocked employers), Profile, Admin (money, members with Mark paid, payment links, invite card, company suggestions, old access requests).
 - CV studio: r/EngineeringResumes template, ATS checker, read advert from a link, Use my CV (one-click tailoring), example CV, Claude pop-up, LinkedIn tips, downloads (PDF/Word/Google Doc).
 
 **Email**: Supabase sends sign-up emails through the Nimbus Gmail as "Children of Khan".

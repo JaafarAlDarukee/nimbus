@@ -6,7 +6,7 @@ Back to [[00 Start Here]]
 UK engineering students need placements and internships, and applying **early** matters (rolling deadlines). Paid tools like Runway (joinrunway.io, US-only, $3–13/month) do "instant alerts + AI CV help". The owner can't pay and wanted their own version for themselves and friends. Maybe a business later (see [[13 Ideas backlog#Business]]).
 
 ## What Nimbus does
-- **Radar**: checks thousands of employers' hiring systems + job APIs + the user's own alert emails, every 30 minutes. See [[04 Radar]].
+- **Radar**: checks thousands of employers' hiring systems + job APIs + the user's own alert emails, every 15 minutes. See [[04 Radar]].
 - **Alerts** within 3 hours of posting (usually minutes): Telegram first, also email digest; Discord and WhatsApp planned.
 - **Website**: landing (invite-only), onboarding, Opportunities (For you / All), Tracker, Calendar, Companies, CV studio, Profile. See [[06 Website]] and [[07 Design]].
 - **Intelligence, not a bot**: every card shows company, role, location, apply link, key disciplines/skills, and *published* contact routes. The user decides and applies or emails themselves. See [[09 Decisions log]].

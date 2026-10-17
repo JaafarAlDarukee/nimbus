@@ -3,7 +3,7 @@
 Back to [[00 Start Here]] · code in `radar/`
 
 ## Run
-- `python -m radar.run --tier priority` (UK/IE; Workday only lists jobs posted in ~the last week) — every 30 min.
+- `python -m radar.run --tier priority` (UK/IE; Workday only lists jobs posted in ~the last week) — every 15 min (since 17 Oct; was 30).
 - `python -m radar.run --tier full` (all countries) — every 6 h.
 - `--dry-run` prints results instead of saving; `--only "<company text>"` limits boards.
 - Locally, results print in full; **in GitHub Actions only summary counts print** (public logs).
@@ -91,3 +91,9 @@ Back to [[00 Start Here]] · code in `radar/`
 - `event_tags.py`: "software engineers" no longer tags every engineering degree. `exclusions.py`: excluded employers named in a title are excluded (e.g. "NTU x ST Engineering Hackathon"; ST Engineering added).
 - `inbox.py` `_company_from`: Bright Network (`/graduate-jobs/<employer>/…`) and Higherin (`/jobs/<id>/<employer>/…`) give the employer. **This exposed 43 open BAE Systems / MBDA / AWE / Babcock roles** hidden behind "via Bright Network"; `reclassify.py` now renames "via <site>" rows from the link and checks exclusions on the new name (run: 43 excluded closed, 307 relabelled, 372 renamed, 2 duplicates closed). LinkedIn / TARGETjobs links don't name the employer (153 rows left).
 - `match.py` `fit()` replaces `score()` (see [[06 Website#Match: facts, not a score (17 Oct)]]); `personal.py`: alerts show the label and ticks (no %), "via Gradcracker" instead of "posted today" for email finds, and **`same_role_key` / `is_repeat`** skip a role already sent to that person in the last 30 days (`REPEAT_DAYS`) or earlier in the run. `MIN_SCORE` removed (it let everything through).
+
+## Changes 2026-10-17 (night)
+- `match.py` `filters_for`: **every student kind** (`STUDENT_KINDS`, all `TYPE_KINDS` values) and **the degree's subjects plus the whole field** (`FIELD_DISCIPLINES`); `degree_disciplines()` = the degree's own. `fit(row, prefs, filters)` → `(rank, ticks, industry)`: ticks "Mechanical in the title" / "Asks for …" (own degree), "Chemical engineering" (other subject in the field), "Engineering role", "Any subject", industry; **no labels, no CV skills**; rank only orders (2 own degree in title, 1 own degree in advert or industry, 0 rest).
+- `personal.py`: message starts with the type (🟦 PLACEMENT, 🟩 APPRENTICESHIP, 🟫 GRADUATE SCHEME, 🟧 HACKATHON…), then title, employer · place, details, ticks; first button **Open on Nimbus** = `{SITE_URL}/?open=<id>` (sign in / pay first); `MAX_PER_PERSON` 30 (then "…and N more on Nimbus"). Trial still 5 alerts. The shared channel (`notify/telegram.py`) is unchanged.
+- Schedule: `nimbus-radar-priority` at `2,17,32,47 * * * *` (migration `20261017010000_radar_every_15_min.sql`); workflow renamed "every 15 min". Priority runs take ~5-7 min; the full run (~27 min, every 6 h at :50) still blocks them while it runs (shared concurrency group).
+- Replay of the owner's last week with the new rules: 360 personal alerts (145 grad schemes, 61 internships, 58 apprenticeships, 53 placements, 36 graduate jobs…).

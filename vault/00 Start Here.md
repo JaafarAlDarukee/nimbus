@@ -13,9 +13,12 @@ Live site: **https://nimbus-pi-three.vercel.app** (open sign-ups: 2 days free, t
 6. Private context about the owner (their CV, goals) is in Claude's local memory folder, not here (this repo is public).
 
 ## State on 17 Oct 2026
-- **Everything is live and healthy.** Radar: priority run every 30 min, full run every 6 h (Supabase pg_cron → GitHub Actions). ~24,000 open roles, newest within minutes. Website on Vercel (auto-deploys from `main`). Telegram: shared channel + personal alerts per user.
+- **Everything is live and healthy.** Radar: priority run every 15 min, full run every 6 h (Supabase pg_cron → GitHub Actions). ~24,000 open roles, newest within minutes. Website on Vercel (auto-deploys from `main`). Telegram: shared channel + personal alerts per user.
 - **Users (17 Oct):** 5 website accounts (owner included), 3 finished sign-up, 2 on personal Telegram alerts; 5 people in the channel.
-- **Checks:** `python -m radar.checks` (151 pass) and `cd web && npx tsx scripts/checks.ts` (150 pass). Run both after any change to matching, tagging, readers or CV logic.
+- **Checks:** `python -m radar.checks` (155 pass) and `cd web && npx tsx scripts/checks.ts` (155 pass). Run both after any change to matching, tagging, readers or CV logic.
+
+## Done 17 Oct night: show everything, split by type, apply through Nimbus, every 15 min
+Owner's decisions, all live: For you and personal alerts show **every type** and **every subject in the user's field** (a Mechanical student sees Chemical, Civil, Electrical, general engineering, apprenticeships, graduate jobs…); the "what kind of opportunities" sign-up question is gone. **For you on a computer = 4 side-by-side columns** (Placements & internships · Graduate jobs · Apprenticeships · Events & research); **phone = type tabs with counts**. **No Top/Good/Worth-a-look labels, no CV-skills ticks** (facts only). **Personal bot: one message per role, type on top, up to 30 per check, "Open on Nimbus"** (website first, so people sign in / pay, then the employer). **Main channel unchanged and private for the owner only** (no invite for payers). **Radar every 15 min.** Sign-in email now also has a **6-digit code** (works inside Telegram/Instagram browsers) and signing in returns to the role tapped. Replay of the owner's last week: **360 alerts (~51 a day)** instead of 58. Details: [[06 Website#Show everything, split by type (17 Oct night)]], [[04 Radar#Changes 2026-10-17 (night)]].
 
 ## Done 17 Oct evening: better personal alerts, ticks instead of %
 Owner: personal Telegram had "a small number of jobs and most of them are bad"; the "80% match" felt like a guess. Now: **ticks + label** (Top match / Good match / Worth a look) from facts only, on the site and in Telegram; **each role sent once** however many places list it; stricter subject words; Bright Network / Higherin employers read from the link. Replaying the owner's last week: 76 alerts instead of 58 (16 repeats/wrong-field removed, 34 real placements added). **Found and fixed: 43 open BAE Systems / MBDA / AWE / Babcock roles** were showing because "via Bright Network" hid the employer; closed by reclassify. Details: [[04 Radar#Changes 2026-10-17 (evening)]], [[06 Website#Match: facts, not a score (17 Oct)]].
@@ -32,8 +35,8 @@ Owner stays anonymous as "Nimbus". Full plan in [[13 Ideas backlog#Paid version 
    1. Create a **Stripe** account. Public business name and statement descriptor: **NIMBUS**. Support email: a brand email without the owner's name (make a new "Nimbus" Gmail if needed).
    2. Product **"Nimbus lifetime access"**, £5, one-off. Create a **Payment Link**; after payment, redirect to `https://nimbus-pi-three.vercel.app/pay?paid=1`.
    3. Developers → Webhooks → add endpoint `https://rwcpwqhjmhsxtslamudm.supabase.co/functions/v1/stripe-webhook`, event `checkout.session.completed` (and `checkout.session.async_payment_succeeded`). Copy its **signing secret** into Supabase → Edge Functions → Secrets as `STRIPE_WEBHOOK_SECRET`.
-   4. Paste the Payment Link and the private channel's invite link on **Admin → Payment links**.
-   5. Telegram: make **Nimbus Alerts** private with "Request admin approval" invite link; remove people who haven't paid.
+   4. Paste the Payment Link on **Admin → Payment link**.
+   5. Telegram: make **Nimbus Alerts** private and remove everyone else: it's the owner's own backup now (owner, 17 Oct). Paying users get the personal bot, not the channel.
    6. Test in Stripe **test mode** first (a test account, test card), then switch the link to live.
 2. **Coverage gaps:** Haleon, Reckitt, Johnson Matthey, Takeda, Lilly, Boston Scientific, Novo Nordisk, Charles River, Arm, BT, HSBC, Vodafone, Sage, Dell, Goldman (no obvious Workday board); Google, Microsoft, Amazon, Apple, Meta (own career sites, not read yet).
 3. **Owner actions suggested, not confirmed:** Bright Network email frequency → most frequent; Profile → add Europe/USA/Canada/UAE to see abroad events.

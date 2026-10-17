@@ -9,7 +9,7 @@ Back to [[00 Start Here]]
 |---|---|---|
 | GitHub | repo `JaafarAlDarukee/nimbus` (public) | `gh` CLI logged in on the PC. Student Pack active |
 | Supabase | project `nimbus`, ref `rwcpwqhjmhsxtslamudm`, London | CLI linked (`npx supabase ...`); owner logged in via `npx.cmd supabase login` |
-| Telegram | bot **@NimbusRadarBot** (token was rotated once); channel **Nimbus Alerts** (public link; owner may make it private for paid access) | Owner's private chat with the bot is used for admin DMs. Branding images in `design/telegram/` |
+| Telegram | bot **@NimbusRadarBot** (token was rotated once); channel **Nimbus Alerts**: the owner's own backup of everything (owner, 17 Oct: make it private, nobody else; payers get the personal bot) | Owner's private chat with the bot is used for admin DMs. Branding images in `design/telegram/` |
 | Gmail | a dedicated "Nimbus" Gmail with 2-step verification + app password "Nimbus" | Used by the radar inbox (IMAP). Owner's main Gmail is NOT connected |
 | Adzuna | developer API (app id + key) | Credit "Jobs by Adzuna" wherever its jobs show |
 | Google AI Studio / Gemini | **not set up; owner declined ("forget about AI")** | Optional `GEMINI_API_KEY` in Vercel would switch on CV studio's dormant Free AI review |

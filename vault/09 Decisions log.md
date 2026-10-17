@@ -44,3 +44,10 @@ No Airbus, BAE Systems, Boeing, or any nuclear / weapons / defence company or ro
 - **No % match score** (owner: "more like a guess"). Ticks with the real facts + a label (Top match / Good match / Worth a look) worked out from them, on the site and in Telegram.
 - **Each role once** per person, however many sources list it (30-day memory for Telegram).
 - "Worth a look" roles (general "Engineering role" titles) are still sent: they include many good placements (Cummins Quality, Curtins, Sulzer), ranked after Top/Good.
+
+## 2026-10-17 (night) · Show everything
+- **For you and personal alerts show every type and the whole field** ("I want to show everything, I don't want to hide"; a Mechanical student sees Chemical roles too). Split by type: columns on a computer, tabs on a phone.
+- **No labels** (Top/Good/Worth a look) and **no CV skills** in matching (many adverts don't list skills).
+- **Personal bot = notifications; applying goes through the Nimbus website** ("Open on Nimbus"), so people sign in / pay. One message per role, as soon as found.
+- **Main channel stays exactly as it is, for the owner only** (their backup if the system fails); not given to payers.
+- **Radar every 15 min.** A server for faster checks is fine with the owner if needed later.
