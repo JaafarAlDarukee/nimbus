@@ -156,6 +156,8 @@ def main() -> None:
     from .notify.personal import is_repeat, same_role_key
     from .sources.inbox import SITES as INBOX_SITES
     from .sources.inbox import _company_from
+    check("broadcast engineer is still engineering", "engineering" in disciplines_for("Graduate Broadcast Engineer - Support", ""))
+    check("theatre design stays creative", disciplines_for("Graduate Audiovisual & Theatre Design", "") == ["creative"])
     check("post production is not manufacturing", "manufacturing" not in disciplines_for("Post Production Technology Internship 2027", ""))
     check("factory production stays", "manufacturing" in disciplines_for("Industrial Placement - Production", ""))
     check("materials management is not materials", "materials" not in disciplines_for("Intern - Materials Management Analyst", ""))

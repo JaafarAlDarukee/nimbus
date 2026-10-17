@@ -269,6 +269,7 @@ GENERIC_ENGINEERING = _rx(
     r"\bstem\b", r"\bmechanic",
 )
 GENERIC_SCIENCE = _rx(r"\bscien", r"\blab(oratory)?\b", r"\bresearch\b")
+ENGINEER_TITLE = _rx(r"\bengineer")
 
 
 def disciplines_for(title: str, description: str) -> list[str]:
@@ -276,6 +277,8 @@ def disciplines_for(title: str, description: str) -> list[str]:
     least twice), and only when the title sounds technical; otherwise a general engineering or
     science tag when the title is clearly one of those."""
     found = [name for name, pattern in DISCIPLINES.items() if pattern.search(title)]
+    if found == ["creative"] and ENGINEER_TITLE.search(title):
+        found.append("engineering")  # "Graduate Broadcast Engineer": a TV word, still an engineering job
     if found:
         return found
     if TECHNICAL_TITLE.search(title):
