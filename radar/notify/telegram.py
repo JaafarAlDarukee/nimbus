@@ -1,4 +1,7 @@
-"""Telegram alerts for new opportunities. Messages go to TELEGRAM_CHAT_ID (you, or your group)."""
+"""The main Telegram channel (TELEGRAM_CHAT_ID): the owner's own, with EVERY new role the radar finds, no
+filter (owner, 17 Oct: "I want to see everything posting in that", and it shows the radar is working).
+UK and Ireland roles get a message each; the rest, and anything past MAX_SINGLE_PER_RUN, come as lists.
+Personal bots (notify/personal.py) are the filtered version for each user."""
 
 from __future__ import annotations
 
@@ -10,11 +13,16 @@ from datetime import datetime
 
 import httpx
 
-MAX_MESSAGES_PER_RUN = 25
+# UK and Ireland roles get their own message, up to this many per check; then lists
+MAX_SINGLE_PER_RUN = 60
 ALERT_COUNTRIES = {"GB", "IE"}
+# Telegram allows about 20 messages a minute in one channel
+PAUSE = 3.1
+# A message can hold 4,096 characters; lists stop a little before
+LIST_CHARS = 3800
 
-# The shared channel is for engineering-type and computing roles. Everything else is still saved
-# (for the website and friends' own filters), it just doesn't ping the channel.
+# Engineering, computing and science roles. The channel no longer filters by this (it posts everything);
+# personal bots give engineering students every UK and Ireland role it covers (personal.py `wanted`).
 ENGINEERING = {"mechanical", "manufacturing", "robotics", "electrical", "aerospace", "automotive",
                "materials", "civil", "chemical", "software", "engineering", "science"}
 TECHNICAL_TITLE = re.compile(
@@ -65,18 +73,49 @@ def format_alert(row: dict) -> str:
     return "\n".join(lines)
 
 
-def _send(client: httpx.Client, token: str, chat_id: str, text: str, url: str | None = None) -> None:
+def _send(client: httpx.Client, token: str, chat_id: str, text: str, url: str | None = None) -> bool:
+    """Send one message, waiting when Telegram says slow down. A failure is counted, never fatal."""
     payload = {"chat_id": chat_id, "text": text, "parse_mode": "HTML", "disable_web_page_preview": True}
     if url:
         payload["reply_markup"] = {"inline_keyboard": [[{"text": "Open and apply", "url": url}]]}
-    response = client.post(f"https://api.telegram.org/bot{token}/sendMessage", json=payload)
-    if response.status_code == 429:
-        time.sleep(response.json().get("parameters", {}).get("retry_after", 5))
+    for _ in range(5):
         response = client.post(f"https://api.telegram.org/bot{token}/sendMessage", json=payload)
-    response.raise_for_status()
+        if response.status_code == 429:
+            time.sleep(response.json().get("parameters", {}).get("retry_after", 5) + 1)
+            continue
+        if not response.is_success:
+            print(f"Telegram: a channel message failed ({response.status_code})")
+        return response.is_success
+    return False
+
+
+def _line(row: dict) -> str:
+    """One role in a list message: type, linked title, employer, place."""
+    e = html.escape
+    where = row.get("location_text") or row.get("country") or ""
+    title = e((row.get("title") or "")[:90])
+    link = f'<a href="{e(row["apply_url"], quote=True)}">{title}</a>' if row.get("apply_url") else title
+    parts = [f"{e(KIND_LABELS.get(row.get('kind') or '', 'Opportunity'))}: {link}", e((row.get("company_name") or "")[:40]), e(where[:40])]
+    return "• " + " · ".join(p for p in parts if p)
+
+
+def role_lists(heading: str, rows: list[dict]) -> list[str]:
+    """Every role, packed into as few messages as fit (none dropped)."""
+    messages: list[str] = []
+    current = heading
+    for row in rows:
+        line = _line(row)
+        if len(current) + 1 + len(line) > LIST_CHARS:
+            messages.append(current)
+            current = f"{heading} (continued)"
+        current += "\n" + line
+    if rows:
+        messages.append(current)
+    return messages
 
 
 def send_new(rows: list[dict], first_run: bool, total_tracked: int) -> None:
+    """Every new role, no filter: UK and Ireland one by one (up to MAX_SINGLE_PER_RUN), the rest as lists."""
     token = os.environ.get("TELEGRAM_BOT_TOKEN")
     chat_id = os.environ.get("TELEGRAM_CHAT_ID")
     if not token or not chat_id:
@@ -90,11 +129,16 @@ def send_new(rows: list[dict], first_run: bool, total_tracked: int) -> None:
                   "From now on you'll get a message here the moment a new one appears.")
             return
 
-        alerts = [r for r in rows if r.get("country") in ALERT_COUNTRIES and is_engineering(r)]
-        for row in alerts[:MAX_MESSAGES_PER_RUN]:
-            _send(client, token, chat_id, format_alert(row), row.get("apply_url"))
-            time.sleep(1.1)  # Telegram allows about one message per second per chat
-        if len(alerts) > MAX_MESSAGES_PER_RUN:
-            _send(client, token, chat_id,
-                  f"…and {len(alerts) - MAX_MESSAGES_PER_RUN} more new opportunities this round.")
-    print(f"Telegram: sent {min(len(alerts), MAX_MESSAGES_PER_RUN)} alerts")
+        home = [r for r in rows if r.get("country") in ALERT_COUNTRIES]
+        abroad = [r for r in rows if r.get("country") not in ALERT_COUNTRIES]
+        singles, rest = home[:MAX_SINGLE_PER_RUN], home[MAX_SINGLE_PER_RUN:]
+        sent = 0
+        for row in singles:
+            sent += _send(client, token, chat_id, format_alert(row), row.get("apply_url"))
+            time.sleep(PAUSE)
+        lists = role_lists(f"📋 <b>{len(rest)} more new roles in the UK and Ireland</b>", rest) + role_lists(
+            f"🌍 <b>{len(abroad)} new roles abroad</b>", abroad)
+        for text in lists:
+            sent += _send(client, token, chat_id, text)
+            time.sleep(PAUSE)
+    print(f"Telegram channel: {sent} messages for {len(rows)} new roles ({len(home)} UK and Ireland, {len(abroad)} abroad)")

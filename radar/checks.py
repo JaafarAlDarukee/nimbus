@@ -199,6 +199,10 @@ def main() -> None:
                     {**jlr, "title": "Design Intern", "kind": "internship", "disciplines": []},
                     {**jlr, "title": "Mechanical Engineering Placement", "country": "IE"}]
     check("the bot gets everything the channel posts", all(wanted(r, mech, fm) for r in channel_rows if r.get("country") in ALERT_COUNTRIES and is_engineering(r)))
+    from .notify.telegram import LIST_CHARS, role_lists
+    many = [{**jlr, "id": str(i), "title": f"Graduate Engineer {i} " + "x" * 60, "apply_url": "https://example.com/" + "y" * 120} for i in range(100)]
+    packed = role_lists("🌍 <b>100 new roles abroad</b>", many)
+    check("channel lists keep every role and fit Telegram", sum(m.count("\n• ") for m in packed) == 100 and all(len(m) <= LIST_CHARS for m in packed), str([len(m) for m in packed]))
     check("muted employers stay muted", not wanted({**channel_rows[3], "company_name": "Muted Co"}, {**mech, "muted": ["Muted Co"]}, fm))
     check("apprenticeships reach a mechanical student", m.is_match({**jlr, "kind": "apprenticeship", "title": "Engineering Apprentice", "disciplines": ["engineering"]}, mech, fm))
     msg = format_match({**jlr, "posted_at": None, "first_seen_at": "2026-10-17T09:00:00+00:00"}, ["Mechanical in the title"])

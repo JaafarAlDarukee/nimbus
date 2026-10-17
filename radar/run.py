@@ -159,13 +159,14 @@ def main() -> None:
         from .store import save
 
         new, first_run = save(opportunities, stats, args.tier)
-        send_new(new, first_run, total_tracked=len(opportunities))
 
         from .notify.personal import send_matches, send_reminders, send_trial_reminders, send_welcome
 
+        # People's own filtered alerts first; then the owner's channel, which posts everything
         if not first_run:
             send_welcome()
             send_matches(new)
+        send_new(new, first_run, total_tracked=len(opportunities))
         send_reminders()
         send_trial_reminders()
 

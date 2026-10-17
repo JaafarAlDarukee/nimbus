@@ -106,8 +106,8 @@ TYPE_ICONS = {"placement": "🟦", "internship": "🟪", "spring_week": "🟨", 
 
 
 def wanted(row: dict, prefs: dict, filters: tuple) -> bool:
-    """Their own matches, plus, for engineering students, everything the main channel posts (UK and
-    Ireland, engineering, computing and science, any type): the bot never has less than the channel."""
+    """Their own matches, plus, for engineering students, every UK and Ireland engineering, computing and
+    science role of any type (what the main channel used to post; the channel now posts everything)."""
     if is_match(row, prefs, filters):
         return True
     return prefs.get("field") == "Engineering" and row.get("country") in ALERT_COUNTRIES and is_engineering(row) and not is_muted(row, prefs)
