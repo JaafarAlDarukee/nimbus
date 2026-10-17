@@ -216,6 +216,12 @@ def main() -> None:
         count = tg._deliver(None, "t", {"main": [("a", None)] * 3, "eng": [("b", None)] * 2, "empty": []})
     finally:
         tg._send, tg.PAUSE = real_send, real_pause
+    uk = {**jlr, "id": "uk", "country": "GB", "title": "Mechanical Engineering Placement", "disciplines": ["mechanical"]}
+    us = {**uk, "id": "us", "country": "US"}
+    nurse = {**uk, "id": "nhs", "title": "Trainee Nurse", "disciplines": ["healthcare"], "country": "IE"}
+    box = tg.channel_outbox([uk, us, nurse], "main", {"eng": "engineering", "med": "medical"})
+    check("channels: UK and Ireland only, nothing abroad", len(box["main"]) == 2 and len(box["eng"]) == 1 and len(box["med"]) == 1
+          and not any("abroad" in text or "US" in text for messages in box.values() for text, _ in messages), str({k: len(v) for k, v in box.items()}))
     check("every channel's messages delivered, taking turns", count == 5 and delivered.count("main") == 3 and delivered[:2] in (["main", "eng"], ["eng", "main"]), str(delivered))
     check("muted employers stay muted", not wanted({**channel_rows[3], "company_name": "Muted Co"}, {**mech, "muted": ["Muted Co"]}, fm))
     check("apprenticeships reach a mechanical student", m.is_match({**jlr, "kind": "apprenticeship", "title": "Engineering Apprentice", "disciplines": ["engineering"]}, mech, fm))

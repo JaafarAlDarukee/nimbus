@@ -20,7 +20,9 @@ Live site: **https://nimbus-pi-three.vercel.app** (open sign-ups: 2 days free, t
 ## Field channels (17 Oct, built; waiting for the owner to create them)
 The owner's private Telegram channels per field, everything instantly, UK & Ireland: **Engineering, Medical & health, Business, Computing, Science, Creative**. Main everything-channel stays. **Owner's steps:** in Telegram make a private channel → Administrators → add **@NimbusRadarBot** (Post Messages on) → the bot DMs "✅ Nimbus can post in …" → Admin → "Your Telegram field channels" → pick the field → Save. Repeat per field. Only channels added by the owner's own connected Telegram register. Details: [[04 Radar#Field channels (17 Oct)]].
 
-## Main channel = everything, no filter (17 Oct, latest)
+## Main channel = everything in the UK and Ireland (17 Oct, latest)
+**Update:** owner cancelled the rest of the world ("focus on UK and Ireland for now"): the main channel posts every new UK and Ireland role, no abroad lists. The paragraph below describes the earlier worldwide version.
+
 The owner's channel ("Children of Khan" branding) now posts **every new role the radar finds** (all subjects, types and countries), to show the radar is working; it's for the owner only. UK and Ireland roles one message each (up to 60 a check), the rest as lists (~15 roles a message, linked). ~7,000 new roles a week (~1,740 UK/IE, ~4,100 abroad). **Personal bots stay filtered** (their matches + every UK/IE engineering, computing and science role for engineering students) and are sent **before** the channel. See [[04 Radar#Main channel posts everything (17 Oct, latest)]].
 
 ## Done 17 Oct, late: the bot gets everything the channel posts, + improvements

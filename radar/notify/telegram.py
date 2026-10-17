@@ -1,6 +1,7 @@
-"""The main Telegram channel (TELEGRAM_CHAT_ID): the owner's own, with EVERY new role the radar finds, no
-filter (owner, 17 Oct: "I want to see everything posting in that", and it shows the radar is working).
-UK and Ireland roles get a message each; the rest, and anything past MAX_SINGLE_PER_RUN, come as lists.
+"""The main Telegram channel (TELEGRAM_CHAT_ID): the owner's own, with every new UK and Ireland role the
+radar finds, no other filter (owner, 17 Oct: "I want to see everything posting in that", and it shows the
+radar is working; "cancel the rest of the world, focus on UK and Ireland for now"). A message each, and
+anything past MAX_SINGLE_PER_RUN in lists.
 The owner's field channels (Engineering, Medical & health, Business, Computing, Science, Creative,
 registered by the bot and given a field on Admin) get every new UK and Ireland role whose subjects fit.
 Personal bots (notify/personal.py) are the filtered version for each user."""
@@ -168,8 +169,19 @@ def _deliver(client: httpx.Client, token: str, outbox: dict[str, list[tuple[str,
     return sent
 
 
+def channel_outbox(rows: list[dict], main: str, field_channels: dict[str, str]) -> dict[str, list[tuple[str, str | None]]]:
+    """What each channel gets: the main one every UK and Ireland role, field channels the ones that fit.
+    Roles elsewhere aren't posted (they stay on the website for people who chose those places)."""
+    home = [r for r in rows if r.get("country") in ALERT_COUNTRIES]
+    outbox = {main: _messages(home, "📋 <b>{n} more new roles in the UK and Ireland</b>")}
+    for channel, field in field_channels.items():
+        if channel != main:
+            outbox[channel] = _messages([r for r in home if field in fields_for(r)], f"📋 <b>{{n}} more new {FIELD_NAMES[field]} roles</b>")
+    return outbox
+
+
 def send_new(rows: list[dict], first_run: bool, total_tracked: int) -> None:
-    """Every new role, no filter: UK and Ireland one by one (up to MAX_SINGLE_PER_RUN), the rest as lists."""
+    """Every new UK and Ireland role to the main channel, and to each field channel it fits."""
     token = os.environ.get("TELEGRAM_BOT_TOKEN")
     chat_id = os.environ.get("TELEGRAM_CHAT_ID")
     if not token or not chat_id:
@@ -183,14 +195,7 @@ def send_new(rows: list[dict], first_run: bool, total_tracked: int) -> None:
                   "From now on you'll get a message here the moment a new one appears.")
             return
 
-        home = [r for r in rows if r.get("country") in ALERT_COUNTRIES]
-        abroad = [r for r in rows if r.get("country") not in ALERT_COUNTRIES]
-        outbox = {chat_id: _messages(home, "📋 <b>{n} more new roles in the UK and Ireland</b>")
-                  + [(t, None) for t in role_lists(f"🌍 <b>{len(abroad)} new roles abroad</b>", abroad)]}
-        for channel, field in _field_channels().items():
-            if channel != chat_id:
-                fits = [r for r in home if field in fields_for(r)]
-                outbox[channel] = _messages(fits, f"📋 <b>{{n}} more new {FIELD_NAMES[field]} roles</b>")
+        outbox = channel_outbox(rows, chat_id, _field_channels())
         sent = _deliver(client, token, outbox)
-    print(f"Telegram channels: {sent} messages for {len(rows)} new roles ({len(home)} UK and Ireland, {len(abroad)} abroad; "
-          f"{len(outbox) - 1} field channels)")
+    home = sum(r.get("country") in ALERT_COUNTRIES for r in rows)
+    print(f"Telegram channels: {sent} messages for {home} new UK and Ireland roles ({len(outbox) - 1} field channels)")
