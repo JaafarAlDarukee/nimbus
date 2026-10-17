@@ -51,3 +51,7 @@ No Airbus, BAE Systems, Boeing, or any nuclear / weapons / defence company or ro
 - **Personal bot = notifications; applying goes through the Nimbus website** ("Open on Nimbus"), so people sign in / pay. One message per role, as soon as found.
 - **Main channel stays exactly as it is, for the owner only** (their backup if the system fails); not given to payers.
 - **Radar every 15 min.** A server for faster checks is fine with the owner if needed later.
+
+## 2026-10-17 (late)
+- **The personal bot never has less than the main channel** (owner) for engineering students.
+- Claude chose and published: trial-ending reminder, Privacy/Terms (refunds within 14 days, owner can change), app icon. The owner asked for suggestions to be made and published.

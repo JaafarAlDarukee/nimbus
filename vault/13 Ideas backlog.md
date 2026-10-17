@@ -27,3 +27,15 @@ Back to [[00 Start Here]] · updated 2026-10-17
 ## Matching (17 Oct)
 - LinkedIn / TARGETjobs alert rows: read the employer from the email text (links don't name it), so the employer exclusion check works for them too.
 - Owner might also like "Research" (KTP, research placements) or "Insight" types: suggest in Profile, don't change without asking.
+
+## Suggested 17 Oct (late)
+In order of importance (told to the owner):
+1. **Hosting before charging**: Vercel's free Hobby plan is for non-commercial use only. Before taking money: Vercel Pro (~$20/month) or a free host that allows commercial use (Cloudflare / Netlify; check Next.js 16 support first).
+2. **Stripe setup** (owner) + brand email on Admin (Privacy/Terms are now live, which Stripe asks for).
+3. **Anonymity**: sign-in emails come from "Children of Khan" (Supabase SMTP sender name, dashboard) and the email footer says it too; the GitHub repo shows the owner's name.
+4. **ICO data protection fee**: a paid service that stores personal data usually has to register with the ICO (about £50 a year; check the self-assessment on ico.org.uk).
+5. **LinkedIn employer names** from the alert email text (153 rows "via LinkedIn"; also lets the defence check see the employer).
+6. **More employers**: research boards for Haleon, Reckitt, Johnson Matthey, Takeda, Lilly, Arm, BT, Vodafone… and big tech's own sites.
+7. **Delete my account** button in Profile (self-service privacy).
+8. **Morning summary** in the bot ("Yesterday: 52 new: 8 placements…") for people who mute notifications.
+9. **Landing page** (Phase 2) and **ads** (Phase 3) as planned.

@@ -97,3 +97,7 @@ Back to [[00 Start Here]] · code in `radar/`
 - `personal.py`: message starts with the type (🟦 PLACEMENT, 🟩 APPRENTICESHIP, 🟫 GRADUATE SCHEME, 🟧 HACKATHON…), then title, employer · place, details, ticks; first button **Open on Nimbus** = `{SITE_URL}/?open=<id>` (sign in / pay first); `MAX_PER_PERSON` 30 (then "…and N more on Nimbus"). Trial still 5 alerts. The shared channel (`notify/telegram.py`) is unchanged.
 - Schedule: `nimbus-radar-priority` at `2,17,32,47 * * * *` (migration `20261017010000_radar_every_15_min.sql`); workflow renamed "every 15 min". Priority runs take ~5-7 min; the full run (~27 min, every 6 h at :50) still blocks them while it runs (shared concurrency group).
 - Replay of the owner's last week with the new rules: 360 personal alerts (145 grad schemes, 61 internships, 58 apprenticeships, 53 placements, 36 graduate jobs…).
+
+## Changes 2026-10-17 (late)
+- `personal.py` `wanted()`: a role reaches a person if it's one of their matches **or**, for Engineering-field users, the main channel would post it (`ALERT_COUNTRIES` + `is_engineering`, any type) and the employer isn't muted. `match.py` `CHANNEL_EXTRA` adds `software` and `science` to Engineering's subjects (website mirrors it), `is_muted()` helper.
+- `send_trial_reminders()` (called after `send_reminders` in `run.py`): trial users with Telegram whose trial ends within `TRIAL_REMIND_HOURS` (12) get one message with the /pay link; `profiles.trial_reminder_at` remembers it.

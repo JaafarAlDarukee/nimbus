@@ -9,6 +9,8 @@ Back to [[00 Start Here]] · project `nimbus`, ref `rwcpwqhjmhsxtslamudm`, regio
 4. `20260930010000_access_requests.sql`: `access_requests` + `hook_before_user_created` (approval lock).
 5. `20260930020000_first_user_admin.sql`: first account becomes admin.
 6. `20261017000000_paywall.sql`: paid access (see below).
+7. `20261017010000_radar_every_15_min.sql`: priority radar every 15 min.
+8. `20261017020000_trial_reminder_contact.sql`: `profiles.trial_reminder_at`; `app_settings.support_email`, readable by signed-out visitors (policy "Anyone reads the contact email", the only anon-readable setting; checked with `set role anon`).
 
 ## Tables
 - Shared (read by signed-in users; written by the radar with the secret key): `companies`, `company_aliases`, `recruiting_routes`, `opportunities`, `company_news`.
