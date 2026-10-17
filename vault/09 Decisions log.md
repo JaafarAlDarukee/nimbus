@@ -39,3 +39,8 @@ No Airbus, BAE Systems, Boeing, or any nuclear / weapons / defence company or ro
 - **Anonymous**: sold as "Nimbus"; the owner's name never shows.
 - Order: **money → website → ads and marketing**.
 - Under £1,000 a year is covered by the UK trading allowance (no registration). Claude won't help hide income above it.
+
+## 2026-10-17 · Matching
+- **No % match score** (owner: "more like a guess"). Ticks with the real facts + a label (Top match / Good match / Worth a look) worked out from them, on the site and in Telegram.
+- **Each role once** per person, however many sources list it (30-day memory for Telegram).
+- "Worth a look" roles (general "Engineering role" titles) are still sent: they include many good placements (Cummins Quality, Curtins, Sulzer), ranked after Top/Good.

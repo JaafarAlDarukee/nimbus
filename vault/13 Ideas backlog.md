@@ -23,3 +23,7 @@ Back to [[00 Start Here]] · updated 2026-10-17
 - Hiring posts with scam checks; company news; daily/weekly digest email; WhatsApp/Discord alerts.
 - Chrome extension: autofill + passive capture (never automate Handshake/LinkedIn).
 - Telegram: the bot's own menu (today's matches, tracker) and a Mini App.
+
+## Matching (17 Oct)
+- LinkedIn / TARGETjobs alert rows: read the employer from the email text (links don't name it), so the employer exclusion check works for them too.
+- Owner might also like "Research" (KTP, research placements) or "Insight" types: suggest in Profile, don't change without asking.

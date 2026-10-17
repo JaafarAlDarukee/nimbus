@@ -46,3 +46,6 @@ Back to [[00 Start Here]]
 
 ## Supabase hiccups
 - Supabase occasionally returns a 5xx (e.g. 555) mid-run; two priority runs failed this way (5 and 14 Oct 2026) and GitHub emailed the owner. Nothing was lost: the next run re-saves. Since 17 Oct `radar/store.py` retries every call up to 3 times (`_Retry` transport). A single failure email is not a worry; several in a row is.
+
+## Dev server shows 404 for every page
+- After `npm run build` while (or before) `npm run dev` runs, the dev server can answer 404 to everything (even `/login`). Stop the preview, delete `web/.next/dev`, start it again. Don't run `npm run build` while the dev preview is open.

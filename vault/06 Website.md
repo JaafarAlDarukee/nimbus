@@ -12,7 +12,7 @@ Back to [[00 Start Here]] · code in `web/` (Next.js 16.3, React 19, Tailwind 4,
 | `/auth/callback` | `src/app/auth/callback/route.ts` | ✅ PKCE code exchange (same browser) |
 | `/auth/confirm` | `src/app/auth/confirm/page.tsx` | ✅ handles hash tokens, token_hash, code |
 | `/onboarding` | `src/app/onboarding/page.tsx`, `onboarding-flow.tsx` | ✅ 10 steps, saves to `profiles` |
-| `/` Opportunities | `src/app/(app)/page.tsx` (data) + `src/components/opportunity-feed.tsx` (UI) + `src/lib/opportunity-view.ts` (row → card, match score, why) | ✅ design-matched |
+| `/` Opportunities | `src/app/(app)/page.tsx` (data) + `src/components/opportunity-feed.tsx` (UI) + `src/lib/opportunity-view.ts` (row → card, fit + ticks, why) | ✅ design-matched |
 | `/admin` | `src/app/(app)/admin/` | ✅ money, members (Mark paid / Undo), payment links, invite card, old access requests |
 | `/tracker` | `(app)/tracker/` + `components/tracker-view.tsx`, `lib/tracker.ts` (stage groups, `parseDue`) | ✅ table/board, click stage to move on, New modal |
 | `/profile` | `(app)/profile/` + `components/profile-view.tsx` | ✅ edits preferences (autosave), Telegram connect/disconnect, log out |
@@ -26,7 +26,7 @@ Back to [[00 Start Here]] · code in `web/` (Next.js 16.3, React 19, Tailwind 4,
 - Themes per screen (`LOOKS` in `app-shell.tsx`): bright `/`, ink `/tracker` `/profile`, calm `/calendar` `/cv-studio`, dark `/companies`.
 - `src/app/(app)/layout.tsx`: requires login and `onboarded_at`, else → `/onboarding`; renders `components/app-shell.tsx` (design top bar; sets `data-theme="bright"` on /, /calendar, /cv-studio). "checked Xm ago" comes from the `radar_last_checked()` SQL function.
 - `src/app/(app)/actions.ts`: `track(opportunityId, "saved" | "applied")` writes `applications` (applied → `applied_at`, follow-up in 14 days; saving never downgrades an applied row).
-- Opportunities details: `?tab=all`, `?type=<chip label>`, `?q=`, `?n=` (show more). Match score is a transparent heuristic (58 base + type/discipline/location/skills overlaps, max 97) and every "why" line is a real overlap. Logos: Google favicon of the employer's own domain only (not hiring-system hosts), else the initial.
+- Opportunities details: `?tab=all`, `?type=<chip label>`, `?q=`, `?n=` (show more). Match is facts only (see Match below); every "why" line is a real overlap. Logos: Google favicon of the employer's own domain only (not hiring-system hosts), else the initial.
 
 ## Brand and tokens
 - `src/app/globals.css`: Night (default) and Cloud (`[data-theme="light"]`) tokens from the design (`--bg`, `--s1`, `--sky`, `--dawn`…), exposed as Tailwind colours (`bg-s1`, `text-tx2`, `border-line2`, `text-t-sky`…), plus shadcn variable mapping.
@@ -84,3 +84,8 @@ Back to [[00 Start Here]] · code in `web/` (Next.js 16.3, React 19, Tailwind 4,
 
 ## Computing (2026-10-05)
 - `FIELDS`: Computing is live. Degrees: Computer Science, Software Engineering, Artificial Intelligence and Machine Learning, Data Science, Cyber Security, Computer Engineering, Information Technology, Games Development (notes + SUGGEST in `onboarding-data.ts`; `FIELD_EXTRAS.Computing`). Sector group "Computing and tech" (Big tech, Software and SaaS, AI and machine learning, Data and analytics, Cyber security, Fintech, Cloud and infrastructure, Gaming, Telecoms, Tech consultancy).
+
+## Match: facts, not a score (17 Oct)
+- Owner: the % "feels like a guess" (it was 50 + points). Replaced by `fitRole()` in `src/lib/opportunity-view.ts` (mirrored in `radar/match.py` `fit`): **ticks** (the facts: "Mechanical in the title", "Placement", "Automotive", "CAD, MATLAB on your CV") and a **label** worked out from them: Top match = your subject in the title + your industry or 2+ CV skills; Good match = subject in the title, or a broader subject match + one of those; Worth a look = the rest ("Engineering role" titles, open hackathons). `Fit`, `FIT_LABEL`, `FIT_TONE` live in `lib/opportunity-types.ts` (browser-safe).
+- Cards: label pill on the right (mint / sky / dawn) and a ticks row; phone cards: ticks + small pill; drawer: label pill + the "why" sentences. Feed order is still newest first.
+- Feed `collapse()` in `(app)/page.tsx` uses `sameRoleKey` / `isSameRole` (years, punctuation, company suffixes ignored; "via <site>" matches any employer): the same role from several places shows once ("+N more").
