@@ -415,8 +415,7 @@ function CompanyDrawer({
               ))}
               {(!found || roles?.length === 0) && (
                 <div className="p-3.5 text-sm text-[#626C7C]">
-                  Nothing open in the UK right now
-                  {company.openAnywhere > 0 ? ` (${company.openAnywhere} abroad)` : ""}.{" "}
+                  Nothing open in the UK right now.{" "}
                   {company.watching ? "We'll message you when something appears." : "See How to get in below."}
                 </div>
               )}

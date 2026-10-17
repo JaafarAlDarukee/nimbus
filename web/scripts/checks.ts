@@ -87,6 +87,7 @@ const mechPrefs = withDefaults({ field: "Engineering", degrees: ["Mechanical Eng
 const mechFilters = matchFilters(mechPrefs);
 const role = (title: string, disciplines: string[], extra: Partial<OpportunityRow> = {}) =>
   ({ id: "r", title, company_name: "Jaguar Land Rover", kind: "placement", disciplines, skills: ["CAD", "MATLAB"], country: "GB", ...extra }) as OpportunityRow;
+check("UK and Ireland only, whatever was picked before", JSON.stringify(matchFilters(withDefaults({ abroad: ["Worldwide", "Germany", "USA"] })).countries) === JSON.stringify(["GB", "IE"]));
 check("every type shows", ["placement", "apprenticeship", "grad_scheme", "graduate_job", "event"].every((k) => mechFilters.kinds.includes(k)));
 check("the whole field shows, plus the channel's computing and science", ["chemical", "civil", "electrical", "engineering", "software", "science"].every((d) => mechFilters.disciplines.includes(d)) && !mechFilters.disciplines.includes("healthcare"));
 const own = fitRole(role("Industrial Placement 2027: Mechanical", ["mechanical"]), mechPrefs, mechFilters);

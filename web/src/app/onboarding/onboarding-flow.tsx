@@ -4,7 +4,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { LogoMark, Sparkle, StarField, TELEGRAM_BOT_URL, Wordmark } from "@/components/brand";
 import {
-  ABROAD_LOCATIONS,
   APPLICATION_PLANS,
   DEGREE_NOTES,
   DEGREES_BY_FIELD,
@@ -12,7 +11,6 @@ import {
   HEARD_FROM,
   SECTOR_GROUPS,
   SUGGEST,
-  UK_LOCATIONS,
   YEARS,
 } from "@/lib/onboarding-data";
 import { applyMatch, matchFilters, type Preferences } from "@/lib/preferences";
@@ -26,7 +24,6 @@ const STEPS = [
   { key: "year", label: "Year", title: "Where are you in your course?", sub: "Spring weeks, placements and grad schemes open to different years, so this filters a lot." },
   { key: "plan", label: "Your plan", title: "How many applications are you planning this season?", sub: "It helps us make Nimbus better for you. Then one quick question about how you found us." },
   { key: "sec", label: "Industries", title: "Which industries pull you in?", sub: "The starred set is common for your degree. Pick as many as you like, or leave it empty to hear about all of them." },
-  { key: "loc", label: "Location", title: "Where would you go for the right role?", sub: "Most roles are UK based. Add any country or city you would move to." },
   { key: "cv", label: "CV", title: "Add your CV.", sub: "It stays private to you. CV studio will read it the way applicant tracking systems do and score it against each role." },
   { key: "alerts", label: "Alerts", title: "How should we reach you?", sub: "Telegram is fastest. Your alerts are only your matches, never anyone else's." },
   { key: "offer", label: "What you get", title: "This is what Nimbus does for you.", sub: "Your radar is set. Here is what is switched on today, and what is coming next." },
@@ -35,7 +32,7 @@ const STEPS = [
 type StepKey = (typeof STEPS)[number]["key"];
 
 const OFFERS = [
-  { t: "Alerts within hours", d: "We check 2,900+ careers pages every 15 minutes and message you when something opens.", c: "#8FC7FF", on: true },
+  { t: "Alerts within hours", d: "We check 3,200+ employers' careers pages every 15 minutes, across the UK and Ireland, and message you when something opens.", c: "#8FC7FF", on: true },
   { t: "Where and how to apply", d: "A direct link to the employer’s own application, never a job board copy.", c: "#93E0C0", on: true },
   { t: "Published contacts", d: "The early-careers team or named contact the employer lists, plus LinkedIn.", c: "#C3B5FF", on: false },
   { t: "CV and ATS score", d: "A score for every role, with the exact keywords you are missing.", c: "#F3C38F", on: false },
@@ -289,7 +286,6 @@ export function OnboardingFlow({
   }
 
   // Constellation stepper summaries
-  const locations = [...prefs.uk, ...prefs.abroad];
   const summary: Record<StepKey, string> = {
     name: [first, last].filter((x) => x.trim()).join(" "),
     field: prefs.field,
@@ -297,7 +293,6 @@ export function OnboardingFlow({
     year: prefs.year,
     plan: prefs.applications ? `${prefs.applications} applications` : "Not set",
     sec: prefs.sectorsAll ? "Everything" : prefs.sectors.length ? `${prefs.sectors.length} picked` : "Not set",
-    loc: locations.slice(0, 2).join(", ") + (locations.length > 2 ? ` +${locations.length - 2}` : ""),
     cv: prefs.cvName ? "Added" : "Not added",
     alerts: [telegram === "on" ? "Telegram" : telegram === "waiting" ? "Telegram (pending)" : "", prefs.emailDigest ? "Email" : ""].filter(Boolean).join(", ") || "None yet",
     offer: "",
@@ -572,28 +567,6 @@ export function OnboardingFlow({
                 </div>
               ))}
               <AddRow placeholder="Other industry, e.g. Theme park rides" value={drafts.sec} onChange={(v) => setDrafts((d) => ({ ...d, sec: v }))} onAdd={() => addExtra("sec")} />
-            </>
-          )}
-
-          {S.key === "loc" && (
-            <>
-              <div className="flex flex-col gap-2.5">
-                <span className={eyebrow}>United Kingdom</span>
-                <div className="flex flex-wrap gap-2">
-                  {UK_LOCATIONS.map((l) => (
-                    <Chip key={l} size="lg" label={l} on={prefs.uk.includes(l)} onClick={() => toggle("uk", l)} />
-                  ))}
-                </div>
-              </div>
-              <div className="flex flex-col gap-2.5">
-                <span className={eyebrow}>Abroad</span>
-                <div className="flex flex-wrap gap-2">
-                  {[...ABROAD_LOCATIONS, ...prefs.extra.abroad].map((l) => (
-                    <Chip key={l} size="lg" label={l} on={prefs.abroad.includes(l)} onClick={() => toggle("abroad", l)} />
-                  ))}
-                </div>
-              </div>
-              <AddRow placeholder="Add a country or city, e.g. Denmark" value={drafts.abroad} onChange={(v) => setDrafts((d) => ({ ...d, abroad: v }))} onAdd={() => addExtra("abroad")} />
             </>
           )}
 

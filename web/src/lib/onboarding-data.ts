@@ -164,19 +164,6 @@ export const TYPES: { t: string; d: string }[] = [
 
 export const DEFAULT_TYPES = ["Placement", "Summer internship", "Spring week", "Hackathon", "Competition", "Conference", "Expo or careers fair"];
 
-export const UK_LOCATIONS = [
-  "Anywhere in the UK", "London", "South East", "South West", "East of England", "East Midlands", "West Midlands",
-  "North West", "North East", "Yorkshire and the Humber", "Scotland", "Wales", "Northern Ireland", "Remote in the UK",
-];
-
-export const ABROAD_LOCATIONS = [
-  "Anywhere in Europe", "Worldwide", "Ireland", "Germany", "Netherlands", "Belgium", "Luxembourg", "France",
-  "Switzerland", "Austria", "Italy", "Spain", "Portugal", "Denmark", "Sweden", "Norway", "Finland", "Poland", "Czechia",
-  "Turkey", "USA", "Canada", "Mexico", "Brazil", "UAE", "Qatar", "Saudi Arabia", "Kuwait", "Oman", "Bahrain", "Egypt",
-  "South Africa", "India", "China", "Hong Kong", "Taiwan", "South Korea", "Japan", "Singapore", "Malaysia",
-  "Australia", "New Zealand",
-];
-
 /** Industries every degree in a field sees, on top of the degree's own suggestions. */
 export const FIELD_EXTRAS: Record<string, string[]> = {
   Engineering: ["Engineering consultancy", "R&D labs"],

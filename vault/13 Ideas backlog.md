@@ -39,3 +39,4 @@ In order of importance (told to the owner):
 7. **Delete my account** button in Profile (self-service privacy).
 8. **Morning summary** in the bot ("Yesterday: 52 new: 8 placements…") for people who mute notifications.
 9. **Landing page** (Phase 2) and **ads** (Phase 3) as planned.
+- Stop saving roles outside the UK and Ireland in the radar (about 3/4 of open rows are abroad): smaller database, faster queries. Abroad events in events.csv are now unused.

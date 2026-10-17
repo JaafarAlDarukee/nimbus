@@ -95,6 +95,7 @@ def main() -> None:
     check("mech skips nursing", not m.is_match(row("placement", ["healthcare"]), mech, fm))
     check("subject-free event for everyone", m.is_match(row("event", [], None, True), bio, fb) and m.is_match(row("event", [], None, True), mech, fm))
     check("lab expo only for science", m.is_match(row("event", ["life_sciences"]), bio, fb) and not m.is_match(row("event", ["life_sciences"]), mech, fm))
+    check("UK and Ireland only, whatever was picked before", m.filters_for(m.with_defaults({"abroad": ["Worldwide", "Germany"]}))[2] == {"GB", "IE"})
     check("abroad role hidden", not m.is_match(row("placement", ["mechanical"], "US"), mech, fm))
     check("typed degree uses field", "mechanical" in m.filters_for(m.with_defaults({"field": "Engineering", "degrees": ["Acoustical Engineering"]}))[1])
 

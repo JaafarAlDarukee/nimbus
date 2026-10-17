@@ -3,7 +3,7 @@ import { safeNext } from "@/lib/next-path";
 import { LoginForm } from "./login-form";
 
 const STATS = [
-  { value: "2,900+", label: "employers watched" },
+  { value: "3,200+", label: "employers watched" },
   { value: "15 min", label: "between checks" },
   { value: "under 3 h", label: "from posted to your phone" },
 ];

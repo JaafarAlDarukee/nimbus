@@ -31,16 +31,8 @@ DEGREE_DISCIPLINES = _ts_record("DEGREE_DISCIPLINES")
 FIELD_DISCIPLINES = _ts_record("FIELD_DISCIPLINES")
 TYPE_KINDS = _ts_record("TYPE_KINDS")
 
-COUNTRY_CODES = {
-    "Ireland": "IE", "Germany": "DE", "Netherlands": "NL", "Belgium": "BE", "Luxembourg": "LU", "France": "FR",
-    "Switzerland": "CH", "Austria": "AT", "Italy": "IT", "Spain": "ES", "Portugal": "PT", "Denmark": "DK",
-    "Sweden": "SE", "Norway": "NO", "Finland": "FI", "Poland": "PL", "Czechia": "CZ", "Turkey": "TR", "USA": "US",
-    "Canada": "CA", "Mexico": "MX", "Brazil": "BR", "UAE": "AE", "Qatar": "QA", "Saudi Arabia": "SA", "Kuwait": "KW",
-    "Oman": "OM", "Bahrain": "BH", "Egypt": "EG", "South Africa": "ZA", "India": "IN", "China": "CN",
-    "Hong Kong": "HK", "Taiwan": "TW", "South Korea": "KR", "Japan": "JP", "Singapore": "SG", "Malaysia": "MY",
-    "Australia": "AU", "New Zealand": "NZ",
-}
-EUROPE = ["IE", "DE", "NL", "BE", "LU", "FR", "CH", "AT", "IT", "ES", "PT", "DK", "SE", "NO", "FI", "PL", "CZ", "GR", "HU", "RO"]
+# Where Nimbus looks (owner, 17 Oct): the same as preferences.ts COVERED_COUNTRIES
+COVERED_COUNTRIES = {"GB", "IE"}
 
 KIND_WORDS = {
     "placement": "Placements are", "internship": "Internships are", "spring_week": "Spring weeks are",
@@ -155,16 +147,8 @@ def filters_for(prefs: dict) -> tuple[set[str], set[str], set[str] | None]:
     kinds = set(STUDENT_KINDS)
     field = prefs.get("field", "")
     disciplines = degree_disciplines(prefs) | set(FIELD_DISCIPLINES.get(field, [])) | CHANNEL_EXTRA.get(field, set())
-    abroad = prefs.get("abroad", [])
-    if "Worldwide" in abroad:
-        return kinds, disciplines, None
-    countries: set[str] = set()
-    if prefs.get("uk"):
-        countries.add("GB")
-    if "Anywhere in Europe" in abroad:
-        countries.update(EUROPE)
-    countries.update(COUNTRY_CODES[p] for p in abroad if p in COUNTRY_CODES)
-    return kinds, disciplines, countries or {"GB"}
+    # Nimbus covers the UK and Ireland only (owner, 17 Oct); places picked before then are ignored
+    return kinds, disciplines, set(COVERED_COUNTRIES)
 
 
 def industry_match(sectors: list[str], company: str, text: str) -> str | None:

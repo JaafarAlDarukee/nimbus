@@ -5,7 +5,7 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { disconnectTelegram, savePreferences, signOut, telegramLinkCode, telegramStatus } from "@/app/(app)/profile/actions";
 import { TELEGRAM_BOT_URL } from "@/components/brand";
-import { ABROAD_LOCATIONS, DEGREES_BY_FIELD, FIELDS, SECTOR_GROUPS, UK_LOCATIONS, YEARS } from "@/lib/onboarding-data";
+import { DEGREES_BY_FIELD, FIELDS, SECTOR_GROUPS, YEARS } from "@/lib/onboarding-data";
 import type { Preferences } from "@/lib/preferences";
 
 const SERIF = "var(--font-newsreader), Georgia, serif";
@@ -78,13 +78,11 @@ export function ProfileView(props: Props) {
     };
   }, []);
 
-  const locations = [...prefs.uk, ...prefs.abroad];
   const steps: Step[] = [
     { key: "field", title: "Field", single: true, opts: FIELDS.map((f) => f.label), soon: FIELDS.filter((f) => f.soon).map((f) => f.label), value: [prefs.field] },
     { key: "deg", title: "Degree", opts: DEGREES_BY_FIELD[prefs.field] ?? [], value: prefs.degrees },
     { key: "year", title: "Year", single: true, opts: YEARS, value: [prefs.year] },
     { key: "sec", title: "Industries", opts: SECTOR_GROUPS.flatMap((g) => g.items), value: prefs.sectors },
-    { key: "loc", title: "Location", opts: [...UK_LOCATIONS, ...ABROAD_LOCATIONS], value: locations },
   ];
 
   const pick = (step: Step, option: string) => {
@@ -96,13 +94,7 @@ export function ProfileView(props: Props) {
     } else if (step.key === "deg") change({ degrees: toggled });
     else if (step.key === "year") change({ year: option });
     else if (step.key === "sec") change({ sectors: toggled, sectorsAll: false });
-    else if (step.key === "types") change({ types: toggled });
-    else if (step.key === "loc") {
-      const inUk = UK_LOCATIONS.includes(option);
-      const list = inUk ? prefs.uk : prefs.abroad;
-      const updated = on ? list.filter((x) => x !== option) : [...list, option];
-      change(inUk ? { uk: updated } : { abroad: updated });
-    }
+
   };
 
   const summary = (step: Step) => {

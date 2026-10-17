@@ -166,7 +166,7 @@ export function OpportunityFeed(props: Props) {
             Opportunities <span className="italic text-t-sky">{tab === "you" ? "for you." : "everywhere."}</span>
           </h1>
           <p className="animate-fade-up m-0 text-[15px] text-tx2" style={{ animationDelay: "120ms" }}>
-            Newest first. Straight from employers&apos; own sites, plus job-board finds marked &ldquo;via&rdquo;.
+            UK and Ireland, newest first. Straight from employers&apos; own sites, plus job-board finds marked &ldquo;via&rdquo;.
           </p>
         </div>
 

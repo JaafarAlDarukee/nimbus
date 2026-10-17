@@ -148,16 +148,8 @@ const TYPE_KINDS: Record<string, string[]> = {
   Fieldwork: ["research"],
 };
 
-const COUNTRY_CODES: Record<string, string> = {
-  Ireland: "IE", Germany: "DE", Netherlands: "NL", Belgium: "BE", Luxembourg: "LU", France: "FR", Switzerland: "CH",
-  Austria: "AT", Italy: "IT", Spain: "ES", Portugal: "PT", Denmark: "DK", Sweden: "SE", Norway: "NO", Finland: "FI",
-  Poland: "PL", Czechia: "CZ", Turkey: "TR", USA: "US", Canada: "CA", Mexico: "MX", Brazil: "BR", UAE: "AE",
-  Qatar: "QA", "Saudi Arabia": "SA", Kuwait: "KW", Oman: "OM", Bahrain: "BH", Egypt: "EG", "South Africa": "ZA",
-  India: "IN", China: "CN", "Hong Kong": "HK", Taiwan: "TW", "South Korea": "KR", Japan: "JP", Singapore: "SG",
-  Malaysia: "MY", Australia: "AU", "New Zealand": "NZ",
-};
-
-const EUROPE = ["IE", "DE", "NL", "BE", "LU", "FR", "CH", "AT", "IT", "ES", "PT", "DK", "SE", "NO", "FI", "PL", "CZ", "GR", "HU", "RO"];
+/** Where Nimbus looks: the UK and Ireland (owner, 17 Oct: "remove all the countries, just keep the UK and Ireland"). */
+export const COVERED_COUNTRIES = ["GB", "IE"] as const;
 
 /** Every student opportunity type. For you and personal alerts show them all, grouped by type,
  *  whatever the user ticked (owner, 17 Oct: "I want to show everything, not hide"). */
@@ -184,16 +176,8 @@ export function matchFilters(p: Preferences): MatchFilters {
   const kinds = STUDENT_KINDS;
   const disciplines = [...new Set([...disciplinesFor(p), ...(FIELD_DISCIPLINES[p.field] ?? []), ...(CHANNEL_EXTRA[p.field] ?? [])])];
 
-  let countries: string[] | null = [];
-  if (p.abroad.includes("Worldwide")) {
-    countries = null;
-  } else {
-    if (p.uk.length) countries.push("GB");
-    if (p.abroad.includes("Anywhere in Europe")) countries.push(...EUROPE);
-    for (const place of p.abroad) if (COUNTRY_CODES[place]) countries.push(COUNTRY_CODES[place]);
-    countries = countries.length ? [...new Set(countries)] : ["GB"];
-  }
-  return { kinds, disciplines, countries };
+  // Nimbus covers the UK and Ireland only (owner, 17 Oct); places picked before then are ignored
+  return { kinds, disciplines, countries: [...COVERED_COUNTRIES] };
 }
 
 /** Anything with .in / .overlaps (a Supabase query) gets the user's filters applied. */

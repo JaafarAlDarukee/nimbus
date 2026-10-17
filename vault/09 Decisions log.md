@@ -61,3 +61,4 @@ No Airbus, BAE Systems, Boeing, or any nuclear / weapons / defence company or ro
 
 - **2026-10-17 · Field channels**: the owner's own private channels per field (Engineering, Medical & health, Business, Computing, Science, Creative), everything instantly, UK & Ireland only; main everything-channel kept. Computing (software, data, cyber, AI) is its own field; a role that is both (embedded software) goes to both channels.
 - **2026-10-17 · Channels are UK and Ireland only** (owner: "for now"); the radar still saves roles elsewhere for people who chose those places.
+- **2026-10-17 · Website: UK and Ireland only**; no location question.
