@@ -116,7 +116,7 @@ def main() -> None:
         check(f"event tags known {e.title}", all(t in m.DISCIPLINE_WORDS for t in e.raw["disciplines"]), str(e.raw["disciplines"]))
     check("event labels", event_type("Advanced Engineering 2026 (expo)") == "Expo" and event_type("DurHack") == "Hackathon")
     msg = format_match({"kind": "event", "title": "Lab Innovations 2026 (expo)", "company_name": "Lab Innovations", "location_text": "Birmingham",
-                        "country": "GB", "closes_at": "2026-11-05T23:59:00+00:00", "disciplines": ["life_sciences"]}, 76, None)
+                        "country": "GB", "closes_at": "2026-11-05T23:59:00+00:00", "disciplines": ["life_sciences"]}, "good", ["Life sciences in the title"])
     check("event alert wording", "Expo · ends 5 Nov" in msg, msg)
     check("hackathon tags", engineering_tags("Climate Hardware Hack") is not None and engineering_tags("Web3 Builders") is None)
 
@@ -150,6 +150,45 @@ def main() -> None:
     check("trial while it lasts", access_state({"trial_ends_at": later}) == "trial")
     check("locked after trial", access_state({"trial_ends_at": earlier}) == "locked" and access_state({}) == "locked")
     check("trial alerts match the site's 5 jobs", TRIAL_ALERTS == 5)
+
+    # Personal alerts: facts, not a made-up %, and each role once (owner, 17 Oct)
+    from .notify.personal import is_repeat, same_role_key
+    from .sources.inbox import SITES as INBOX_SITES
+    from .sources.inbox import _company_from
+    check("post production is not manufacturing", "manufacturing" not in disciplines_for("Post Production Technology Internship 2027", ""))
+    check("factory production stays", "manufacturing" in disciplines_for("Industrial Placement - Production", ""))
+    check("materials management is not materials", "materials" not in disciplines_for("Intern - Materials Management Analyst", ""))
+    check("a document isn't materials", "materials" not in disciplines_for("Evidence Intern: Reviewing Fragmented Antimicrobial Material", ""))
+    check("materials specialist stays", "materials" in disciplines_for("Summer Internship - Materials Specialist", ""))
+    check("data automation is not robotics", "robotics" not in disciplines_for("Data Management & Automation Intern", ""))
+    check("automation engineer is robotics", "robotics" in disciplines_for("Automation Engineer Placement", ""))
+    check("test automation is not robotics", "robotics" not in disciplines_for("Test Automation Engineer Intern", ""))
+    check("software society hackathon not mechanical", "mechanical" not in (engineering_tags("Society of Software Engineers Halloween Hackathon") or []))
+    check("engineering hackathon still tagged", "mechanical" in (engineering_tags("Engineering Design Hackathon") or []))
+    check("defence sponsor in a title excluded", excluded("Nanyang Technological University", "NTU x ST Engineering Hackathon"))
+    bright = next(s for s in INBOX_SITES if s.name == "Bright Network")
+    check("IT support is not engineering", disciplines_for("IT Support Engineer Internship 2026", "") == ["software"])
+    check("insurance technician is business", "engineering" not in disciplines_for("Graduate Placement Support Technician - Insurance Broking", ""))
+    higherin = next(s for s in INBOX_SITES if s.name == "Higherin")
+    check("higherin employer", (_company_from("https://higherin.com/jobs/46073/mercedes-amg-high-performance-powertrains-ltd/hse-placement-2027", higherin) or "").startswith("Mercedes Amg"))
+    check("bright network employer", _company_from("https://www.brightnetwork.co.uk/graduate-jobs/bmw/production-data-scientist-internship-oxford-2027-apk1", bright) == "BMW")
+    check("same role from two places", is_repeat(same_role_key({"title": "Industrial Placement Vehicle Motion 2027", "company_name": "via Bright Network"}),
+                                                  [same_role_key({"title": "Industrial Placement - Vehicle Motion", "company_name": "Bentley Motors Ltd"})]))
+    check("same company, suffix differs", is_repeat(same_role_key({"title": "Powertrain Calibration Support Intern", "company_name": "Bosch"}),
+                                                    [same_role_key({"title": "Powertrain Calibration Support Intern", "company_name": "Bosch Group"})]))
+    check("same title, other employer is new", not is_repeat(same_role_key({"title": "Mechanical Engineering Industrial Placement", "company_name": "Cummins"}),
+                                                             [same_role_key({"title": "Mechanical Engineering Industrial Placement", "company_name": "Phillips 66"})]))
+    mech = m.with_defaults({"field": "Engineering", "degrees": ["Mechanical Engineering"], "types": ["Placement"], "sectors": ["Automotive"]})
+    fm = m.filters_for(mech)
+    jlr = {"title": "Industrial Placement 2027: Mechanical", "company_name": "Jaguar Land Rover", "kind": "placement", "disciplines": ["mechanical"],
+           "skills": ["CAD", "MATLAB"], "country": "GB"}
+    level, ticks, _ = m.fit(jlr, mech, fm, ["CAD", "MATLAB"])
+    check("fit: top with ticks", level == "top" and ticks[0] == "Mechanical in the title" and "Placement" in ticks and "CAD, MATLAB on your CV" in ticks, f"{level} {ticks}")
+    level, ticks, _ = m.fit({**jlr, "title": "Placement Student - Quality", "disciplines": ["engineering"], "skills": [], "company_name": "Acme Ltd"}, mech, fm, [])
+    check("fit: generic engineering is worth a look", level == "look" and ticks[0] == "Engineering role", f"{level} {ticks}")
+    check("fit: other subject is no fit", m.fit({**jlr, "title": "Cyber Security Placement", "disciplines": ["software"]}, mech, fm, [])[0] is None)
+    msg = format_match({**jlr, "posted_at": None, "first_seen_at": "2026-10-17T09:00:00+00:00", "apply_url": "https://example.com"}, "top", ["Mechanical in the title", "Placement"])
+    check("alert shows ticks, no %", "Top match" in msg and "✓ Mechanical in the title" in msg and "%" not in msg, msg)
 
     print(f"{ok} passed, {fail} failed")
     sys.exit(1 if fail else 0)

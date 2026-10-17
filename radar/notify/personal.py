@@ -15,12 +15,14 @@ from zoneinfo import ZoneInfo
 
 import httpx
 
-from ..match import DISCIPLINE_WORDS, filters_for, is_match, score, with_defaults
+from ..match import DISCIPLINE_WORDS, FIT_LABELS, FIT_RANK, filters_for, fit, is_match, with_defaults
 from ..store import _fetch_all, client
+from ..sources.inbox import SITES
 from .telegram import KIND_LABELS
 
 MAX_PER_PERSON = 8
-MIN_SCORE = 60
+# The same role from several places (employer, Gradcracker, Bright Network, Adzuna) is sent once
+REPEAT_DAYS = 30
 # Paid access (mirrors web/src/lib/access.ts): 2 days free with TRIAL_ALERTS alerts, then £5 once
 TRIAL_ALERTS = 5
 PRICE = "£5"
@@ -58,35 +60,74 @@ def event_type(title: str) -> str:
     return "Event"
 
 
-def format_match(row: dict, points: int, industry: str | None) -> str:
+def _via(row: dict) -> str | None:
+    """"Gradcracker" for a role found in a job-site email, "Adzuna" for the job board."""
+    if row.get("source_kind") == "adzuna":
+        return "Adzuna"
+    if row.get("source_kind") == "inbox":
+        return next((s.name for s in SITES if s.job_link.search(row.get("apply_url") or "")), "a job site")
+    return None
+
+
+_YEARS = re.compile(r"\b20\d\d\b")
+_COMPANY_WORDS = re.compile(r"\b(ltd|limited|plc|llp|inc|group|uk|gmbh|co|the|and|ireland|services|holdings)\b")
+
+
+def _norm(text: str) -> str:
+    return " ".join(re.sub(r"[^a-z0-9]+", " ", text.lower()).split())
+
+
+def same_role_key(row: dict) -> tuple[str, str]:
+    """(title, employer) with years, punctuation and company suffixes removed; employer "" when a
+    job site didn't say ("via Bright Network")."""
+    company = row.get("company_name") or ""
+    company = "" if company.lower().startswith("via ") else _norm(_COMPANY_WORDS.sub(" ", company.lower()))
+    return _norm(_YEARS.sub(" ", row.get("title") or "")), company
+
+
+def is_repeat(key: tuple[str, str], seen: list[tuple[str, str]]) -> bool:
+    title, company = key
+    return any(t == title and (not c or not company or c.startswith(company) or company.startswith(c)) for t, c in seen)
+
+
+def _seen_roles(db: httpx.Client, ids: str) -> dict[str, list[tuple[str, str]]]:
+    """Each person's roles already sent in the last REPEAT_DAYS days."""
+    since = (datetime.now(timezone.utc) - timedelta(days=REPEAT_DAYS)).isoformat()
+    seen: dict[str, list[tuple[str, str]]] = {}
+    for a in _fetch_all(db, "/alerts_sent", {"select": "user_id,opportunities(title,company_name)", "user_id": f"in.({ids})",
+                                             "channel": "eq.telegram", "sent_at": f"gt.{since}"}):
+        if a.get("opportunities"):
+            seen.setdefault(a["user_id"], []).append(same_role_key(a["opportunities"]))
+    return seen
+
+
+def format_match(row: dict, level: str, ticks: list[str]) -> str:
     e = html.escape
-    label = "Strong match for you" if points >= 85 else "Good match for you" if points >= 75 else "New for you"
-    icon = "🟢" if points >= 85 else "🔵" if points >= 75 else "🟠"
+    label = FIT_LABELS.get(level, "New for you")
+    icon = {"top": "🟢", "good": "🔵"}.get(level, "🟠")
     posted = row.get("posted_at") or row.get("first_seen_at")
     posted_text = "posted today" if posted and datetime.fromisoformat(posted).astimezone(UK).date() == datetime.now(UK).date() else (
         f"posted {_day(posted)}" if posted else "just found")
     if row.get("kind") == "event":  # an expo or hackathon: what it is and when it ends, not a deadline
         details = [event_type(row.get("title") or "")] + ([f"ends {_day(row['closes_at'])}"] if row.get("closes_at") else [])
     else:
-        details = [KIND_LABELS.get(row.get("kind") or "", "Opportunity"), posted_text]
+        via = _via(row)
+        details = [KIND_LABELS.get(row.get("kind") or "", "Opportunity"), f"via {via}" if via else posted_text]
         if row.get("closes_at"):
             details.append(f"deadline {_day(row['closes_at'])}")
         elif row.get("rolling"):
             details.append("rolling, apply early")
-    tags = [_hashtag(DISCIPLINE_WORDS.get(d, d).replace(" engineering", "")) for d in (row.get("disciplines") or [])[:3]]
-    if industry:
-        tags.append(_hashtag(industry))
     where = row.get("location_text") or ("United Kingdom" if row.get("country") == "GB" else row.get("country") or "")
     lines = [
-        f"{icon} <b>{label}</b> · {points}% match",
+        f"{icon} <b>{label}</b>",
         f"<b>{e(row['title'])}</b>",
         e(" · ".join(p for p in (row.get("company_name"), where) if p)),
         e(" · ".join(details)),
     ]
-    if tags:
-        lines.append(" ".join(tags))
-    if row.get("source_kind") == "adzuna":
-        lines.append("<i>via Adzuna: found on a job board, so it may be a few days old</i>")
+    if ticks:
+        lines.append(e("  ".join(f"✓ {t}" for t in ticks)))
+    if row.get("source_kind") in ("adzuna", "inbox"):
+        lines.append("<i>Found on a job site, so it may have been up for a few days</i>")
     return "\n".join(lines)
 
 
@@ -201,6 +242,7 @@ def send_matches(rows: list[dict]) -> None:
         hidden: dict[str, set[str]] = {}
         for h in _fetch_all(db, "/hidden_opportunities", {"select": "user_id,opportunity_id", "user_id": f"in.({ids})"}):
             hidden.setdefault(h["user_id"], set()).add(h["opportunity_id"])
+        seen = _seen_roles(db, ids)
 
         reached = 0
         for person in people:
@@ -212,18 +254,27 @@ def send_matches(rows: list[dict]) -> None:
             for row in rows:
                 if row["id"] in hidden.get(person["user_id"], set()) or not is_match(row, prefs, filters):
                     continue
-                points, _, industry = score(row, prefs, filters, cv_skills)
-                if points >= MIN_SCORE:
-                    fits.append((points, industry, row))
-            fits.sort(key=lambda f: -f[0])
+                level, ticks, _ = fit(row, prefs, filters, cv_skills)
+                if level:
+                    fits.append((level, ticks, row))
+            fits.sort(key=lambda f: -FIT_RANK[f[0]])
+            # Once per role, however many places list it (this run and the last 30 days)
+            mine = seen.setdefault(person["user_id"], [])
+            unique = []
+            for f in fits:
+                key = same_role_key(f[2])
+                if not is_repeat(key, mine):
+                    mine.append(key)
+                    unique.append(f)
+            fits = unique
             chat = person["config"]["chat_id"]
             left = budget.get(person["user_id"])
             limit = MAX_PER_PERSON if left is None else min(MAX_PER_PERSON, left)
             if not fits or limit <= 0:
                 continue
             sent_here = 0
-            for points, industry, row in fits[:limit]:
-                if _send_once(db, telegram, person["user_id"], row["id"], "telegram", chat, format_match(row, points, industry), _buttons(row)):
+            for level, ticks, row in fits[:limit]:
+                if _send_once(db, telegram, person["user_id"], row["id"], "telegram", chat, format_match(row, level, ticks), _buttons(row)):
                     sent_here += 1
             if len(fits) > limit and left is not None:
                 telegram.send(chat, f"🔒 {len(fits) - limit} more new matches for you. The free trial includes {TRIAL_ALERTS} alerts: unlock every alert for {PRICE}, once: {SITE_URL}/pay")
@@ -261,16 +312,22 @@ def send_welcome() -> None:
             prefs = with_defaults(profile.get("preferences"))
             filters = filters_for(prefs)
             cv_skills = (profile.get("cv_details") or {}).get("skills") or []
-            fits = sorted(
-                ((score(r, prefs, filters, cv_skills), r) for r in recent if is_match(r, prefs, filters)),
-                key=lambda f: -f[0][0],
-            )[:3]  # newcomers have sent nothing yet, so this fits inside the trial's 5
+            ranked = sorted(
+                ((fit(r, prefs, filters, cv_skills), r) for r in recent if is_match(r, prefs, filters)),
+                key=lambda f: -FIT_RANK.get(f[0][0] or "", -1),
+            )
+            fits, keys = [], []
+            for f in ranked:
+                if f[0][0] and not is_repeat(same_role_key(f[1]), keys):
+                    keys.append(same_role_key(f[1]))
+                    fits.append(f)
+            fits = fits[:3]  # newcomers have sent nothing yet, so this fits inside the trial's 5
             if not fits:
                 continue
             chat = person["config"]["chat_id"]
             telegram.send(chat, "👋 <b>To get you started</b>, here are your best open matches right now. New ones will arrive the moment they open.")
-            for (points, _, industry), row in fits:
-                _send_once(db, telegram, person["user_id"], row["id"], "telegram", chat, format_match(row, points, industry), _buttons(row))
+            for (level, ticks, _), row in fits:
+                _send_once(db, telegram, person["user_id"], row["id"], "telegram", chat, format_match(row, level, ticks), _buttons(row))
     print(f"Welcome matches: {telegram.sent} messages")
 
 

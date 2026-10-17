@@ -8,7 +8,7 @@ import { telegramLinkCode } from "@/app/(app)/profile/actions";
 import { peopleToFind } from "@/components/apply-tips";
 import { SPARKLE, StarField, TELEGRAM_BOT_URL, TelegramFab } from "@/components/brand";
 import { PRICE, TRIAL_JOBS } from "@/lib/access";
-import { TYPE_CHIPS, type OpportunityView } from "@/lib/opportunity-types";
+import { FIT_LABEL, FIT_TONE, TYPE_CHIPS, type Fit, type OpportunityView } from "@/lib/opportunity-types";
 
 type Props = {
   tab: "you" | "all";
@@ -34,7 +34,6 @@ const SERIF = "var(--font-newsreader), Georgia, serif";
 const MONO = "var(--font-geist-mono), ui-monospace, monospace";
 const EYEBROW = "text-[12px] font-semibold uppercase tracking-[.08em] text-[#626C7C]";
 
-const ringColour = (match: number) => (match >= 85 ? "var(--t-mint)" : match >= 75 ? "var(--t-sky)" : "var(--t-dawn)");
 
 export function OpportunityFeed(props: Props) {
   const { tab, type, opportunities, counts, error } = props;
@@ -253,8 +252,9 @@ export function OpportunityFeed(props: Props) {
                     {o.via && ` · via ${o.via}`}
                   </span>
                 </span>
+                <Ticks ticks={o.ticks} />
               </div>
-              <MatchRing match={o.match} />
+              <FitPill fit={o.fit} />
             </button>
           ))}
           {props.trialLocked > 0 && <TrialLock count={props.trialLocked} />}
@@ -331,9 +331,11 @@ export function OpportunityFeed(props: Props) {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <TypePill o={selected} drawer />
-                  <span className="flex h-6 items-center rounded-full px-2.5 text-[12px] font-semibold text-[#1B6E4D]" style={{ background: "rgba(147,224,192,.4)" }}>
-                    {selected.match}% match
-                  </span>
+                  {selected.fit && (
+                    <span className="flex h-6 items-center rounded-full px-2.5 text-[12px] font-semibold" style={DRAWER_FIT[selected.fit]}>
+                      {FIT_LABEL[selected.fit]}
+                    </span>
+                  )}
                 </div>
                 <button
                   type="button"
@@ -594,27 +596,42 @@ function LogoTile({ o, size, drawer }: { o: OpportunityView; size: number; drawe
   );
 }
 
-function MatchRing({ match }: { match: number }) {
-  const colour = ringColour(match);
+/** "Top match" / "Good match" / "Worth a look", from facts only (no % score). */
+function FitPill({ fit, small }: { fit: Fit | null; small?: boolean }) {
+  if (!fit) return <span />;
+  const tone = FIT_TONE[fit];
   return (
-    <div className="relative grid size-[46px] place-items-center" aria-label={`${match}% match`}>
-      <svg width="46" height="46" viewBox="0 0 46 46" className="absolute inset-0 -rotate-90">
-        <circle cx="23" cy="23" r="19" style={{ fill: "none", stroke: "var(--line2)", strokeWidth: 2.5 }} />
-        <circle
-          cx="23"
-          cy="23"
-          r="19"
-          pathLength={100}
-          strokeDasharray={`${match} 100`}
-          style={{ fill: "none", stroke: colour, strokeWidth: 2.5, strokeLinecap: "round" }}
-        />
-      </svg>
-      <span className="text-[12px]" style={{ fontFamily: MONO, color: colour }}>
-        {match}
-      </span>
-    </div>
+    <span
+      className={`flex items-center whitespace-nowrap rounded-full font-sans font-semibold ${small ? "h-5 px-2 text-[11px]" : "h-7 px-3 text-[12px]"}`}
+      style={{ background: `var(--b-${tone})`, color: `var(--t-${tone})` }}
+    >
+      {FIT_LABEL[fit]}
+    </span>
   );
 }
+
+/** The facts behind the fit: ✓ Mechanical in the title ✓ Placement ✓ CAD, MATLAB on your CV */
+function Ticks({ ticks, light }: { ticks: string[]; light?: boolean }) {
+  if (!ticks.length) return null;
+  return (
+    <span className={`flex flex-wrap gap-x-3 gap-y-0.5 text-[13px] ${light ? "text-[#3E4550]" : "text-tx2"}`}>
+      {ticks.map((t) => (
+        <span key={t} className="flex items-center gap-1">
+          <span aria-hidden className={light ? "text-[#1B6E4D]" : "text-t-mint"}>
+            ✓
+          </span>
+          {t}
+        </span>
+      ))}
+    </span>
+  );
+}
+
+const DRAWER_FIT: Record<Fit, React.CSSProperties> = {
+  top: { background: "rgba(147,224,192,.4)", color: "#1B6E4D" },
+  good: { background: "rgba(143,199,255,.35)", color: "#1D5C9C" },
+  look: { background: "rgba(255,196,140,.35)", color: "#8E5413" },
+};
 
 function Fact({ label, value, colour, small }: { label: string; value: string; colour?: string; small?: boolean }) {
   return (
@@ -659,7 +676,6 @@ function PhoneFeed(
   }, []);
   const list = tab === "New" ? props.opportunities : tab === "Closing soon" ? props.phone.closingSoon : props.phone.saved;
   const [top, ...rest] = list;
-  const matchWord = (m: number) => (m >= 85 ? "Strong match" : m >= 75 ? "Good match" : "Match");
   const saved = (o: OpportunityView) => !!props.tracked[o.id];
 
   return (
@@ -738,7 +754,7 @@ function PhoneFeed(
                   )}
                 </span>
                 <span className="text-[12px] font-semibold uppercase tracking-[.08em] text-[#1D5C9C]">
-                  {matchWord(top.match)} · {top.match}
+                  {top.fit ? FIT_LABEL[top.fit] : "New"}
                 </span>
               </span>
               <span className="text-[11px] text-[#5A616C]" style={{ fontFamily: MONO }}>
@@ -752,6 +768,7 @@ function PhoneFeed(
               <span className="text-sm text-[#3E4550]">
                 {top.company} · {top.loc}
               </span>
+              <Ticks ticks={top.ticks} light />
             </button>
             <div className="flex items-center gap-2 text-[12px]">
               <span className="flex h-6 items-center rounded-full bg-[#E6E9EE] px-[9px] font-medium">{top.type}</span>
@@ -788,7 +805,7 @@ function PhoneFeed(
             key={o.id}
             type="button"
             onClick={() => props.onOpen(o)}
-            className="animate-fade-up grid cursor-pointer grid-cols-[40px_minmax(0,1fr)_40px] items-center gap-3 rounded-2xl border p-3.5 text-left text-tx"
+            className="animate-fade-up grid cursor-pointer grid-cols-[40px_minmax(0,1fr)] items-center gap-3 rounded-2xl border p-3.5 text-left text-tx"
             style={{ background: "rgba(255,255,255,.04)", borderColor: "rgba(255,255,255,.08)", animationDelay: `${Math.min(i, 8) * 40 + 60}ms` }}
           >
             <span
@@ -806,7 +823,9 @@ function PhoneFeed(
               <span className="text-[13px] text-tx2">
                 {o.company} · {o.loc}
               </span>
-              <div className="mt-1 flex items-center gap-2 text-[11px]" style={{ fontFamily: MONO }}>
+              <Ticks ticks={o.ticks} />
+              <div className="mt-1 flex flex-wrap items-center gap-2 text-[11px]" style={{ fontFamily: MONO }}>
+                <FitPill fit={o.fit} small />
                 <span
                   className="flex h-5 items-center rounded-full px-2 font-sans text-[11px] font-medium"
                   style={{ background: `var(--b-${o.tone})`, color: `var(--t-${o.tone})` }}
@@ -817,7 +836,6 @@ function PhoneFeed(
                 {o.via && <span className="text-tx3">via {o.via}</span>}
               </div>
             </div>
-            <PhoneRing match={o.match} />
           </button>
         ))}
 
@@ -856,27 +874,5 @@ function TrialLock({ count }: { count: number }) {
       <span className="text-[15px] text-tx2">The free trial shows {TRIAL_JOBS}. Unlock every job and instant alerts for {PRICE}, once.</span>
       <span className="mt-1 flex h-12 items-center rounded-xl bg-[#C3B5FF] px-6 text-[16px] font-semibold text-[#120B2A]">Unlock everything for {PRICE}</span>
     </Link>
-  );
-}
-
-function PhoneRing({ match }: { match: number }) {
-  const colour = ringColour(match);
-  return (
-    <div className="relative grid size-10 place-items-center">
-      <svg width="40" height="40" viewBox="0 0 40 40" className="absolute inset-0 -rotate-90">
-        <circle cx="20" cy="20" r="16" style={{ fill: "none", stroke: "var(--line2)", strokeWidth: 2.5 }} />
-        <circle
-          cx="20"
-          cy="20"
-          r="16"
-          pathLength={100}
-          strokeDasharray={`${match} 100`}
-          style={{ fill: "none", stroke: colour, strokeWidth: 2.5, strokeLinecap: "round" }}
-        />
-      </svg>
-      <span className="text-[11px]" style={{ fontFamily: MONO, color: colour }}>
-        {match}
-      </span>
-    </div>
   );
 }

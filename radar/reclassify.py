@@ -15,6 +15,7 @@ from collections import defaultdict
 from .pipeline.classify import STAFF_ROLE, disciplines_for, fingerprint, kind_for
 from .pipeline.exclusions import excluded
 from .pipeline.names import clean_company_name
+from .sources.inbox import company_from_url
 from .store import HINT_FIELDS as HINTS
 from .store import _batches, _fetch_all, client
 
@@ -27,7 +28,7 @@ def main() -> None:
             db,
             "/opportunities",
             {
-                "select": "id,fingerprint,title,company_name,city,location_text,description,kind,disciplines,source_kind,"
+                "select": "id,fingerprint,title,company_name,city,location_text,description,kind,disciplines,source_kind,apply_url,"
                 + ",".join(f"{h}:raw->>{h}" for h in HINTS),
                 "status": "eq.open",
                 "order": "id",
@@ -42,6 +43,9 @@ def main() -> None:
         taken = {r["fingerprint"] for r in _fetch_all(db, "/opportunities", {"select": "fingerprint", "order": "id"})}
         for row in rows:
             clean = clean_company_name(row["company_name"] or "")
+            # Job-site emails saved before the employer could be read from the link ("via Bright Network")
+            if clean.startswith("via "):
+                clean = company_from_url(row.get("apply_url") or "") or clean
             if clean == (row["company_name"] or ""):
                 continue
             new_fp = fingerprint(clean, row["title"] or "", row.get("city") or row.get("location_text") or "")
@@ -51,6 +55,7 @@ def main() -> None:
                 rename.append((row["id"], clean, new_fp))
                 taken.add(new_fp)
         duplicates = set(close["duplicate under an old name"])
+        new_names = {row_id: clean for row_id, clean, _ in rename}  # so a newly named Babcock role is excluded now
 
         for row in rows:
             if row["id"] in duplicates:
@@ -61,7 +66,7 @@ def main() -> None:
             if row["source_kind"] in RETIRED_SOURCES:
                 close["job board copy"].append(row["id"])
                 continue
-            if excluded(row["company_name"] or "", title, description):
+            if excluded(new_names.get(row["id"], row["company_name"] or ""), title, description):
                 close["excluded"].append(row["id"])
                 continue
             hint = " ".join(str(row[h]) for h in HINTS if row.get(h)) or None

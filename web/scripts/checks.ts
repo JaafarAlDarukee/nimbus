@@ -4,7 +4,7 @@
  *
  *   cd web && npx tsx scripts/checks.ts
  */
-import { kindView } from "../src/lib/opportunity-view";
+import { fitRole, isSameRole, kindView, sameRoleKey, type OpportunityRow } from "../src/lib/opportunity-view";
 import { matchFilters, withDefaults, DEGREE_DISCIPLINES } from "../src/lib/preferences";
 import { DEGREES_BY_FIELD, DEFAULT_TYPES } from "../src/lib/onboarding-data";
 import { analyse, attachPrompt, cvHtml, cvLines, tailorPrompt, type CvJob } from "../src/lib/cv";
@@ -80,6 +80,20 @@ check("acronyms only in capitals", !keywordsIn("we sell spices").includes("SPICE
 check("short degree", shortDegree("BEng (Hons) Mechanical Engineering (with Foundation Year)") === "Mechanical Engineering");
 check("LinkedIn searches", peopleToFind("Jaguar Land Rover", "Industrial Placement 2027: Mechanical", "University of Leeds").length === 4);
 check("card labels", kindView({ kind: "event", title: "DurHack" }).type === "Hackathon" && kindView({ kind: "event", title: "Lab Innovations 2026 (expo)" }).type === "Expo");
+
+// Match: facts, not a made-up % (owner, 17 Oct), and each role once
+const mechPrefs = withDefaults({ field: "Engineering", degrees: ["Mechanical Engineering"], types: ["Placement"], sectors: ["Automotive"] });
+const mechFilters = matchFilters(mechPrefs);
+const role = (title: string, disciplines: string[], extra: Partial<OpportunityRow> = {}) =>
+  ({ id: "r", title, company_name: "Jaguar Land Rover", kind: "placement", disciplines, skills: ["CAD", "MATLAB"], country: "GB", ...extra }) as OpportunityRow;
+const top = fitRole(role("Industrial Placement 2027: Mechanical", ["mechanical"]), mechPrefs, mechFilters, { cvSkills: ["CAD", "MATLAB"] });
+check("fit: top with ticks", top.fit === "top" && top.ticks[0] === "Mechanical in the title" && top.ticks.includes("CAD, MATLAB on your CV"), `${top.fit} ${top.ticks}`);
+const generic = fitRole(role("Placement Student - Quality", ["engineering"], { company_name: "Acme Ltd", skills: [] }), mechPrefs, mechFilters);
+check("fit: generic engineering is worth a look", generic.fit === "look" && generic.ticks[0] === "Engineering role", `${generic.fit} ${generic.ticks}`);
+check("fit: other subject is no fit", fitRole(role("Cyber Security Placement", ["software"]), mechPrefs, mechFilters).fit === null);
+check("fit: film production isn't manufacturing in the title", fitRole(role("Post Production Technology Internship", ["manufacturing"]), withDefaults({ degrees: ["Mechanical Engineering"] }), matchFilters(withDefaults({ degrees: ["Mechanical Engineering"] }))).ticks[0] !== "Manufacturing in the title");
+check("same role from two places", isSameRole(sameRoleKey("Industrial Placement - Vehicle Motion", "Bentley Motors Ltd"), sameRoleKey("Industrial Placement Vehicle Motion 2027", "via Bright Network")));
+check("same title, other employer is new", !isSameRole(sameRoleKey("Mechanical Engineering Industrial Placement", "Phillips 66"), sameRoleKey("Mechanical Engineering Industrial Placement", "Cummins")));
 
 // Paid access: 2 days free with 5 jobs and 2 CVs, then £5 once
 const HOUR = 3_600_000;

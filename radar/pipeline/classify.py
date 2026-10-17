@@ -67,12 +67,16 @@ DISCIPLINES: dict[str, re.Pattern] = {
         r"\bcfd\b",
     ),
     "manufacturing": _rx(
-        r"\bmanufactur", r"\bproduction\b", r"\bindustrial engineer", r"\bprocess engineer", r"\blean\b",
+        # "production" in the factory sense, not TV or film ("Post Production", "Production Assistant")
+        r"\bmanufactur", r"(?<!post )(?<!post-)\bproduction\b(?! (assistant|runner|coordinator|company|data))", r"\bindustrial engineer", r"\bprocess engineer", r"\blean\b",
         r"\bquality engineer", r"\boperations engineer", r"\bcalibration\b", r"\bmetrolog", r"\bmaintenance engineer",
         r"\bcontinuous improvement\b", r"\boperational excellence\b",
     ),
     "robotics": _rx(
-        r"\brobot", r"\bautomation\b", r"\bmechatronic", r"\bcontrol (systems?|engineer)", r"\bcontrols engineer",
+        # Automation of machines, not of data or tests ("Data Management & Automation Intern")
+        r"\brobot", r"\b(industrial|robotics?|factory|manufacturing|controls?|plc|process|electrical|building|warehouse) automation\b",
+        r"(?<!test )(?<!& )(?<!and )\bautomation (engineer\w*|technician|intern\w*|placement|apprentic\w*|graduate)", r"^automation\b",
+        r"\bmechatronic", r"\bcontrol (systems?|engineer)", r"\bcontrols engineer",
         r"\bautonom", r"\bgnc\b",
     ),
     "electrical": _rx(
@@ -83,7 +87,9 @@ DISCIPLINES: dict[str, re.Pattern] = {
     "aerospace": _rx(r"\baerospace\b", r"\baeronautic", r"\baircraft\b", r"\bpropulsion\b", r"\bgas turbine", r"\bavionic"),
     "automotive": _rx(r"\bautomotive\b", r"\bvehicle\b", r"\bpowertrain\b", r"\bchassis\b", r"\bmotorsport\b"),
     "materials": _rx(
-        r"\bmaterials?\b", r"\bmetallurg", r"\bcomposites?\b", r"\bndt\b", r"\bnon-destructive\b", r"\bpolymer",
+        # Materials science, not stock ("Materials Management Analyst") or a document ("Antimicrobial Material")
+        r"\bmaterials\b(?! (management|handl\w*|planner|planning|controller|coordinator|buyer|purchas\w*|supply))",
+        r"\bmaterial (science|scientist|engineer\w*|testing|characteri[sz]ation|development)\b", r"\bmetallurg", r"\bcomposites?\b", r"\bndt\b", r"\bnon-destructive\b", r"\bpolymer",
         r"\bcorrosion\b", r"\bwelding\b",
     ),
     "civil": _rx(r"\bcivil\b", r"\bstructural\b", r"\bgeotechnic", r"\bdams?\b", r"\binfrastructure engineer", r"\bwater engineer"),
@@ -95,6 +101,7 @@ DISCIPLINES: dict[str, re.Pattern] = {
         r"\bfull[- ]?stack\b", r"\bfront[- ]?end\b", r"\bback[- ]?end\b", r"\bcloud\b", r"\bsite reliability\b", r"\bsre\b",
         r"\bweb\b", r"\bmobile\b", r"\bios\b", r"\bandroid\b", r"\bplatform engineer", r"\btechnology (graduate|analyst|programme|intern)",
         r"\binformation security\b", r"\btest automation\b", r"\bgames? (developer|programmer)\b",
+        r"\bit (support|service\w*|technician|engineer\w*|infrastructure|helpdesk)\b", r"\b(compiler|helpdesk|service desk)\b",
     ),
     # Science and health, for students outside engineering (Biomedical Science, Medicine, Marine Biology...)
     "biomedical": _rx(
@@ -119,7 +126,7 @@ DISCIPLINES: dict[str, re.Pattern] = {
         r"\benvironment(al)?\b", r"\becolog", r"\bmarine (biolog|scien|conservation|environment|survey)", r"\bconservation\b",
         r"\bsustainab", r"\bclimate\b", r"\bwildlife\b", r"\bocean", r"\bgeolog", r"\bgeoscien", r"\bearth scien",
         r"\bhydrolog", r"\bwater (science|quality|resources)\b", r"\bfisheries\b", r"\baquacult", r"\bbiodiversity\b",
-        r"\bzoolog", r"\bnet zero\b",
+        r"\bzoolog", r"\bnet zero\b", r"\bagronom", r"\bagricultur",
     ),
     "business": _rx(
         r"\bfinance\b", r"\bcommercial\b", r"\bprocurement\b", r"\bsupply chain\b", r"\bhuman resources\b",
@@ -127,11 +134,13 @@ DISCIPLINES: dict[str, re.Pattern] = {
         r"\bpublic affairs\b", r"\bcompliance\b", r"\bproject management\b", r"\btreasury\b", r"\btrading\b",
         r"\bquant", r"\binvestment\b", r"\baudit\b", r"\btax\b", r"\baccount(ing|ancy)\b", r"\blegal\b",
         r"\boperations associate\b", r"\bconsult(ant|ing)\b", r"\bcrypto\b",
+        r"\bmaterials? (management|planning|planner|handl\w*|controller|coordinator|buyer)\b", r"\binsurance\b", r"\bbroking\b",
     ),
     # Not engineering at all: keeps these out of every engineering student's For you
     "creative": _rx(
         r"\bgraphic design", r"\bbrand\b", r"\bsocial media\b", r"\bcontent\b", r"\bwriters?\b", r"\bjournalis",
         r"\bcopywrit", r"\bvideo\b", r"\bphotograph", r"\bevent (producer|planner|coordinator)\b", r"\bcommunications\b",
+        r"\bpost[- ]?production\b", r"\b(tv|television|broadcast\w*|theatre|music)\b", r"(?<!thin )\bfilms?\b",
     ),
 }
 
@@ -256,7 +265,7 @@ def fingerprint(company: str, title: str, place: str) -> str:
 # "Engineering Placement 2027", "Technical Apprentice", "Laboratory Assistant"): a general tag that
 # every engineering (or science) degree includes, so they still reach For you and personal alerts
 GENERIC_ENGINEERING = _rx(
-    r"\bengineer", r"\btechnical\b", r"\btechnician", r"\bmaintenance\b", r"\br&d\b", r"\bquality\b", r"\bproduction\b",
+    r"\bengineer", r"\btechnical\b", r"\btechnician", r"\bmaintenance\b", r"\br&d\b", r"\bquality\b", r"(?<!post )(?<!post-)\bproduction\b(?! (assistant|runner|coordinator|company|data))",
     r"\bstem\b", r"\bmechanic",
 )
 GENERIC_SCIENCE = _rx(r"\bscien", r"\blab(oratory)?\b", r"\bresearch\b")

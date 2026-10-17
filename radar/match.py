@@ -179,30 +179,59 @@ def is_match(row: dict, prefs: dict, filters: tuple) -> bool:
     return not any(company.startswith(m.lower()) for m in prefs.get("muted", []))
 
 
-def score(row: dict, prefs: dict, filters: tuple, cv_skills: list[str]) -> tuple[int, list[str], str | None]:
-    """(score out of 100, reasons, matching industry): the same points as the website."""
-    kinds, disciplines, countries = filters
-    degree = (prefs.get("degrees") or ["degree"])[0]
-    points, why = 50, []
-    if row.get("kind") in kinds and row.get("kind") in KIND_WORDS:
-        points += 14
-        why.append(f"{KIND_WORDS[row['kind']]} one of the types you picked")
-    overlap = [d for d in row.get("disciplines") or [] if d in disciplines]
-    in_title = next((d for d in overlap if d in TITLE_DISCIPLINE and TITLE_DISCIPLINE[d].search(row.get("title") or "")), None)
+FIT_LABELS = {"top": "Top match", "good": "Good match", "look": "Worth a look"}
+FIT_RANK = {"top": 2, "good": 1, "look": 0}
+SHORT_WORDS = {
+    "mechanical": "Mechanical", "manufacturing": "Manufacturing", "robotics": "Robotics", "electrical": "Electrical",
+    "aerospace": "Aerospace", "automotive": "Automotive", "materials": "Materials", "civil": "Civil", "chemical": "Chemical",
+    "software": "Computing", "business": "Business", "biomedical": "Biomedical", "life_sciences": "Life sciences",
+    "healthcare": "Healthcare", "environmental": "Environmental", "engineering": "Engineering", "science": "Science",
+}
+KIND_TICKS = {
+    "placement": "Placement", "internship": "Internship", "spring_week": "Spring week", "insight": "Insight",
+    "grad_scheme": "Graduate", "graduate_job": "Graduate", "apprenticeship": "Apprenticeship", "research": "Research",
+    "scholarship": "Scholarship",
+}
+GENERIC_TAGS = {"engineering", "science"}
+
+
+def fit(row: dict, prefs: dict, filters: tuple, cv_skills: list[str]) -> tuple[str | None, list[str], str | None]:
+    """(level, ticks, industry): how well a role fits, from facts only, no made-up score (owner,
+    17 Oct). Ticks are the facts ("Mechanical in the title", "Placement", "Automotive", "CAD,
+    MATLAB on your CV"). Level: top = your subject in the title plus your industry or 2+ CV skills;
+    good = your subject in the title, or a broader subject match plus one of those; look = the
+    rest; None = not one of your subjects. The same rules as the website (opportunity-view.ts)."""
+    kinds, disciplines, _ = filters
+    title = row.get("title") or ""
+    tags = row.get("disciplines") or []
+    overlap = [d for d in tags if d in disciplines]
+    in_title = next((d for d in overlap if d not in GENERIC_TAGS and d in TITLE_DISCIPLINE and TITLE_DISCIPLINE[d].search(title)), None)
+    ticks: list[str] = []
     if in_title:
-        points += 20
-        why.append(f"{DISCIPLINE_WORDS.get(in_title, in_title)} fits your {degree}")
+        ticks.append(f"{SHORT_WORDS.get(in_title, in_title)} in the title")
     elif overlap:
-        points += 8
-        why.append(f"The advert asks for {DISCIPLINE_WORDS.get(overlap[0], overlap[0]).lower()}, part of your {degree}")
-    text = f"{row.get('title', '')} {row.get('company_name', '')} {(row.get('description') or '')[:800]}"
+        subject = next((d for d in overlap if d not in GENERIC_TAGS), overlap[0])
+        ticks.append(f"{SHORT_WORDS[subject]} role" if subject in GENERIC_TAGS else f"Asks for {DISCIPLINE_WORDS.get(subject, subject).lower()}")
+    elif row.get("kind") == "event" and not tags:
+        ticks.append("Any subject")
+    kind = row.get("kind")
+    if kind in kinds:
+        ticks.append(("Hackathon" if re.search(r"hack", title, re.I) else "Event") if kind == "event" else KIND_TICKS.get(kind, "Opportunity"))
+    text = f"{title} {row.get('company_name', '')} {(row.get('description') or '')[:800]}"
     industry = industry_match(prefs.get("sectors", []), row.get("company_name") or "", text) if prefs.get("sectors") else None
     if industry:
-        points += 12
-        why.append(f"{industry} is one of your industries")
-    if countries is None or row.get("country") in countries:
-        points += 4
+        ticks.append(industry)
     mine = {s.lower() for s in cv_skills}
     shared = [s for s in row.get("skills") or [] if s.lower() in mine]
-    points += min(9, len(shared) * 3)
-    return max(30, min(97, points)), why[:3], industry
+    if shared:
+        ticks.append(", ".join(shared[:2]) + (f" +{len(shared) - 2}" if len(shared) > 2 else "") + " on your CV")
+    extra = bool(industry) or len(shared) >= 2
+    if in_title:
+        level = "top" if extra else "good"
+    elif overlap:
+        level = "good" if extra else "look"
+    elif kind == "event" and not tags:
+        level = "look"
+    else:
+        level = None
+    return level, ticks, industry

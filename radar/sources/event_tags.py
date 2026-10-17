@@ -22,7 +22,8 @@ _RULES: list[tuple[re.Pattern, list[str]]] = [
      ["biomedical", "healthcare", "life_sciences"]),
     (re.compile(r"\b(civil|structur\w*|smart cit\w*|infrastructure|construction|water)\b", re.I), ["civil", "environmental"]),
     (re.compile(r"\b(chemistry|chemical|materials?|physics|quantum)\b", re.I), ["chemical", "materials", "electrical"]),
-    (re.compile(r"\b(engineering|engineers?|stem)\b", re.I), ENGINEERING_ONLY),
+    # "Society of Software Engineers" is a computing hackathon, not every engineering degree's
+    (re.compile(r"(?<!software )\b(engineering|engineers?|stem)\b", re.I), ENGINEERING_ONLY),
 ]
 
 # UK, Europe, North America, and the Middle East

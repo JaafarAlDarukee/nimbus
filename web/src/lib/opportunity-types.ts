@@ -3,6 +3,11 @@
 
 export type Tone = "sky" | "lil" | "dawn" | "mint" | "teal" | "rose";
 
+/** How well a role fits, worked out from facts only (owner, 17 Oct: no made-up % score). */
+export type Fit = "top" | "good" | "look";
+export const FIT_LABEL: Record<Fit, string> = { top: "Top match", good: "Good match", look: "Worth a look" };
+export const FIT_TONE: Record<Fit, Tone> = { top: "mint", good: "sky", look: "dawn" };
+
 /** What a card and the detail drawer show. */
 export type OpportunityView = {
   id: string;
@@ -15,7 +20,10 @@ export type OpportunityView = {
   tone: Tone;
   found: string;
   isNew: boolean;
-  match: number;
+  /** null when it isn't one of your subjects (the All tab) */
+  fit: Fit | null;
+  /** The facts behind the fit: "Mechanical in the title", "Placement", "Automotive", "CAD, MATLAB on your CV" */
+  ticks: string[];
   why: string[];
   deadline: string;
   /** "closes 24 Oct", "rolling" or "" (phone cards) */

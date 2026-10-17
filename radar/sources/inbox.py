@@ -109,12 +109,25 @@ def _canonical(url: str, site: Site) -> str:
 
 
 def _company_from(url: str, site: Site) -> str | None:
-    if site.name == "Gradcracker":  # /hub/<id>/<employer-slug>/<type>/<id>/<title-slug>
-        segments = [s for s in urlsplit(url).path.split("/") if s]
-        if len(segments) >= 3:
-            slug = segments[2]
-            return slug.upper() if len(slug) <= 3 else slug.replace("-", " ").title()  # jcb -> JCB
-    return None
+    """The employer named in the job link: Gradcracker /hub/<id>/<employer>/<type>/<id>/<title>,
+    Bright Network /graduate-jobs/<employer>/<title>, Higherin /jobs/<id>/<employer>/<title>."""
+    segments = [s for s in urlsplit(url).path.split("/") if s]
+    slug = None
+    if site.name == "Gradcracker" and len(segments) >= 3:
+        slug = segments[2]
+    elif site.name == "Bright Network" and len(segments) >= 3:
+        slug = segments[1]
+    elif site.name == "Higherin" and len(segments) >= 4 and segments[1].isdigit():
+        slug = segments[2]
+    if not slug:
+        return None
+    return slug.upper() if len(slug) <= 3 else slug.replace("-", " ").title()  # jcb -> JCB
+
+
+def company_from_url(url: str) -> str | None:
+    """The employer for a job-site link saved earlier as "via <site>" (used by radar.reclassify)."""
+    site = next((s for s in SITES if s.job_link.search(url or "")), None)
+    return _company_from(url, site) if site else None
 
 
 def _site_for(sender: str, links: list[tuple[str, str]]) -> Site | None:

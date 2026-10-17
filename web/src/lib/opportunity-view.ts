@@ -1,7 +1,7 @@
 import type { MatchFilters, Preferences } from "@/lib/preferences";
 import { timeAgo } from "@/lib/time";
 import { industryMatch } from "@/lib/industries";
-import type { OpportunityView, Tone } from "@/lib/opportunity-types";
+import type { Fit, OpportunityView, Tone } from "@/lib/opportunity-types";
 
 export type { OpportunityView, Tone } from "@/lib/opportunity-types";
 export { TYPE_CHIPS } from "@/lib/opportunity-types";
@@ -102,12 +102,12 @@ const HOUR = 3_600_000;
  *  The same title words the radar tags with (radar/pipeline/classify.py DISCIPLINES). */
 const TITLE_DISCIPLINE: Record<string, RegExp> = {
   mechanical: /\b(mechanical|mech|design engineer\w*|stress|thermo\w*|fluids?|hvac|cfd)\b/i,
-  manufacturing: /\b(manufactur\w*|production|industrial engineer\w*|process engineer\w*|lean|quality engineer\w*|operations engineer\w*|calibration|metrolog\w*|maintenance engineer\w*|continuous improvement|operational excellence)\b/i,
-  robotics: /\b(robot\w*|automation|mechatronic\w*|controls? (systems?|engineer)|autonom\w*|gnc)\b/i,
+  manufacturing: /\b(manufactur\w*|(?<!post[- ])production(?! (assistant|runner|coordinator|company|data))|industrial engineer\w*|process engineer\w*|lean|quality engineer\w*|operations engineer\w*|calibration|metrolog\w*|maintenance engineer\w*|continuous improvement|operational excellence)\b/i,
+  robotics: /\b(robot\w*|(industrial|robotics?|factory|manufacturing|controls?|plc|process|electrical|building|warehouse) automation|(?<!(test|&|and) )automation (engineer\w*|technician|intern\w*|placement|apprentic\w*|graduate)|^automation|mechatronic\w*|controls? (systems?|engineer)|autonom\w*|gnc)\b/i,
   electrical: /\b(electrical|electronic\w*|power systems|embedded|firmware|hardware|high voltage|protection (and|&) control|fpga|semiconductor\w*|pcb|rf engineer\w*|signal processing)\b/i,
   aerospace: /\b(aerospace|aeronautic\w*|aircraft|propulsion|gas turbines?|avionic\w*)\b/i,
   automotive: /\b(automotive|vehicles?|powertrain|chassis|motorsport)\b/i,
-  materials: /\b(materials?|metallurg\w*|composites?|ndt|non-destructive|polymer\w*|corrosion|welding)\b/i,
+  materials: /\b(materials(?! (management|handl\w*|planner|planning|controller|coordinator|buyer|purchas\w*|supply))|material (science|scientist|engineer\w*|testing|characteri[sz]ation|development)|metallurg\w*|composites?|ndt|non-destructive|polymer\w*|corrosion|welding)\b/i,
   civil: /\b(civil|structural|geotechnic\w*|dams?|infrastructure engineer\w*|water engineer\w*)\b/i,
   chemical: /\b(chemical|chemistry)\b/i,
   software: /\b(software|data|computer science|computing|developer|programmer|cyber|machine learning|deep learning|ai|ml|llms?|nlp|computer vision|devops|full[- ]?stack|front[- ]?end|back[- ]?end|cloud|site reliability|sre|web|mobile|ios|android|platform engineer\w*|technology (graduate|analyst|programme|intern\w*)|information security|test automation|games? (developer|programmer))\b/i,
@@ -119,53 +119,86 @@ const TITLE_DISCIPLINE: Record<string, RegExp> = {
 
 export type MatchExtras = { cvSkills?: string[] };
 
-/**
- * How well a role fits, out of 100, and why. Every point is a real overlap with the user's choices
- * (type, degree, industries, location) or their CV skills. Mirrored in radar/match.py.
- */
-export function scoreRole(row: OpportunityRow, prefs: Preferences, filters: MatchFilters, extras: MatchExtras = {}) {
-  const kind = kindView(row);
-  const why: string[] = [];
-  let match = 50;
+const SHORT_WORD: Record<string, string> = {
+  mechanical: "Mechanical", manufacturing: "Manufacturing", robotics: "Robotics", electrical: "Electrical", aerospace: "Aerospace",
+  automotive: "Automotive", materials: "Materials", civil: "Civil", chemical: "Chemical", software: "Computing", business: "Business",
+  biomedical: "Biomedical", life_sciences: "Life sciences", healthcare: "Healthcare", environmental: "Environmental",
+  engineering: "Engineering", science: "Science",
+};
+const GENERIC = new Set(["engineering", "science"]);
 
-  if (filters.kinds.includes(row.kind) && kind.plural) {
-    match += 14;
-    why.push(`${kind.plural} one of the types you picked`);
-  }
-  const overlap = (row.disciplines ?? []).filter((d) => filters.disciplines.includes(d));
-  const inTitle = overlap.find((d) => TITLE_DISCIPLINE[d]?.test(row.title));
+/**
+ * How well a role fits, from facts only: no made-up score. `ticks` are the facts ("Mechanical in the
+ * title", "Placement", "Automotive", "CAD, MATLAB on your CV"); `fit` is top (your subject in the
+ * title plus your industry or 2+ CV skills), good (your subject in the title, or a broader subject
+ * match plus one of those), look (the rest), or null (not your subject). `why` explains it in
+ * sentences for the drawer. Mirrored in radar/match.py `fit`.
+ */
+export function fitRole(row: OpportunityRow, prefs: Preferences, filters: MatchFilters, extras: MatchExtras = {}) {
+  const kind = kindView(row);
+  const degree = prefs.degrees[0] ?? "degree";
+  const ticks: string[] = [];
+  const why: string[] = [];
+  const tags = row.disciplines ?? [];
+  const overlap = tags.filter((d) => filters.disciplines.includes(d));
+  const inTitle = overlap.find((d) => !GENERIC.has(d) && TITLE_DISCIPLINE[d]?.test(row.title));
   if (inTitle) {
-    match += 20;
-    why.push(`${DISCIPLINE_WORD[inTitle] ?? inTitle} fits your ${prefs.degrees[0] ?? "degree"}`);
+    ticks.push(`${SHORT_WORD[inTitle] ?? inTitle} in the title`);
+    why.push(`${DISCIPLINE_WORD[inTitle] ?? inTitle} is in the title, and it fits your ${degree}`);
   } else if (overlap.length) {
-    match += 8;
-    why.push(`The advert asks for ${(DISCIPLINE_WORD[overlap[0]] ?? overlap[0]).toLowerCase()}, part of your ${prefs.degrees[0] ?? "degree"}`);
+    const subject = overlap.find((d) => !GENERIC.has(d)) ?? overlap[0];
+    ticks.push(GENERIC.has(subject) ? `${SHORT_WORD[subject]} role` : `Asks for ${(DISCIPLINE_WORD[subject] ?? subject).toLowerCase()}`);
+    why.push(
+      GENERIC.has(subject)
+        ? `A general ${subject} role: the title doesn't name a field, so check it suits your ${degree}`
+        : `The advert asks for ${(DISCIPLINE_WORD[subject] ?? subject).toLowerCase()}, part of your ${degree}`,
+    );
+  } else if (row.kind === "event" && !tags.length) {
+    ticks.push("Any subject");
+  }
+  if (filters.kinds.includes(row.kind)) {
+    ticks.push(kind.type);
+    if (kind.plural) why.push(`${kind.plural} one of the types you picked`);
   }
   const industry = prefs.sectors.length ? industryMatch(prefs.sectors, row.company_name, `${row.title} ${row.company_name} ${(row.description ?? "").slice(0, 800)}`) : null;
   if (industry) {
-    match += 12;
+    ticks.push(industry);
     why.push(`${industry} is one of your industries`);
-  }
-  if (!filters.countries || (row.country && filters.countries.includes(row.country))) {
-    match += 4;
-    if (row.country === "GB") why.push("Based in the UK, where you said you'd work");
   }
   const mine = new Set((extras.cvSkills ?? []).map((s) => s.toLowerCase()));
   const shared = (row.skills ?? []).filter((s) => mine.has(s.toLowerCase()));
   if (shared.length) {
-    match += Math.min(9, shared.length * 3);
+    ticks.push(`${shared.slice(0, 2).join(", ")}${shared.length > 2 ? ` +${shared.length - 2}` : ""} on your CV`);
     why.push(`Asks for ${shared.slice(0, 3).join(", ")}, ${shared.length > 1 ? "all" : "also"} on your CV`);
   } else if (row.skills?.length) {
     why.push(`Asks for ${row.skills.slice(0, 3).join(", ")}`);
   }
   if (row.rolling) why.push("Rolling applications, so applying early matters");
   if (!why.length) why.push("Posted on the employer's own site");
-  return { match: Math.max(30, Math.min(97, match)), why: why.slice(0, 3) };
+
+  const extra = !!industry || shared.length >= 2;
+  const fit: Fit | null = inTitle ? (extra ? "top" : "good") : overlap.length ? (extra ? "good" : "look") : row.kind === "event" && !tags.length ? "look" : null;
+  return { fit, ticks, why: why.slice(0, 4) };
+}
+
+const YEARS = /\b20\d\d\b/g;
+const COMPANY_WORDS = /\b(ltd|limited|plc|llp|inc|group|uk|gmbh|co|the|and|ireland|services|holdings)\b/g;
+const norm = (text: string) => text.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim().replace(/\s+/g, " ");
+
+/** (title, employer) with years, punctuation and company suffixes removed; employer "" when a job
+ *  site didn't say ("via Bright Network"). Mirrored in radar/notify/personal.py `same_role_key`. */
+export function sameRoleKey(title: string, company: string): [string, string] {
+  const c = company.toLowerCase().startsWith("via ") ? "" : norm(company.toLowerCase().replace(COMPANY_WORDS, " "));
+  return [norm(title.replace(YEARS, " ")), c];
+}
+
+export function isSameRole([title, company]: [string, string], [t, c]: [string, string]): boolean {
+  return t === title && (!c || !company || c.startsWith(company) || company.startsWith(c));
 }
 
 export function toView(row: OpportunityRow, prefs: Preferences, filters: MatchFilters, now: number, extras: MatchExtras = {}): OpportunityView {
   const kind = kindView(row);
-  const { match, why } = scoreRole(row, prefs, filters, extras);
+  const { fit, ticks, why } = fitRole(row, prefs, filters, extras);
 
   const source = host(row.apply_url);
   const contact = row.published_contacts?.[0];
@@ -186,7 +219,8 @@ export function toView(row: OpportunityRow, prefs: Preferences, filters: MatchFi
     // Job-board copies appear days after the employer posts them: never "just opened"
     isNew: age < 6 * HOUR && row.source_kind !== "adzuna",
     via: row.source_kind === "adzuna" ? "Adzuna" : null,
-    match,
+    fit,
+    ticks,
     why,
     deadline: row.closes_at
       ? new Date(row.closes_at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })

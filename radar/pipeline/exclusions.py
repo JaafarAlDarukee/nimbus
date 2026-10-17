@@ -18,7 +18,9 @@ EXCLUDED_COMPANIES = re.compile(
     r"atomic energy|acceleron fusion|hadrian|saronic|vannevar|epirus|castelion|frazer-nash|"
     # Gradcracker's defence employers (the Nimbus inbox follows every Gradcracker hub)
     r"british army|royal air force|royal navy|cyber and specialist operations command|"
-    r"defence equipment and support|mi5|mi6|gchq|submarine delivery agency|martin-baker|abaco systems"
+    r"defence equipment and support|mi5|mi6|gchq|submarine delivery agency|martin-baker|abaco systems|"
+    # Singapore's defence group (sponsors university hackathons)
+    r"st engineering"
     r")\b",
     re.I,
 )
@@ -41,7 +43,8 @@ def excluded_company(company: str) -> bool:
 
 
 def excluded_title(title: str) -> bool:
-    return bool(EXCLUDED_TITLE.search(title or ""))
+    """Defence topics, or an excluded employer named in the title ("NTU x ST Engineering Hackathon")."""
+    return bool(EXCLUDED_TITLE.search(title or "") or EXCLUDED_COMPANIES.search(title or ""))
 
 
 def excluded_description(description: str) -> bool:
