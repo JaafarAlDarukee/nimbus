@@ -137,6 +137,7 @@ def _row(o: Opportunity, company_ids: dict[str, str], source_ids: dict[str, str]
         "posted_at": _iso(o.posted_at),
         "closes_at": _iso(o.closes_at),
         "rolling": o.rolling,
+        "defence": o.defence,
         "source_kind": o.source_kind,
         # The hiring system's own type fields (employmentType "Intern", Devpost "hackathon"): kept so
         # reclassify can re-apply the same rules later
@@ -159,6 +160,7 @@ def save(opportunities: list[Opportunity], stats: dict, tier: str) -> tuple[list
         company_ids = _company_ids(db)
         rows = [_row(o, company_ids, source_ids) for o in opportunities]
         board_of = {o.fingerprint: o.raw.get("board", "") for o in opportunities}
+        defence_of = {o.fingerprint: o.defence for o in opportunities}
 
         new: list[dict] = []
         for chunk in _batches(rows, 200):
@@ -180,6 +182,19 @@ def save(opportunities: list[Opportunity], stats: dict, tier: str) -> tuple[list
                 json={"last_seen_at": now.isoformat(), "status": "open"},
             )
             response.raise_for_status()
+        # Defence roles seen again are flagged too (some were saved before 18 Oct without the flag)
+        for chunk in _batches([fp for fp in seen_again if defence_of.get(fp)], 100):
+            db.patch("/opportunities", params={"fingerprint": f"in.({','.join(chunk)})"}, json={"defence": True}).raise_for_status()
+
+        # When each new role really opened: the employer's date, or the same role seen earlier at the
+        # same employer (job-site emails resend roles that opened weeks ago)
+        opened: dict[str, str] = {}
+        for chunk in _batches([row["id"] for row in new], 200):
+            response = db.post("/rpc/set_opened_at", json={"ids": chunk})
+            response.raise_for_status()
+            opened.update({r["id"]: r["opened_at"] for r in response.json()})
+        for row in new:
+            row["opened_at"] = opened.get(row["id"]) or row.get("posted_at") or row.get("first_seen_at")
 
         delays = [
             (now - datetime.fromisoformat(row["posted_at"])).total_seconds() / 60
@@ -208,16 +223,17 @@ def save(opportunities: list[Opportunity], stats: dict, tier: str) -> tuple[list
         )
         run.raise_for_status()
 
-    # Worth an alert: from a board we already knew, and posted in the last week (or date unknown)
+    # Worth an alert: from a board we already knew, and opened in the last week (a role resent by a
+    # job site weeks after it opened isn't news)
     week_ago = now - timedelta(days=7)
     alertable = [
         row for row in new
         if board_of.get(row["fingerprint"]) not in new_boards
-        and (not row.get("posted_at") or datetime.fromisoformat(row["posted_at"]) >= week_ago)
+        and (not row.get("opened_at") or datetime.fromisoformat(row["opened_at"]) >= week_ago)
     ]
     quiet = len(new) - len(alertable)
     print(f"Saved: {len(new)} new ({quiet} saved quietly: from {len(new_boards)} newly added boards "
-          f"or posted over a week ago), "
+          f"or opened over a week ago), "
           f"{len(seen_again)} seen again, {closed} closed (gone from the employer's site or past the deadline)"
           f"{' (first run: alerts skipped)' if first_run else ''}")
     return alertable, first_run

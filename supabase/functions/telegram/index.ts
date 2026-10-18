@@ -94,6 +94,14 @@ async function onMessage(msg: any) {
     await db.from("telegram_links").update({ used_at: new Date().toISOString() }).eq("code", start[1]);
     const name = msg.from?.first_name ? `, ${escape(msg.from.first_name)}` : "";
     await say(chatId, `✨ You're connected${name}. Your alerts will arrive here from now on.\n\n${TUTORIAL}`);
+    // On the free trial: say when it ends and what it includes
+    const { data: profile } = await db.from("profiles").select("is_admin,paid_at,trial_ends_at").eq("id", link.user_id).maybeSingle();
+    if (profile && !profile.is_admin && !profile.paid_at && profile.trial_ends_at && new Date(profile.trial_ends_at).getTime() > Date.now()) {
+      const ends = new Date(profile.trial_ends_at).toLocaleString("en-GB", {
+        timeZone: "Europe/London", weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit",
+      });
+      await say(chatId, `⏳ <b>You're on the free trial until ${ends}.</b>\nIt includes 5 alerts. Unlock every alert for £5, once (no subscription): ${SITE}/pay`);
+    }
     return;
   }
 

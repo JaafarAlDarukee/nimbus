@@ -7,7 +7,7 @@ Nimbus is a private job radar for UK engineering students ("Opportunities, the m
 ## Non-negotiables
 - Never ask for, handle or print secret values. The owner creates accounts and pastes keys (`gh secret set`, Supabase dashboard/Vault).
 - This repo is **public** and CI logs are public: no personal data (emails, names, chat IDs, inbox contents) in commits or logs.
-- Nimbus never applies to or messages employers. It never shows Airbus, BAE Systems, Boeing, or nuclear / weapons / defence roles.
+- Nimbus never applies to or messages employers. Airbus, BAE Systems, Boeing and nuclear / weapons / defence roles are hidden by default: shown only to people who turn on "Defence and nuclear roles" in Profile (owner's change, 18 Oct 2026), never in the Telegram channels.
 - Don't bypass sites that block automated access.
 - Next.js here is v16: read `web/AGENTS.md` and the bundled docs before using unfamiliar APIs.
 - End commit messages with `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`.

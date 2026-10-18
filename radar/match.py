@@ -121,7 +121,7 @@ DIRECTORY = _directory()
 
 def with_defaults(stored: dict | None) -> dict:
     prefs = {"field": "Engineering", "degrees": ["Mechanical Engineering"], "sectors": [], "types": DEFAULT_TYPES,
-             "uk": ["Anywhere in the UK"], "abroad": [], "muted": []}
+             "uk": ["Anywhere in the UK"], "abroad": [], "muted": [], "defence": False}
     prefs.update({k: v for k, v in (stored or {}).items() if v is not None})
     return prefs
 
@@ -169,6 +169,8 @@ def is_muted(row: dict, prefs: dict) -> bool:
 
 def is_match(row: dict, prefs: dict, filters: tuple) -> bool:
     kinds, disciplines, countries = filters
+    if row.get("defence") and not prefs.get("defence"):
+        return False  # defence, nuclear and weapons roles only for people who turn them on
     if kinds and row.get("kind") not in kinds:
         return False
     event = row.get("kind") == "event"

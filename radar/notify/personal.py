@@ -110,7 +110,8 @@ def wanted(row: dict, prefs: dict, filters: tuple) -> bool:
     science role of any type (what the main channel used to post; the channel now posts everything)."""
     if is_match(row, prefs, filters):
         return True
-    return prefs.get("field") == "Engineering" and row.get("country") in ALERT_COUNTRIES and is_engineering(row) and not is_muted(row, prefs)
+    return (prefs.get("field") == "Engineering" and row.get("country") in ALERT_COUNTRIES and is_engineering(row)
+            and not is_muted(row, prefs) and (not row.get("defence") or bool(prefs.get("defence"))))
 
 
 def open_on_nimbus(row: dict) -> str:
@@ -299,7 +300,7 @@ def send_matches(rows: list[dict]) -> None:
     print(f"Personal alerts: {telegram.sent} messages to {reached} people")
 
 
-WELCOME_COLUMNS = "id,title,company_name,kind,disciplines,skills,country,remote,location_text,closes_at,posted_at,first_seen_at,rolling,apply_url,source_kind"
+WELCOME_COLUMNS = "id,title,company_name,kind,disciplines,skills,country,remote,location_text,closes_at,posted_at,first_seen_at,opened_at,rolling,apply_url,source_kind,defence"
 
 
 def send_welcome() -> None:

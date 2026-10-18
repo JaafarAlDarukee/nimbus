@@ -11,13 +11,13 @@ import { PRICE, TRIAL_JOBS } from "@/lib/access";
 import type { OpportunityView } from "@/lib/opportunity-types";
 
 type Props = {
-  tab: "you" | "all";
+  tab: "you" | "all" | "abroad";
   type: string;
   q: string;
   limit: number;
   opportunities: OpportunityView[];
   hasMore: boolean;
-  counts: { you: number; all: number };
+  counts: { you: number; all: number; abroad: number };
   newCount: number;
   tracked: Record<string, string>;
   /** The phone layout's extra tabs (mobile design) */
@@ -61,7 +61,7 @@ export function OpportunityFeed(props: Props) {
   const go = (next: Partial<{ tab: string; type: string; q: string; n: number }>, replace = false) => {
     const state = { tab, type, q, n: undefined as number | undefined, ...next };
     const params = new URLSearchParams();
-    if (state.tab === "all") params.set("tab", "all");
+    if (state.tab === "all" || state.tab === "abroad") params.set("tab", state.tab);
     if (state.type && state.type !== "All types") params.set("type", state.type);
     if (state.q.trim()) params.set("q", state.q.trim());
     if (state.n) params.set("n", String(state.n));
@@ -163,10 +163,10 @@ export function OpportunityFeed(props: Props) {
             className="animate-fade-up m-0 text-[44px] font-normal leading-none tracking-[-.035em] sm:text-[60px]"
             style={{ fontFamily: SERIF, animationDelay: "60ms" }}
           >
-            Opportunities <span className="italic text-t-sky">{tab === "you" ? "for you." : "everywhere."}</span>
+            Opportunities <span className="italic text-t-sky">{tab === "you" ? "for you." : tab === "abroad" ? "abroad." : "everywhere."}</span>
           </h1>
           <p className="animate-fade-up m-0 text-[15px] text-tx2" style={{ animationDelay: "120ms" }}>
-            UK and Ireland, newest first. Straight from employers&apos; own sites, plus job-board finds marked &ldquo;via&rdquo;.
+            {tab === "abroad" ? "Outside the UK and Ireland" : "UK and Ireland"}, newest first. Straight from employers&apos; own sites, plus job-site finds marked &ldquo;via&rdquo;.
           </p>
         </div>
 
@@ -177,6 +177,7 @@ export function OpportunityFeed(props: Props) {
                 [
                   ["you", "For you", counts.you],
                   ["all", "All", counts.all],
+                  ["abroad", "Abroad", counts.abroad],
                 ] as const
               ).map(([id, label, count]) => (
                 <button
@@ -262,7 +263,7 @@ export function OpportunityFeed(props: Props) {
                 <span className="text-sm text-tx2">
                   {o.company} · {o.loc}{" "}
                   <span className="text-[12px] text-tx3" style={{ fontFamily: MONO }}>
-                    · found {o.found}
+                    · {o.found}
                     {o.via && ` · via ${o.via}`}
                   </span>
                 </span>
@@ -369,7 +370,7 @@ export function OpportunityFeed(props: Props) {
                 </div>
               </div>
               <div className="grid grid-cols-3 rounded-xl border border-[#E3E8EE] bg-white">
-                <Fact label="Found" value={selected.found} />
+                <Fact label="When" value={selected.found} />
                 <Fact label="Deadline" value={selected.deadline} colour="#8E5413" />
                 <Fact label="Source" value={selected.source} small />
               </div>
@@ -647,7 +648,7 @@ function Columns(props: {
               </span>
               <Ticks ticks={o.ticks} />
               <span className="text-[11px] text-tx3" style={{ fontFamily: MONO }}>
-                found {o.found}
+                {o.found}
                 {o.via && ` · via ${o.via}`}
                 {o.closing && ` · ${o.closing}`}
               </span>

@@ -1,7 +1,8 @@
-"""Employers and roles Nimbus never shows: Airbus, BAE Systems, and anything nuclear or
-weapons/defence. This is the group's own choice, applied to every source before anything is
-saved or alerted. Companies with mixed work (e.g. civil aerospace) stay, but their nuclear or
-defence roles are dropped by the title and description checks."""
+"""Defence, nuclear and weapons employers and roles: Airbus, BAE Systems, Babcock... Until 18 Oct
+Nimbus dropped them; now they're kept with a `defence` flag and shown only to people who turn on
+"Defence and nuclear roles" in Profile (owner: "if someone wants defence jobs, let it be visible for
+them"). Companies with mixed work (e.g. civil aerospace) aren't flagged, but their nuclear or defence
+roles are, by the title and description checks."""
 
 from __future__ import annotations
 

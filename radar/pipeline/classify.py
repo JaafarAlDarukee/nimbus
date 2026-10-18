@@ -8,7 +8,7 @@ from datetime import datetime, timezone
 
 from ..geo import first_city, guess_country
 from ..models import Opportunity, RawJob
-from .exclusions import excluded, excluded_company, excluded_title
+from .exclusions import excluded
 
 
 def _rx(*patterns: str) -> re.Pattern:
@@ -233,9 +233,8 @@ def _hint(job: RawJob) -> str | None:
 
 
 def is_candidate(job: RawJob) -> bool:
-    """Cheap title-only check, used before fetching full descriptions."""
-    if excluded_company(job.company) or excluded_title(job.title):
-        return False
+    """Cheap title-only check, used before fetching full descriptions. Defence roles are candidates
+    too: they're kept with a flag and shown only to people who turn them on (owner, 18 Oct)."""
     return _kind(job.title, _hint(job)) is not None and not STAFF_ROLE.search(job.title)
 
 
@@ -301,8 +300,9 @@ def kind_for(title: str, hint: str | None = None) -> str | None:
 
 def classify(job: RawJob) -> Opportunity | None:
     kind = _kind(job.title, _hint(job))
-    if kind is None or STAFF_ROLE.search(job.title) or excluded(job.company, job.title, job.description):
+    if kind is None or STAFF_ROLE.search(job.title):
         return None
+    defence = excluded(job.company, job.title, job.description)
 
     # Event readers set the subject themselves: [] for hackathons (open to everyone), a list for a lab expo
     disciplines = job.raw["disciplines"] if "disciplines" in job.raw else disciplines_for(job.title, job.description)
@@ -327,5 +327,6 @@ def classify(job: RawJob) -> Opportunity | None:
         posted_at=job.posted_at,
         closes_at=job.closes_at or _closing_date(job.description),
         rolling=True if ROLLING.search(job.description) else None,
+        defence=defence,
         raw=job.raw,
     )

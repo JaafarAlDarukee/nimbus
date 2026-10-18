@@ -133,7 +133,7 @@ export const SAMPLES: Record<string, { path: string; bare?: boolean; render: () 
     path: "/",
     render: () => {
       const o = (id: number, type: string, tone: OpportunityView["tone"], ticks: string[], title: string, company: string, loc: string, found: string, isNew: boolean, domain: string | null, closing: string): OpportunityView => ({
-        id: String(id), type, tone, ticks, title, company, loc, found, isNew, initial: company[0], closing,
+        id: String(id), type, tone, ticks, title, company, loc, found: `posted ${found}`, isNew, initial: company[0], closing,
         logo: domain ? `https://www.google.com/s2/favicons?sz=64&domain=${domain}` : null,
         why: ["Manufacturing is in the title, and it's part of your Mechanical Engineering", "Food and drink is one of your industries", "Asks for Excel, Lean"],
         deadline: "24 Oct 2026", source: "careers.example.com", applyUrl: "https://example.com", contact: "Early Careers team", contactNote: "Listed by the employer", advert: "", via: null,
@@ -148,7 +148,7 @@ export const SAMPLES: Record<string, { path: string; bare?: boolean; render: () 
       ];
       return (
         <OpportunityFeed
-          tab="you" type="All types" q="" limit={40} opportunities={list} hasMore={false} counts={{ you: 9, all: 1284 }} newCount={8}
+          tab="you" type="All types" q="" limit={40} opportunities={list} hasMore={false} counts={{ you: 9, all: 1284, abroad: 3120 }} newCount={8}
           tracked={{ "2": "saved" }} phone={{ closingSoon: [list[1], list[4]], saved: [list[1]], today: 3, weekday: "Tuesday" }} find={false} telegramLinked error={null}
           trialLocked={0}
           columns={[

@@ -45,7 +45,7 @@ export default async function OpportunitiesPage(props: PageProps<"/">) {
 }
 
 async function loadFeed(params: Awaited<PageProps<"/">["searchParams"]>): Promise<React.ComponentProps<typeof OpportunityFeed>> {
-  const tab = first(params.tab) === "all" ? "all" : "you";
+  const tab = first(params.tab) === "all" ? "all" : first(params.tab) === "abroad" ? "abroad" : "you";
   // A column group ("Graduate jobs"), or one of the older, finer types still used in links ("Placement")
   const chip: { label: string; kinds: string[]; title?: "hack" | "not-hack" } =
     TYPE_COLUMNS.find((c) => c.label === first(params.type)) ?? TYPE_CHIPS.find((c) => c.label === first(params.type)) ?? TYPE_CHIPS[0];
@@ -68,12 +68,15 @@ async function loadFeed(params: Awaited<PageProps<"/">["searchParams"]>): Promis
   const filters = matchFilters(prefs);
 
   // Everything open in the UK and Ireland (plus online events, which aren't tied to a country)
+  const openAnywhere = (columns: string, head = false) => {
+    const query = supabase.from("opportunities").select(columns, { count: "exact", head }).eq("status", "open");
+    return prefs.defence ? query : query.eq("defence", false);
+  };
   const open = (columns: string, head = false) =>
-    supabase
-      .from("opportunities")
-      .select(columns, { count: "exact", head })
-      .eq("status", "open")
-      .or(`country.in.(${COVERED_COUNTRIES.join(",")}),and(kind.eq.event,remote.is.true)`);
+    openAnywhere(columns, head).or(`country.in.(${COVERED_COUNTRIES.join(",")}),and(kind.eq.event,remote.is.true)`);
+  // Roles elsewhere are still saved: shown on their own tab, marked "(abroad)" (owner, 18 Oct)
+  const abroad = (columns: string, head = false) =>
+    openAnywhere(columns, head).not("country", "in", `(${COVERED_COUNTRIES.join(",")})`).not("country", "is", null);
   // For you: the user's matches, minus companies muted on the Companies page
   const matched = (columns: string, head = false) => {
     let query = applyMatch(open(columns, head), filters);
@@ -81,7 +84,7 @@ async function loadFeed(params: Awaited<PageProps<"/">["searchParams"]>): Promis
     if (hidden.length) query = query.not("id", "in", `(${hidden.join(",")})`);
     return query;
   };
-  const scoped = (columns: string, head = false) => (tab === "you" ? matched(columns, head) : open(columns, head));
+  const scoped = (columns: string, head = false) => (tab === "you" ? matched(columns, head) : tab === "abroad" ? abroad(columns, head) : open(columns, head));
 
   let list = scoped(OPPORTUNITY_SELECT);
   if (chip.kinds.length) list = list.in("kind", chip.kinds);
@@ -92,17 +95,19 @@ async function loadFeed(params: Awaited<PageProps<"/">["searchParams"]>): Promis
   list = search(list);
   // One column per type group: counts always (phone tabs, chips), cards only when shown side by side
   const trial = accessState(profile) === "trial";
-  const columnsView = chip.label === "All types" && !trial;
+  const columnsView = chip.label === "All types" && !trial && tab !== "abroad";
 
   const nowIso = new Date().toISOString();
   const since = new Date(Date.now() - DAY).toISOString();
-  const [rows, forYou, all, fresh, today, closing, savedApps, opened, ...columnRows] = await Promise.all([
-    list.order("first_seen_at", { ascending: false }).limit(limit),
+  // Newest first by when roles really opened, not when Nimbus happened to find them (owner, 18 Oct)
+  const [rows, forYou, all, abroadCount, fresh, today, closing, savedApps, opened, ...columnRows] = await Promise.all([
+    list.order("opened_at", { ascending: false }).order("first_seen_at", { ascending: false }).limit(limit),
     matched("id", true),
     open("id", true),
-    scoped("id", true).gte("first_seen_at", since),
+    abroad("id", true),
+    scoped("id", true).gte("opened_at", since),
     // Phone layout: "N new today", Closing soon and Saved
-    matched("id", true).gte("first_seen_at", londonMidnight()),
+    matched("id", true).gte("opened_at", londonMidnight()),
     matched(OPPORTUNITY_SELECT)
       .gte("closes_at", nowIso)
       .lte("closes_at", new Date(Date.now() + 21 * DAY).toISOString())
@@ -120,7 +125,7 @@ async function loadFeed(params: Awaited<PageProps<"/">["searchParams"]>): Promis
       : Promise.resolve({ data: null }),
     ...TYPE_COLUMNS.map((col) =>
       columnsView
-        ? search(scoped(OPPORTUNITY_SELECT)).in("kind", col.kinds).order("first_seen_at", { ascending: false }).limit(COLUMN_SIZE)
+        ? search(scoped(OPPORTUNITY_SELECT)).in("kind", col.kinds).order("opened_at", { ascending: false }).order("first_seen_at", { ascending: false }).limit(COLUMN_SIZE)
         : search(scoped("id", true)).in("kind", col.kinds),
     ),
   ]);
@@ -150,7 +155,7 @@ async function loadFeed(params: Awaited<PageProps<"/">["searchParams"]>): Promis
     limit,
     opportunities,
     hasMore: !trial && (rows.count ?? 0) > (rows.data?.length ?? 0),
-    counts: { you: forYou.count ?? 0, all: all.count ?? 0 },
+    counts: { you: forYou.count ?? 0, all: all.count ?? 0, abroad: abroadCount.count ?? 0 },
     newCount: fresh.count ?? 0,
     tracked,
     phone: {

@@ -172,7 +172,8 @@ def _deliver(client: httpx.Client, token: str, outbox: dict[str, list[tuple[str,
 def channel_outbox(rows: list[dict], main: str, field_channels: dict[str, str]) -> dict[str, list[tuple[str, str | None]]]:
     """What each channel gets: the main one every UK and Ireland role, field channels the ones that fit.
     Roles elsewhere aren't posted (they stay on the website for people who chose those places)."""
-    home = [r for r in rows if r.get("country") in ALERT_COUNTRIES]
+    # Defence roles stay out of the channels (they're only for people who opt in on the website)
+    home = [r for r in rows if r.get("country") in ALERT_COUNTRIES and not r.get("defence")]
     outbox = {main: _messages(home, "📋 <b>{n} more new roles in the UK and Ireland</b>")}
     for channel, field in field_channels.items():
         if channel != main:

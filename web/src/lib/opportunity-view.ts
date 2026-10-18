@@ -1,5 +1,5 @@
 import { degreeDisciplines, type MatchFilters, type Preferences } from "@/lib/preferences";
-import { timeAgo } from "@/lib/time";
+import { shortDate, timeAgo } from "@/lib/time";
 import { industryMatch } from "@/lib/industries";
 import type { OpportunityView, Tone } from "@/lib/opportunity-types";
 
@@ -20,13 +20,16 @@ export type OpportunityRow = {
   description: string | null;
   published_contacts: { type?: string; value?: string; label?: string }[] | null;
   first_seen_at: string;
+  /** When it really opened: the employer's date, or the same role seen earlier (job-site emails resend old roles) */
+  opened_at: string | null;
   closes_at: string | null;
   rolling: boolean | null;
   source_kind: string | null;
+  defence?: boolean | null;
 };
 
 export const OPPORTUNITY_SELECT =
-  "id,title,company_name,kind,disciplines,skills,location_text,country,apply_url,description,published_contacts,first_seen_at,closes_at,rolling,source_kind";
+  "id,title,company_name,kind,disciplines,skills,location_text,country,apply_url,description,published_contacts,first_seen_at,opened_at,closes_at,rolling,source_kind,defence";
 
 const KIND_VIEW: Record<string, { type: string; tone: Tone; plural: string }> = {
   placement: { type: "Placement", tone: "sky", plural: "Placements are" },
@@ -97,6 +100,13 @@ export function kindView(row: { kind: string; title: string }) {
 }
 
 const HOUR = 3_600_000;
+
+/** Job sites whose alert emails Nimbus reads, by their link */
+const JOB_SITES: [RegExp, string][] = [
+  [/gradcracker\./i, "Gradcracker"], [/brightnetwork\./i, "Bright Network"], [/(higherin|ratemyplacement)\./i, "Higherin"],
+  [/linkedin\./i, "LinkedIn"], [/targetjobs\./i, "TARGETjobs"], [/prospects\.ac\.uk/i, "Prospects"], [/indeed\./i, "Indeed"],
+  [/joinhandshake\./i, "Handshake"],
+];
 
 /** A discipline named in the title itself is a much stronger match than one found in the advert.
  *  The same title words the radar tags with (radar/pipeline/classify.py DISCIPLINES). */
@@ -193,7 +203,13 @@ export function toView(row: OpportunityRow, prefs: Preferences, filters: MatchFi
   const contact = row.published_contacts?.[0];
   // Adverts often list an email for questions: that is a published contact too
   const advertEmail = row.description?.match(/[\w.+-]+@[\w-]+(\.[\w-]+)+/)?.[0];
-  const age = now - new Date(row.first_seen_at).getTime();
+  // Job-site emails and job boards can't say when a role opened (they resend old ones), so they're
+  // never "just opened"; a role first listed over a day before Nimbus found it says so
+  const jobSite = row.source_kind === "inbox" || row.source_kind === "adzuna";
+  const opened = row.opened_at ?? row.first_seen_at;
+  const openedAge = now - new Date(opened).getTime();
+  const listedEarlier = new Date(row.first_seen_at).getTime() - new Date(opened).getTime() > 24 * HOUR;
+  const abroad = !!row.country && row.country !== "GB" && row.country !== "IE";
 
   return {
     id: row.id,
@@ -201,13 +217,12 @@ export function toView(row: OpportunityRow, prefs: Preferences, filters: MatchFi
     company: row.company_name,
     initial: (row.company_name.trim()[0] ?? "?").toUpperCase(),
     logo: source && !NOT_EMPLOYER.test(source) ? `https://www.google.com/s2/favicons?sz=64&domain=${siteOf(source)}` : null,
-    loc: row.location_text || (row.country === "GB" ? "United Kingdom" : (row.country ?? "Location not given")),
+    loc: (row.location_text || (row.country === "GB" ? "United Kingdom" : (row.country ?? "Location not given"))) + (abroad ? " (abroad)" : ""),
     type: kind.type,
     tone: kind.tone,
-    found: timeAgo(row.first_seen_at, now),
-    // Job-board copies appear days after the employer posts them: never "just opened"
-    isNew: age < 6 * HOUR && row.source_kind !== "adzuna",
-    via: row.source_kind === "adzuna" ? "Adzuna" : null,
+    found: listedEarlier ? `listed since ${shortDate(opened)}` : jobSite ? `found ${timeAgo(row.first_seen_at, now)}` : `posted ${timeAgo(opened, now)}`,
+    isNew: !jobSite && openedAge < 6 * HOUR,
+    via: row.source_kind === "adzuna" ? "Adzuna" : row.source_kind === "inbox" ? (JOB_SITES.find(([re]) => re.test(row.apply_url))?.[1] ?? "a job site") : null,
     ticks,
     why,
     deadline: row.closes_at

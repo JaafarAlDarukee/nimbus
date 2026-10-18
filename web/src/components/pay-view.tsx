@@ -1,14 +1,8 @@
 import Link from "next/link";
 import { signOut } from "@/app/(app)/profile/actions";
 import { Brand, StarField } from "@/components/brand";
-import { PRICE, TRIAL_CVS, TRIAL_JOBS, type Access } from "@/lib/access";
+import { PAID_FEATURES, PRICE, TRIAL_CVS, TRIAL_JOBS, type Access } from "@/lib/access";
 
-const WHAT_YOU_GET = [
-  "Every job, placement and grad scheme that fits your degree",
-  "Instant Telegram alerts the moment they open",
-  "Unlimited CV checks for every job you apply to",
-  "Your tracker, calendar and deadline reminders",
-];
 
 type Props = {
   access: Access;
@@ -75,7 +69,7 @@ export function PayView({ access, justPaid, left, link, home }: Props) {
                     <span className="text-[17px] text-tx2">once · lifetime access</span>
                   </div>
                   <ul className="m-0 flex list-none flex-col gap-2.5 p-0 text-[16px] leading-snug">
-                    {WHAT_YOU_GET.map((w) => (
+                    {PAID_FEATURES.map((w) => (
                       <li key={w} className="flex gap-2.5">
                         <span className="text-t-mint">✓</span>
                         <span>{w}</span>
@@ -105,7 +99,7 @@ export function PayView({ access, justPaid, left, link, home }: Props) {
         )}
 
         <p className="m-0 text-center text-[13px] text-tx3">
-          <Link href="/terms" className="!text-tx3 underline">Terms and refunds</Link> · <Link href="/privacy" className="!text-tx3 underline">Privacy</Link>
+          <Link href="/pricing" className="!text-tx3 underline">What you get</Link> · <Link href="/terms" className="!text-tx3 underline">Terms and refunds</Link> · <Link href="/privacy" className="!text-tx3 underline">Privacy</Link>
         </p>
         <form action={signOut} className="text-center">
           <button type="submit" className="cursor-pointer text-[13px] text-tx3 hover:text-tx">

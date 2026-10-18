@@ -19,6 +19,8 @@ export type Preferences = {
   /** Sign-up answers: how many applications this season, and how they heard about Nimbus */
   applications: string;
   heardFrom: string;
+  /** Defence, nuclear and weapons roles (BAE Systems, Babcock...): hidden unless turned on in Profile */
+  defence: boolean;
 };
 
 export const DEFAULT_PREFERENCES: Preferences = {
@@ -36,6 +38,7 @@ export const DEFAULT_PREFERENCES: Preferences = {
   emailDigest: true,
   muted: [],
   applications: "",
+  defence: false,
   heardFrom: "",
 };
 
@@ -169,6 +172,8 @@ export type MatchFilters = {
   disciplines: string[];
   /** null = anywhere in the world */
   countries: string[] | null;
+  /** Show defence, nuclear and weapons roles */
+  defence: boolean;
 };
 
 export function matchFilters(p: Preferences): MatchFilters {
@@ -177,15 +182,16 @@ export function matchFilters(p: Preferences): MatchFilters {
   const disciplines = [...new Set([...disciplinesFor(p), ...(FIELD_DISCIPLINES[p.field] ?? []), ...(CHANNEL_EXTRA[p.field] ?? [])])];
 
   // Nimbus covers the UK and Ireland only (owner, 17 Oct); places picked before then are ignored
-  return { kinds, disciplines, countries: [...COVERED_COUNTRIES] };
+  return { kinds, disciplines, countries: [...COVERED_COUNTRIES], defence: !!p.defence };
 }
 
 /** Anything with .in / .overlaps (a Supabase query) gets the user's filters applied. */
-export function applyMatch<Q extends { in: (c: string, v: string[]) => Q; or: (filters: string) => Q }>(
+export function applyMatch<Q extends { in: (c: string, v: string[]) => Q; or: (filters: string) => Q; eq: (c: string, v: boolean) => Q }>(
   query: Q,
   filters: MatchFilters,
 ): Q {
   let q = query;
+  if (!filters.defence) q = q.eq("defence", false);
   if (filters.kinds.length) q = q.in("kind", filters.kinds);
   // Events with no subject (most hackathons) are for everyone; a lab expo or a medtech
   // conference only for the degrees it fits. Online events aren't tied to a country.

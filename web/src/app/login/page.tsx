@@ -26,12 +26,17 @@ export default async function LandingPage(props: PageProps<"/login">) {
 
       <header className="relative flex h-[72px] w-full max-w-[1200px] items-center justify-between px-8">
         <Brand />
-        <a
-          href="#signin"
-          className="flex h-9 items-center rounded-full border border-line2 px-3.5 text-[13px] !text-tx hover:border-l-sky"
-        >
-          Sign in
-        </a>
+        <span className="flex items-center gap-2">
+          <a href="/pricing" className="flex h-9 items-center rounded-full px-3.5 text-[13px] !text-tx2 hover:!text-tx">
+            Pricing
+          </a>
+          <a
+            href="#signin"
+            className="flex h-9 items-center rounded-full border border-line2 px-3.5 text-[13px] !text-tx hover:border-l-sky"
+          >
+            Sign in
+          </a>
+        </span>
       </header>
 
       <main className="relative flex w-full max-w-[760px] flex-1 flex-col items-center gap-7 px-6 pb-16 pt-[clamp(56px,12vh,120px)] text-center">
@@ -74,6 +79,7 @@ export default async function LandingPage(props: PageProps<"/login">) {
       <TelegramFab />
       <footer className="relative flex flex-wrap justify-center gap-x-4 gap-y-1 p-6 text-[13px] text-tx3">
         <span>Nimbus never applies or messages employers for you.</span>
+        <a href="/pricing" className="!text-tx3 hover:!text-tx">Pricing</a>
         <a href="/privacy" className="!text-tx3 hover:!text-tx">Privacy</a>
         <a href="/terms" className="!text-tx3 hover:!text-tx">Terms</a>
       </footer>

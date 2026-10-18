@@ -28,7 +28,7 @@ def main() -> None:
             db,
             "/opportunities",
             {
-                "select": "id,fingerprint,title,company_name,city,location_text,description,kind,disciplines,source_kind,apply_url,"
+                "select": "id,fingerprint,title,company_name,city,location_text,description,kind,disciplines,source_kind,apply_url,defence,"
                 + ",".join(f"{h}:raw->>{h}" for h in HINTS),
                 "status": "eq.open",
                 "order": "id",
@@ -36,6 +36,7 @@ def main() -> None:
         )
         close: dict[str, list[str]] = defaultdict(list)
         relabel: dict[tuple[str, tuple[str, ...]], list[str]] = defaultdict(list)
+        flag: dict[bool, list[str]] = defaultdict(list)  # defence flag to set (True) or clear (False)
         rename: list[tuple[str, str, str]] = []  # (id, clean name, new fingerprint)
 
         # Employer names saved before the name tidy-up ("cat", "1054 GlaxoSmithKline..."): rename them,
@@ -66,9 +67,10 @@ def main() -> None:
             if row["source_kind"] in RETIRED_SOURCES:
                 close["job board copy"].append(row["id"])
                 continue
-            if excluded(new_names.get(row["id"], row["company_name"] or ""), title, description):
-                close["excluded"].append(row["id"])
-                continue
+            # Defence roles are kept with a flag now (shown only to people who opt in), not closed
+            defence = excluded(new_names.get(row["id"], row["company_name"] or ""), title, description)
+            if defence != bool(row.get("defence")):
+                flag[defence].append(row["id"])
             hint = " ".join(str(row[h]) for h in HINTS if row.get(h)) or None
             kind = kind_for(title, hint)
             if kind is None:
@@ -85,6 +87,9 @@ def main() -> None:
         for ids in close.values():
             for chunk in _batches(ids, 100):
                 db.patch("/opportunities", params={"id": f"in.({','.join(chunk)})"}, json={"status": "closed"}).raise_for_status()
+        for value, ids in flag.items():
+            for chunk in _batches(ids, 100):
+                db.patch("/opportunities", params={"id": f"in.({','.join(chunk)})"}, json={"defence": value}).raise_for_status()
         for row_id, clean, new_fp in rename:
             db.patch("/opportunities", params={"id": f"eq.{row_id}"}, json={"company_name": clean, "fingerprint": new_fp}).raise_for_status()
         for (kind, disciplines), ids in relabel.items():
@@ -99,6 +104,7 @@ def main() -> None:
     for reason, ids in close.items():
         print(f"Closed {len(ids)}: {reason}")
     print(f"Relabelled {sum(len(ids) for ids in relabel.values())}")
+    print(f"Defence flag set on {len(flag[True])}, cleared on {len(flag[False])}")
     print(f"Renamed {len(rename)} employers to their tidy names")
 
 

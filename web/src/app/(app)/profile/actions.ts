@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { withDefaults, type Preferences } from "@/lib/preferences";
 import { createClient } from "@/lib/supabase/server";
 
-const EDITABLE = ["field", "degrees", "year", "sectors", "sectorsAll", "types", "uk", "abroad", "emailDigest", "muted"] as const;
+const EDITABLE = ["field", "degrees", "year", "sectors", "sectorsAll", "types", "uk", "abroad", "emailDigest", "muted", "defence"] as const;
 
 /** Save the radar choices edited on Profile (the rest of the stored preferences are kept). */
 export async function savePreferences(next: Partial<Preferences>): Promise<{ ok: boolean }> {

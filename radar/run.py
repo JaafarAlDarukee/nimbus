@@ -21,7 +21,6 @@ from dotenv import load_dotenv
 from .http import Fetcher
 from .models import Board, Opportunity, RawJob
 from .pipeline.classify import classify, is_candidate
-from .pipeline.exclusions import excluded_company
 from .pipeline.names import clean_company_name
 from .sources import READERS
 
@@ -41,7 +40,7 @@ def load_boards(only: str | None) -> list[Board]:
                 board = Board(**{k: (v or "").strip() for k, v in row.items()})
                 board.company = clean_company_name(board.company)
                 key = (board.kind, board.ref.lower().rstrip("/"))
-                if board.kind in READERS and key not in seen and not excluded_company(board.company):
+                if board.kind in READERS and key not in seen:
                     seen.add(key)
                     boards.append(board)
     if only:

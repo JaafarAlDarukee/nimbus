@@ -189,6 +189,17 @@ export function ProfileView(props: Props) {
             </div>
           );
         })}
+        <div className="flex flex-wrap items-center gap-3 border-t border-line px-5 py-4">
+          <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+            <span className="text-[15px] font-medium">Defence and nuclear roles</span>
+            <span className="text-[13px] text-tx3">
+              BAE Systems, Babcock, MBDA, Airbus, nuclear and weapons work. {prefs.defence ? "Shown in your matches and alerts." : "Hidden unless you turn them on."}
+            </span>
+          </div>
+          <RowButton onClick={() => change({ defence: !prefs.defence })} strong={!prefs.defence}>
+            {prefs.defence ? "Hide them" : "Show them"}
+          </RowButton>
+        </div>
       </div>
 
       <div className="animate-fade-up flex flex-col rounded-2xl border border-line bg-s1" style={{ animationDelay: "200ms" }}>

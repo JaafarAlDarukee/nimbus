@@ -4,7 +4,7 @@
  *
  *   cd web && npx tsx scripts/checks.ts
  */
-import { fitRole, isSameRole, kindView, sameRoleKey, type OpportunityRow } from "../src/lib/opportunity-view";
+import { fitRole, isSameRole, kindView, sameRoleKey, toView, type OpportunityRow } from "../src/lib/opportunity-view";
 import { matchFilters, withDefaults, DEGREE_DISCIPLINES } from "../src/lib/preferences";
 import { DEGREES_BY_FIELD, DEFAULT_TYPES } from "../src/lib/onboarding-data";
 import { analyse, attachPrompt, cvHtml, cvLines, tailorPrompt, type CvJob } from "../src/lib/cv";
@@ -104,6 +104,19 @@ check("same title, other employer is new", !isSameRole(sameRoleKey("Mechanical E
 // After signing in: back to the role a Telegram alert opened, never to another site
 check("return to the role", safeNext("/?open=abc") === "/?open=abc");
 check("never another site", [null, "", "//evil.example", "/\\evil.example", "https://evil.example", "/login?next=/", "/auth/callback"].every((v) => safeNext(v) === null));
+
+// Newest by when roles really opened (owner, 18 Oct: a Gradcracker email resent a Caterpillar placement from September)
+const NOW = Date.parse("2026-10-18T17:20:00Z");
+const resent = toView(role("Manufacturing Engineering (12 Month Placement Scheme)", ["manufacturing"], {
+  company_name: "Caterpillar Uk Ltd", source_kind: "inbox", apply_url: "https://www.gradcracker.com/hub/219/caterpillar-uk-ltd/work-placement-internship/83716/x",
+  first_seen_at: "2026-10-18T17:08:00Z", opened_at: "2026-09-30T17:10:00Z" }), mechPrefs, mechFilters, NOW);
+check("resent role: not just opened, says since when, and where from", !resent.isNew && resent.found.startsWith("listed since 30 Sep") && resent.via === "Gradcracker", `${resent.isNew} ${resent.found} ${resent.via}`);
+const emailed = toView(role("Graduate Engineer", ["engineering"], { source_kind: "inbox", apply_url: "https://www.brightnetwork.co.uk/graduate-jobs/acme/x", first_seen_at: "2026-10-18T17:00:00Z", opened_at: "2026-10-18T17:00:00Z" }), mechPrefs, mechFilters, NOW);
+check("job-site email: never 'just opened'", !emailed.isNew && emailed.found === "found 20m ago" && emailed.via === "Bright Network", `${emailed.found}`);
+const direct = toView(role("Mechanical Engineering Placement", ["mechanical"], { source_kind: "workday", apply_url: "https://acme.wd3.myworkdayjobs.com/x", first_seen_at: "2026-10-18T17:05:00Z", opened_at: "2026-10-18T16:50:00Z" }), mechPrefs, mechFilters, NOW);
+check("employer's own site: just opened", direct.isNew && direct.found === "posted 30m ago", direct.found);
+check("abroad roles say so", toView(role("Graduate Engineer", ["engineering"], { country: "DE", location_text: "Munich", first_seen_at: "2026-10-18T17:00:00Z", opened_at: null }), mechPrefs, mechFilters, NOW).loc === "Munich (abroad)");
+check("defence hidden unless turned on", mechFilters.defence === false && matchFilters(withDefaults({ defence: true })).defence === true);
 
 // Paid access: 2 days free with 5 jobs and 2 CVs, then £5 once
 const HOUR = 3_600_000;

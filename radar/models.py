@@ -52,4 +52,6 @@ class Opportunity:
     posted_at: datetime | None = None
     closes_at: datetime | None = None
     rolling: bool | None = None
+    # Defence, nuclear or weapons work (pipeline/exclusions.py): kept, shown only to people who opt in
+    defence: bool = False
     raw: dict = field(default_factory=dict)

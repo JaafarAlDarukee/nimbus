@@ -169,6 +169,14 @@ def main() -> None:
     check("test automation is not robotics", "robotics" not in disciplines_for("Test Automation Engineer Intern", ""))
     check("software society hackathon not mechanical", "mechanical" not in (engineering_tags("Society of Software Engineers Halloween Hackathon") or []))
     check("engineering hackathon still tagged", "mechanical" in (engineering_tags("Engineering Design Hackathon") or []))
+    from .models import RawJob
+    bae = classify(RawJob(company="BAE Systems", title="Undergraduate Structural Engineer 2027", url="https://example.com/b", source_kind="inbox", location="Barrow"))
+    check("defence roles kept with a flag", bae is not None and bae.defence)
+    civil = classify(RawJob(company="Rolls-Royce", title="Civil Aerospace Placement 2027", url="https://example.com/r", source_kind="workday", location="Derby"))
+    check("civil roles not flagged", civil is not None and not civil.defence)
+    mech_d = m.with_defaults({"field": "Engineering", "degrees": ["Mechanical Engineering"]})
+    flagged = {"kind": "placement", "disciplines": ["engineering"], "country": "GB", "title": "Undergraduate Structural Engineer", "company_name": "BAE Systems", "defence": True}
+    check("defence hidden unless turned on", not m.is_match(flagged, mech_d, m.filters_for(mech_d)) and m.is_match(flagged, {**mech_d, "defence": True}, m.filters_for(mech_d)))
     check("defence sponsor in a title excluded", excluded("Nanyang Technological University", "NTU x ST Engineering Hackathon"))
     bright = next(s for s in INBOX_SITES if s.name == "Bright Network")
     check("IT support is not engineering", disciplines_for("IT Support Engineer Internship 2026", "") == ["software"])
@@ -220,7 +228,7 @@ def main() -> None:
     uk = {**jlr, "id": "uk", "country": "GB", "title": "Mechanical Engineering Placement", "disciplines": ["mechanical"]}
     us = {**uk, "id": "us", "country": "US"}
     nurse = {**uk, "id": "nhs", "title": "Trainee Nurse", "disciplines": ["healthcare"], "country": "IE"}
-    box = tg.channel_outbox([uk, us, nurse], "main", {"eng": "engineering", "med": "medical"})
+    box = tg.channel_outbox([uk, us, nurse, {**uk, "id": "bae", "defence": True}], "main", {"eng": "engineering", "med": "medical"})
     check("channels: UK and Ireland only, nothing abroad", len(box["main"]) == 2 and len(box["eng"]) == 1 and len(box["med"]) == 1
           and not any("abroad" in text or "US" in text for messages in box.values() for text, _ in messages), str({k: len(v) for k, v in box.items()}))
     check("every channel's messages delivered, taking turns", count == 5 and delivered.count("main") == 3 and delivered[:2] in (["main", "eng"], ["eng", "main"]), str(delivered))
