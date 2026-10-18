@@ -15,7 +15,8 @@ Live site: **https://nimbus-pi-three.vercel.app** (open sign-ups: 2 days free, t
 ## State on 17 Oct 2026
 - **Everything is live and healthy.** Radar: priority run every 15 min, full run every 6 h (Supabase pg_cron → GitHub Actions). ~24,000 open roles, newest within minutes. Website on Vercel (auto-deploys from `main`). Telegram: shared channel + personal alerts per user.
 - **Users (17 Oct):** 5 website accounts (owner included), 3 finished sign-up, 2 on personal Telegram alerts; 5 people in the channel.
-- **Checks:** `python -m radar.checks` (158 pass) and `cd web && npx tsx scripts/checks.ts` (156 pass). Run both after any change to matching, tagging, readers or CV logic.
+- **Checks:** `python -m radar.checks` (168 pass) and `cd web && npx tsx scripts/checks.ts` (157 pass).
+- **Website and channels cover the UK and Ireland only** (owner, 17 Oct, last). Newest summary for the owner: Session log "18 Oct: recap". Run both after any change to matching, tagging, readers or CV logic.
 
 ## Field channels (17 Oct, built; waiting for the owner to create them)
 The owner's private Telegram channels per field, everything instantly, UK & Ireland: **Engineering, Medical & health, Business, Computing, Science, Creative**. Main everything-channel stays. **Owner's steps:** in Telegram make a private channel → Administrators → add **@NimbusRadarBot** (Post Messages on) → the bot DMs "✅ Nimbus can post in …" → Admin → "Your Telegram field channels" → pick the field → Save. Repeat per field. Only channels added by the owner's own connected Telegram register. Details: [[04 Radar#Field channels (17 Oct)]].
@@ -54,7 +55,7 @@ Owner stays anonymous as "Nimbus". Full plan in [[13 Ideas backlog#Paid version 
    5. Telegram: make **Nimbus Alerts** private and remove everyone else: it's the owner's own backup now (owner, 17 Oct). Paying users get the personal bot, not the channel.
    6. Test in Stripe **test mode** first (a test account, test card), then switch the link to live.
 2. **Coverage gaps:** Haleon, Reckitt, Johnson Matthey, Takeda, Lilly, Boston Scientific, Novo Nordisk, Charles River, Arm, BT, HSBC, Vodafone, Sage, Dell, Goldman (no obvious Workday board); Google, Microsoft, Amazon, Apple, Meta (own career sites, not read yet).
-3. **Owner actions suggested, not confirmed:** Bright Network email frequency → most frequent; Profile → add Europe/USA/Canada/UAE to see abroad events.
+3. **Owner actions suggested, not confirmed:** Bright Network email frequency → most frequent; more LinkedIn job alerts (engineering placement / internship / graduate / apprenticeship, UK) forwarded to the Nimbus Gmail; create the field channels; decide hosting before charging (Vercel Hobby is non-commercial); stop saving abroad roles in the radar? (asked 17 Oct, no answer yet).
 4. Ideas in [[13 Ideas backlog]] (learned keywords per role type, Recruitee/Teamtailor readers, hidden opportunities, digests…).
 
 ## Map
