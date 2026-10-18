@@ -141,7 +141,7 @@ def _row(o: Opportunity, company_ids: dict[str, str], source_ids: dict[str, str]
         "source_kind": o.source_kind,
         # The hiring system's own type fields (employmentType "Intern", Devpost "hackathon"): kept so
         # reclassify can re-apply the same rules later
-        "raw": {k: o.raw[k] for k in HINT_FIELDS if o.raw.get(k)} or None,
+        "raw": {k: o.raw[k] for k in (*HINT_FIELDS, "reminder") if o.raw.get(k)} or None,
     }
 
 
@@ -195,6 +195,14 @@ def save(opportunities: list[Opportunity], stats: dict, tier: str) -> tuple[list
             opened.update({r["id"]: r["opened_at"] for r in response.json()})
         for row in new:
             row["opened_at"] = opened.get(row["id"]) or row.get("posted_at") or row.get("first_seen_at")
+        # From a "closing soon" reminder email and not seen before: it opened a while ago, but nobody
+        # says when. No opening date (it sorts below new roles) and no alert.
+        unknown = [row for row in new if (row.get("raw") or {}).get("reminder")
+                   and datetime.fromisoformat(row["opened_at"]) >= datetime.fromisoformat(row["first_seen_at"]) - timedelta(days=1)]
+        for chunk in _batches([row["id"] for row in unknown], 100):
+            db.patch("/opportunities", params={"id": f"in.({','.join(chunk)})"}, json={"opened_at": None}).raise_for_status()
+        for row in unknown:
+            row["opened_at"] = None
 
         delays = [
             (now - datetime.fromisoformat(row["posted_at"])).total_seconds() / 60
@@ -229,6 +237,7 @@ def save(opportunities: list[Opportunity], stats: dict, tier: str) -> tuple[list
     alertable = [
         row for row in new
         if board_of.get(row["fingerprint"]) not in new_boards
+        and not (row.get("raw") or {}).get("reminder")
         and (not row.get("opened_at") or datetime.fromisoformat(row["opened_at"]) >= week_ago)
     ]
     quiet = len(new) - len(alertable)

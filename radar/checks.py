@@ -188,6 +188,15 @@ def main() -> None:
                                                   [same_role_key({"title": "Industrial Placement - Vehicle Motion", "company_name": "Bentley Motors Ltd"})]))
     check("same company, suffix differs", is_repeat(same_role_key({"title": "Powertrain Calibration Support Intern", "company_name": "Bosch"}),
                                                     [same_role_key({"title": "Powertrain Calibration Support Intern", "company_name": "Bosch Group"})]))
+    check("near-identical title at the same employer is the same role",
+          is_repeat(same_role_key({"title": "Manufacturing Engineering (12 Month Placement Scheme)", "company_name": "Caterpillar Uk Ltd"}),
+                    [same_role_key({"title": "12 Month Industrial Placement Scheme - Manufacturing Engineering - Technical Services", "company_name": "Caterpillar"})]))
+    check("different roles at one employer stay apart",
+          not is_repeat(same_role_key({"title": "Summer Internship 2027 - Mechanical Engineer - London", "company_name": "Arup"}),
+                        [same_role_key({"title": "Summer Internship 2027 - Mechanical Engineer - Manchester", "company_name": "Arup"})]))
+    from .sources.inbox import REMINDER_SUBJECT
+    check("reminder emails spotted", all(REMINDER_SUBJECT.search(s) for s in ["Closing soon: 12 placements", "Last chance to apply", "Deadlines this week"])
+          and not any(REMINDER_SUBJECT.search(s) for s in ["New engineering jobs for you", "3 new placements match your alert"]))
     check("same title, other employer is new", not is_repeat(same_role_key({"title": "Mechanical Engineering Industrial Placement", "company_name": "Cummins"}),
                                                              [same_role_key({"title": "Mechanical Engineering Industrial Placement", "company_name": "Phillips 66"})]))
     mech = m.with_defaults({"field": "Engineering", "degrees": ["Mechanical Engineering"], "types": ["Placement"], "sectors": ["Automotive"]})

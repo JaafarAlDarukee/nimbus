@@ -76,27 +76,60 @@ def _norm(text: str) -> str:
     return " ".join(re.sub(r"[^a-z0-9]+", " ", text.lower()).split())
 
 
-def same_role_key(row: dict) -> tuple[str, str]:
-    """(title, employer) with years, punctuation and company suffixes removed; employer "" when a
-    job site didn't say ("via Bright Network")."""
+_LITTLE_WORDS = {"and", "the", "of", "for", "in", "at", "to", "an", "with", "or"}
+
+
+def title_words(title: str) -> frozenset[str]:
+    """The words of a title without years and little words (the same as SQL public.title_words)."""
+    return frozenset(w for w in re.split(r"[^a-z0-9]+", (title or "").lower())
+                     if len(w) > 1 and not re.fullmatch(r"20\d\d", w) and w not in _LITTLE_WORDS)
+
+
+def similar_titles(a: frozenset[str], b: frozenset[str]) -> bool:
+    """At least 5 words, and 90% of the shorter title's words in the other (SQL public.similar_titles)."""
+    shorter = min(len(a), len(b))
+    return shorter >= 5 and len(a & b) >= 0.9 * shorter
+
+
+RoleKey = tuple[str, str, frozenset[str]]
+
+
+def same_role_key(row: dict) -> RoleKey:
+    """(title, employer, title words) with years, punctuation and company suffixes removed; employer ""
+    when a job site didn't say ("via Bright Network")."""
     company = row.get("company_name") or ""
     company = "" if company.lower().startswith("via ") else _norm(_COMPANY_WORDS.sub(" ", company.lower()))
-    return _norm(_YEARS.sub(" ", row.get("title") or "")), company
+    title = row.get("title") or ""
+    return _norm(_YEARS.sub(" ", title)), company, title_words(title)
 
 
-def is_repeat(key: tuple[str, str], seen: list[tuple[str, str]]) -> bool:
-    title, company = key
-    return any(t == title and (not c or not company or c.startswith(company) or company.startswith(c)) for t, c in seen)
+def is_repeat(key: RoleKey, seen: list[RoleKey]) -> bool:
+    """The same role: same employer (or one unknown) and the same title, or the same employer and a
+    near-identical title ("Manufacturing Engineering (12 Month Placement Scheme)" and "12 Month
+    Industrial Placement Scheme - Manufacturing Engineering - Technical Services")."""
+    title, company, words = key
+    for t, c, w in seen:
+        same_employer = bool(c and company) and (c == company or c.startswith(company + " ") or company.startswith(c + " "))
+        if t == title and (same_employer or not c or not company):
+            return True
+        if same_employer and similar_titles(words, w):
+            return True
+    return False
 
 
-def _seen_roles(db: httpx.Client, ids: str) -> dict[str, list[tuple[str, str]]]:
-    """Each person's roles already sent in the last REPEAT_DAYS days."""
+def _seen_roles(db: httpx.Client, ids: str) -> dict[str, list[RoleKey]]:
+    """Each person's roles already sent in the last REPEAT_DAYS days, and everything in their tracker
+    (saved, applied, interviews...), so a copy of a role they've applied to doesn't come again."""
     since = (datetime.now(timezone.utc) - timedelta(days=REPEAT_DAYS)).isoformat()
-    seen: dict[str, list[tuple[str, str]]] = {}
+    seen: dict[str, list[RoleKey]] = {}
     for a in _fetch_all(db, "/alerts_sent", {"select": "user_id,opportunities(title,company_name)", "user_id": f"in.({ids})",
                                              "channel": "eq.telegram", "sent_at": f"gt.{since}"}):
         if a.get("opportunities"):
             seen.setdefault(a["user_id"], []).append(same_role_key(a["opportunities"]))
+    for a in _fetch_all(db, "/applications", {"select": "user_id,title,company_name,opportunities(title,company_name)", "user_id": f"in.({ids})"}):
+        role = a.get("opportunities") or {"title": a.get("title"), "company_name": a.get("company_name")}
+        if role.get("title"):
+            seen.setdefault(a["user_id"], []).append(same_role_key(role))
     return seen
 
 

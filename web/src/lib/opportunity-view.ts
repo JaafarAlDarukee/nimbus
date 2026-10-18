@@ -220,7 +220,9 @@ export function toView(row: OpportunityRow, prefs: Preferences, filters: MatchFi
     loc: (row.location_text || (row.country === "GB" ? "United Kingdom" : (row.country ?? "Location not given"))) + (abroad ? " (abroad)" : ""),
     type: kind.type,
     tone: kind.tone,
-    found: listedEarlier ? `listed since ${shortDate(opened)}` : jobSite ? `found ${timeAgo(row.first_seen_at, now)}` : `posted ${timeAgo(opened, now)}`,
+    // No opening date: from a job site's "closing soon" reminder email, so it has been open a while
+    found: row.opened_at === null && jobSite ? "from a closing-soon email"
+      : listedEarlier ? `listed since ${shortDate(opened)}` : jobSite ? `found ${timeAgo(row.first_seen_at, now)}` : `posted ${timeAgo(opened, now)}`,
     isNew: !jobSite && openedAge < 6 * HOUR,
     via: row.source_kind === "adzuna" ? "Adzuna" : row.source_kind === "inbox" ? (JOB_SITES.find(([re]) => re.test(row.apply_url))?.[1] ?? "a job site") : null,
     ticks,

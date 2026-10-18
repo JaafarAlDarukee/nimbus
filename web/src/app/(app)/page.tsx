@@ -101,7 +101,7 @@ async function loadFeed(params: Awaited<PageProps<"/">["searchParams"]>): Promis
   const since = new Date(Date.now() - DAY).toISOString();
   // Newest first by when roles really opened, not when Nimbus happened to find them (owner, 18 Oct)
   const [rows, forYou, all, abroadCount, fresh, today, closing, savedApps, opened, ...columnRows] = await Promise.all([
-    list.order("opened_at", { ascending: false }).order("first_seen_at", { ascending: false }).limit(limit),
+    list.order("opened_at", { ascending: false, nullsFirst: false }).order("first_seen_at", { ascending: false }).limit(limit),
     matched("id", true),
     open("id", true),
     abroad("id", true),
@@ -125,7 +125,7 @@ async function loadFeed(params: Awaited<PageProps<"/">["searchParams"]>): Promis
       : Promise.resolve({ data: null }),
     ...TYPE_COLUMNS.map((col) =>
       columnsView
-        ? search(scoped(OPPORTUNITY_SELECT)).in("kind", col.kinds).order("opened_at", { ascending: false }).order("first_seen_at", { ascending: false }).limit(COLUMN_SIZE)
+        ? search(scoped(OPPORTUNITY_SELECT)).in("kind", col.kinds).order("opened_at", { ascending: false, nullsFirst: false }).order("first_seen_at", { ascending: false }).limit(COLUMN_SIZE)
         : search(scoped("id", true)).in("kind", col.kinds),
     ),
   ]);

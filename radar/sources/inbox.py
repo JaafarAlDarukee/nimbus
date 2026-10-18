@@ -53,6 +53,13 @@ SITES = [
     Site("Indeed", ("indeed.com", "indeed.co.uk"), re.compile(r"indeed\.(com|co\.uk)/[^\s]*[?&]jk=[0-9a-f]+", re.I),
          uk_only=False),
 ]
+# Job sites' reminder emails ("Closing soon", "Last chance to apply") resend roles that opened weeks
+# ago: their roles are saved but never alerted as new
+REMINDER_SUBJECT = re.compile(
+    r"\b(clos(e|es|ing)( date| dates)? (soon|this week|tomorrow|today|in \d+)|deadlines?|last chance|final (call|chance|days?)|"
+    r"don'?t miss|still (time|open)|ending soon|reminder|apply before|before (it|they) close|last few days)\b",
+    re.I,
+)
 GENERIC_TEXT = re.compile(
     r"^(view( job| details| all)?|apply( now)?|see (more|all|job)|more jobs|find out more|read more|"
     r"learn more|unsubscribe|manage (alerts|preferences)|click here|here|details)$",
@@ -191,7 +198,8 @@ def read_emails() -> list[tuple[str, str, datetime | None, str]]:
             pass
 
 
-def jobs_from_email(sender: str, date: datetime | None, html: str) -> list[RawJob]:
+def jobs_from_email(sender: str, date: datetime | None, html: str, subject: str = "") -> list[RawJob]:
+    reminder = bool(REMINDER_SUBJECT.search(subject or ""))
     parser = _Links()
     parser.feed(html)
     site = _site_for(sender, parser.links)
@@ -213,7 +221,7 @@ def jobs_from_email(sender: str, date: datetime | None, html: str) -> list[RawJo
                     source_kind="inbox",
                     country="GB" if site.uk_only else None,
                     posted_at=date,
-                    raw={"site": site.name},
+                    raw={"site": site.name, **({"reminder": True} if reminder else {})},
                 )
                 break
     return [job for job in jobs.values() if job.title]
@@ -224,8 +232,10 @@ async def fetch(board: Board, http: Fetcher, tier: str) -> list[RawJob]:
     jobs: list[RawJob] = []
     per_sender: dict[str, list[int]] = {}
     link_hosts: dict[str, dict[str, int]] = {}
-    for sender, _, date, html in emails:
-        found = jobs_from_email(sender, date, html)
+    reminders = 0
+    for sender, subject, date, html in emails:
+        found = jobs_from_email(sender, date, html, subject)
+        reminders += bool(found) and bool(REMINDER_SUBJECT.search(subject or ""))
         jobs.extend(found)
         domain = sender.rsplit("@", 1)[-1].lower()
         counts = per_sender.setdefault(domain, [0, 0])
@@ -241,6 +251,7 @@ async def fetch(board: Board, http: Fetcher, tier: str) -> list[RawJob]:
                     if host:
                         hosts[host] = hosts.get(host, 0) + 1
     # Safe for public logs: sender domains, link hosts and counts only, never email content
+    print(f"  inbox: {reminders} reminder emails (their roles aren't alerted as new)")
     for domain, (email_count, job_count) in sorted(per_sender.items()):
         print(f"  inbox: {domain}: {email_count} emails -> {job_count} jobs")
         if job_count == 0 and link_hosts.get(domain):
@@ -253,7 +264,7 @@ def inspect() -> None:
     """Local troubleshooting only (never in public CI logs): what each recent email yields."""
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
     for sender, subject, date, html in read_emails():
-        jobs = jobs_from_email(sender, date, html)
+        jobs = jobs_from_email(sender, date, html, subject)
         print(f"{date:%d %b %H:%M} | {sender.rsplit('@', 1)[-1]} | {subject[:70]} | {len(jobs)} jobs")
         for job in jobs[:5]:
             print(f"    {job.company} | {job.title} | {job.url}")
