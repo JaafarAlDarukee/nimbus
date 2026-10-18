@@ -154,6 +154,17 @@ const TYPE_KINDS: Record<string, string[]> = {
 /** Where Nimbus looks: the UK and Ireland (owner, 17 Oct: "remove all the countries, just keep the UK and Ireland"). */
 export const COVERED_COUNTRIES = ["GB", "IE"] as const;
 
+/** Engineering, computing and science (radar/notify/telegram.py ENGINEERING): the website shows only
+ *  these, never business, health or creative roles (owner, 18 Oct). Same as is_engineering_role. */
+export const ENGINEERING_TAGS = ["mechanical", "manufacturing", "robotics", "electrical", "aerospace", "automotive", "materials", "civil", "chemical", "software", "engineering", "science"];
+const NOT_ENGINEERING = ["business", "creative"];
+
+export function engineeringOnly<Q extends { or: (filters: string) => Q; not: (c: string, op: string, v: string) => Q }>(query: Q): Q {
+  return query
+    .or(`disciplines.ov.{${ENGINEERING_TAGS.join(",")}},and(kind.eq.event,disciplines.eq.{})`)
+    .not("disciplines", "ov", `{${NOT_ENGINEERING.join(",")}}`);
+}
+
 /** Every student opportunity type. For you and personal alerts show them all, grouped by type,
  *  whatever the user ticked (owner, 17 Oct: "I want to show everything, not hide"). */
 export const STUDENT_KINDS = [...new Set(Object.values(TYPE_KINDS).flat())];

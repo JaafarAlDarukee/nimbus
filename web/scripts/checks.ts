@@ -5,7 +5,7 @@
  *   cd web && npx tsx scripts/checks.ts
  */
 import { fitRole, isSameRole, kindView, sameRoleKey, toView, type OpportunityRow } from "../src/lib/opportunity-view";
-import { matchFilters, withDefaults, DEGREE_DISCIPLINES } from "../src/lib/preferences";
+import { matchFilters, withDefaults, DEGREE_DISCIPLINES, ENGINEERING_TAGS } from "../src/lib/preferences";
 import { DEGREES_BY_FIELD, DEFAULT_TYPES } from "../src/lib/onboarding-data";
 import { analyse, attachPrompt, cvHtml, cvLines, tailorPrompt, type CvJob } from "../src/lib/cv";
 import { cvFromText, tailorCv } from "../src/lib/cv-tailor";
@@ -116,6 +116,7 @@ check("job-site email: never 'just opened'", !emailed.isNew && emailed.found ===
 const direct = toView(role("Mechanical Engineering Placement", ["mechanical"], { source_kind: "workday", apply_url: "https://acme.wd3.myworkdayjobs.com/x", first_seen_at: "2026-10-18T17:05:00Z", opened_at: "2026-10-18T16:50:00Z" }), mechPrefs, mechFilters, NOW);
 check("employer's own site: just opened", direct.isNew && direct.found === "posted 30m ago", direct.found);
 check("abroad roles say so", toView(role("Graduate Engineer", ["engineering"], { country: "DE", location_text: "Munich", first_seen_at: "2026-10-18T17:00:00Z", opened_at: null }), mechPrefs, mechFilters, NOW).loc === "Munich (abroad)");
+check("website: engineering, computing and science, no business", ENGINEERING_TAGS.includes("software") && ENGINEERING_TAGS.includes("science") && !ENGINEERING_TAGS.includes("business"));
 check("defence hidden unless turned on", mechFilters.defence === false && matchFilters(withDefaults({ defence: true })).defence === true);
 
 // Paid access: 2 days free with 5 jobs and 2 CVs, then £5 once

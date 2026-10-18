@@ -53,6 +53,16 @@ def is_engineering(row: dict) -> bool:
         return True
     return not disciplines and bool(TECHNICAL_TITLE.search(row.get("title") or ""))
 
+
+# Not engineering even when a computing word appears ("Technology Consultant", "Sales Engineer")
+NOT_ENGINEERING = {"business", "creative"}
+
+
+def is_engineering_role(row: dict) -> bool:
+    """Engineering, computing or science, and not business or creative: what the website and the
+    personal bot show (owner, 18 Oct). The same rule as web/src/lib/preferences.ts engineeringOnly."""
+    return is_engineering(row) and not (set(row.get("disciplines") or []) & NOT_ENGINEERING)
+
 KIND_LABELS = {
     "placement": "Placement", "internship": "Internship", "spring_week": "Spring week",
     "insight": "Insight / work experience", "grad_scheme": "Graduate scheme", "graduate_job": "Graduate job",

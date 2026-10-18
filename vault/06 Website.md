@@ -111,3 +111,6 @@ Back to [[00 Start Here]] · code in `web/` (Next.js 16.3, React 19, Tailwind 4,
 - Tabs: For you · All (UK/IE) · Abroad. `applyMatch` and the All/Abroad queries hide `defence` rows unless `prefs.defence`; Profile row "Defence and nuclear roles" (Show/Hide).
 - `/pricing` public page; login header + footer link to it; /pay links "What you get".
 - `(app)/layout.tsx` `TrialBanner`; `lib/access.ts` `hoursLeft`, `TRIAL_FEATURES`, `PAID_FEATURES`.
+
+## Engineering only (18 Oct, night)
+- `preferences.ts` `engineeringOnly()` on every feed query (`openAnywhere` in `(app)/page.tsx`): disciplines overlap `ENGINEERING_TAGS` (engineering fields + software + science) or an untagged event, and never `business`/`creative`. Same as radar `is_engineering_role`. UK/IE open roles shown: 2,117 of 5,792.

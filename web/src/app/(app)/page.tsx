@@ -1,7 +1,7 @@
 import { OpportunityFeed } from "@/components/opportunity-feed";
 import { TRIAL_JOBS, accessState } from "@/lib/access";
 import { OPPORTUNITY_SELECT, TYPE_CHIPS, TYPE_COLUMNS, isSameRole, sameRoleKey, toView, type OpportunityRow, type OpportunityView } from "@/lib/opportunity-view";
-import { COVERED_COUNTRIES, applyMatch, matchFilters, withDefaults } from "@/lib/preferences";
+import { COVERED_COUNTRIES, applyMatch, engineeringOnly, matchFilters, withDefaults } from "@/lib/preferences";
 import { createClient } from "@/lib/supabase/server";
 
 const PAGE_SIZE = 40;
@@ -68,8 +68,9 @@ async function loadFeed(params: Awaited<PageProps<"/">["searchParams"]>): Promis
   const filters = matchFilters(prefs);
 
   // Everything open in the UK and Ireland (plus online events, which aren't tied to a country)
+  // Engineering, computing and science only, on every tab (owner, 18 Oct)
   const openAnywhere = (columns: string, head = false) => {
-    const query = supabase.from("opportunities").select(columns, { count: "exact", head }).eq("status", "open");
+    const query = engineeringOnly(supabase.from("opportunities").select(columns, { count: "exact", head }).eq("status", "open"));
     return prefs.defence ? query : query.eq("defence", false);
   };
   const open = (columns: string, head = false) =>

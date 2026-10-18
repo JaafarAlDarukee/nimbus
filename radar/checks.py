@@ -250,6 +250,9 @@ def main() -> None:
 
     from .notify import personal as personal_alerts
     check("private: no trial or payment messages", personal_alerts.PRIVATE is True)
+    from .notify.telegram import is_engineering_role
+    check("engineering, computing and science stay", all(is_engineering_role({"disciplines": d, "title": "x"}) for d in (["mechanical"], ["software"], ["science"], ["electrical", "software"])))
+    check("business, health and creative go", not any(is_engineering_role({"disciplines": d, "title": "x"}) for d in (["business"], ["business", "software"], ["healthcare"], ["creative"])))
     check("the bot is for placements and internships", personal_alerts.BOT_KINDS == {"placement", "internship", "spring_week", "insight"})
 
     print(f"{ok} passed, {fail} failed")

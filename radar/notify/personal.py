@@ -18,7 +18,7 @@ import httpx
 from ..match import filters_for, fit, is_match, is_muted, with_defaults
 from ..store import _fetch_all, client
 from ..sources.inbox import SITES
-from .telegram import ALERT_COUNTRIES, KIND_LABELS, is_engineering
+from .telegram import ALERT_COUNTRIES, KIND_LABELS, is_engineering, is_engineering_role
 
 # "Your free trial ends soon" this many hours before it does (once)
 TRIAL_REMIND_HOURS = 12
@@ -311,7 +311,8 @@ def send_matches(rows: list[dict]) -> None:
             filters = filters_for(prefs)
             fits = []
             for row in rows:
-                if row.get("kind") not in BOT_KINDS or row["id"] in hidden.get(person["user_id"], set()) or not wanted(row, prefs, filters):
+                if (row.get("kind") not in BOT_KINDS or not is_engineering_role(row) or row["id"] in hidden.get(person["user_id"], set())
+                        or not wanted(row, prefs, filters)):
                     continue
                 rank, ticks, _ = fit(row, prefs, filters)
                 fits.append((rank, ticks, row))
@@ -369,7 +370,7 @@ def send_welcome() -> None:
             profile = profiles.get(person["user_id"]) or {}
             prefs = with_defaults(profile.get("preferences"))
             filters = filters_for(prefs)
-            ranked = sorted(((fit(r, prefs, filters), r) for r in recent if r.get("kind") in BOT_KINDS and is_match(r, prefs, filters)),
+            ranked = sorted(((fit(r, prefs, filters), r) for r in recent if r.get("kind") in BOT_KINDS and is_engineering_role(r) and is_match(r, prefs, filters)),
                             key=lambda f: -f[0][0])
             fits, keys = [], []
             for f in ranked:
