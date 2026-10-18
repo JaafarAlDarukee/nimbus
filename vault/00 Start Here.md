@@ -15,8 +15,17 @@ Live site: **https://nimbus-pi-three.vercel.app** (open sign-ups: 2 days free, t
 ## State on 17 Oct 2026
 - **Everything is live and healthy.** Radar: priority run every 15 min, full run every 6 h (Supabase pg_cron → GitHub Actions). ~24,000 open roles, newest within minutes. Website on Vercel (auto-deploys from `main`). Telegram: shared channel + personal alerts per user.
 - **Users (17 Oct):** 5 website accounts (owner included), 3 finished sign-up, 2 on personal Telegram alerts; 5 people in the channel.
-- **Checks:** `python -m radar.checks` (168 pass) and `cd web && npx tsx scripts/checks.ts` (157 pass).
+- **Checks:** `python -m radar.checks` (171 pass) and `cd web && npx tsx scripts/checks.ts` (162 pass).
 - **Website and channels cover the UK and Ireland only** (owner, 17 Oct, last). Newest summary for the owner: Session log "18 Oct: recap". Run both after any change to matching, tagging, readers or CV logic.
+
+## Done 18 Oct: real opening dates, defence opt-in, Abroad tab, pricing page, louder trial
+- **opened_at** (migration `20261018000000_opened_at_defence.sql`): employer's posted date, or the earliest near-identical role at the same employer (`set_opened_at`, called by the radar after saving). The feed sorts by it; "Just opened" only for employer-site roles; job-site finds say "via Gradcracker" and old ones "listed since 30 Sep"; alerts only for roles opened in the last week. Example: a Caterpillar placement emailed by Gradcracker on 18 Oct now opens 19 Sep (as on Caterpillar's site). Backfill: 1,546 of 5,812 open UK/IE roles opened over a day before Nimbus found them.
+- **Defence roles opt-in** (owner's change; CLAUDE.md updated): kept with `defence = true`, hidden unless Profile → "Defence and nuclear roles" → Show them; never in channels. First run saved 458 (56 UK/IE).
+- **Abroad tab** on Opportunities (roles outside UK/IE, "(abroad)"); For you/All stay UK/IE.
+- **/pricing** (public): free trial vs £5 once, what you get (`PAID_FEATURES` in lib/access.ts, also on /pay), "when do you hear about a role" bars (honest: employer site / Nimbus within ~30 min / job sites hours to weeks).
+- **Trial**: banner bigger, orange in the last 12 h; bot tells new trial users when the trial ends; the 12-hour reminder was already live.
+- **Emails**: signed "Nimbus". Spam fix needs the owner: own domain + email service (see [[13 Ideas backlog#Email deliverability (18 Oct)]]).
+- Asked the owner what "the website is still unusable" means exactly.
 
 ## Field channels (17 Oct, built; waiting for the owner to create them)
 The owner's private Telegram channels per field, everything instantly, UK & Ireland: **Engineering, Medical & health, Business, Computing, Science, Creative**. Main everything-channel stays. **Owner's steps:** in Telegram make a private channel → Administrators → add **@NimbusRadarBot** (Post Messages on) → the bot DMs "✅ Nimbus can post in …" → Admin → "Your Telegram field channels" → pick the field → Save. Repeat per field. Only channels added by the owner's own connected Telegram register. Details: [[04 Radar#Field channels (17 Oct)]].

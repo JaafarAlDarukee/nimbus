@@ -105,3 +105,9 @@ Back to [[00 Start Here]] · code in `web/` (Next.js 16.3, React 19, Tailwind 4,
 ## UK and Ireland only (17 Oct, last)
 - Owner: "remove all the countries from my website, just keep the UK and Ireland". `preferences.ts` `COVERED_COUNTRIES` = GB, IE; `matchFilters` always uses it (old "abroad" picks ignored; mirrored in `radar/match.py`). The All tab (`open()` in `(app)/page.tsx`) is UK/IE too, plus online events. The Location question is gone from onboarding and Profile (it only chose countries; UK regions never filtered). `UK_LOCATIONS` / `ABROAD_LOCATIONS` removed. Companies: no "(N abroad)". Copy: "UK and Ireland, newest first"; "3,200+ employers" (3,242 careers sites, 3,303 boards).
 - The radar still collects roles worldwide (~18,000 of ~24,000 open are abroad); stopping that would save database space (idea).
+
+## 18 Oct
+- Feed ordered by `opened_at` (then `first_seen_at`); "N opened since yesterday" and phone "new today" count by `opened_at`. `toView`: `found` = "posted 30m ago" (employer site) / "found 20m ago" (job-site email or Adzuna) / "listed since 30 Sep" (opened over a day before Nimbus found it); `isNew` only for employer sites opened < 6 h; `via` names the job site from the link; abroad roles' place ends "(abroad)". Drawer fact "When".
+- Tabs: For you · All (UK/IE) · Abroad. `applyMatch` and the All/Abroad queries hide `defence` rows unless `prefs.defence`; Profile row "Defence and nuclear roles" (Show/Hide).
+- `/pricing` public page; login header + footer link to it; /pay links "What you get".
+- `(app)/layout.tsx` `TrialBanner`; `lib/access.ts` `hoursLeft`, `TRIAL_FEATURES`, `PAID_FEATURES`.

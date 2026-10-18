@@ -40,3 +40,6 @@ In order of importance (told to the owner):
 8. **Morning summary** in the bot ("Yesterday: 52 new: 8 placements…") for people who mute notifications.
 9. **Landing page** (Phase 2) and **ads** (Phase 3) as planned.
 - Stop saving roles outside the UK and Ireland in the radar (about 3/4 of open rows are abroad): smaller database, faster queries. Abroad events in events.csv are now unused.
+
+## Email deliverability (18 Oct)
+Sign-in emails go to spam: they're sent through a Gmail account via SMTP, with links to supabase.co / vercel.app. Real fix (owner): buy a domain (~£10/year, e.g. at Cloudflare), send through an email service (Resend: free up to 3,000 a month) with SPF, DKIM and DMARC records, sender "Nimbus <hello@yourdomain>"; also gives a brand email and a proper website address (helps Stripe and anonymity). Meanwhile: sender name "Nimbus" in Supabase → Auth → SMTP (dashboard), and ask people to mark the first email "Not spam".

@@ -118,3 +118,8 @@ Back to [[00 Start Here]] · code in `radar/`
 - Weekly UK/IE volumes (last week): engineering ~550, business ~350, medical ~145, computing ~110, science ~75, creative ~18; no subject ~520 (main channel only).
 
 - **UK and Ireland only (17 Oct, last):** owner: "cancel the idea of the rest of the world, focus on UK and Ireland for now". `channel_outbox()` gives the main channel every new UK/IE role (no abroad lists) and field channels the UK/IE roles that fit. Roles elsewhere are still saved and shown on the website only to people who picked those places (and abroad events). Check: "channels: UK and Ireland only".
+
+## Changes 2026-10-18
+- `store.save`: after inserting, calls `rpc/set_opened_at(ids)`; `alertable` = known board and `opened_at` within 7 days (job-site resends of old roles are saved quietly). `_row` stores `defence`; seen-again defence roles get the flag.
+- `classify`: excluded (defence/nuclear/weapons) roles are kept with `Opportunity.defence = True`; `is_candidate` no longer drops them; `run.load_boards` no longer skips excluded employers' boards. `reclassify` sets/clears the flag instead of closing. `match.is_match` hides defence unless `prefs.defence`; personal `wanted` too; `channel_outbox` never posts them.
+- SQL: `company_key()`, `title_words()`, `similar_titles()` (≥5 words, 90% of the shorter title's words in the other), index on the company's first word.

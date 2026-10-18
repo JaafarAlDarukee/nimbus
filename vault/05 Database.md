@@ -42,3 +42,4 @@ Bucket `cvs` (private, 5 MB, PDF/DOCX). Users may only touch `<their user id>/â€
 
 ## Useful queries
 Run with `npx supabase db query --linked "<sql>"` (see [[10 How to run things]]). Never select `vault.decrypted_secrets`.
+- 9. `20261018000000_opened_at_defence.sql`: `opportunities.opened_at` (+ index), `opportunities.defence`, functions `company_key`, `title_words`, `similar_titles`, `set_opened_at(ids)` (service role only).
