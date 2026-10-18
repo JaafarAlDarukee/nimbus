@@ -67,3 +67,6 @@ No Airbus, BAE Systems, Boeing, or any nuclear / weapons / defence company or ro
 - **Defence roles: opt-in per user** (owner: "if someone wants defence jobs, BAE, Babcock, let it be visible for them"); hidden by default; never in the channels.
 - **Abroad roles kept**, on their own tab, marked "(abroad)" (owner: "keep them, just put (abroad)").
 - **Newest = when a role really opened**, not when Nimbus found it.
+
+## 2026-10-18 (night) · Private
+- **Nimbus is for the owner only: no payments, trial or sign-ups** (owner: "I know it's not possible to make money from it, let's make it for me only"). Supersedes the paid/public plan of 17 Oct; reversible by switches (`PRIVATE`, `enable_signup`).
