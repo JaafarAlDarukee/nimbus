@@ -121,7 +121,7 @@ DIRECTORY = _directory()
 
 def with_defaults(stored: dict | None) -> dict:
     prefs = {"field": "Engineering", "degrees": ["Mechanical Engineering"], "sectors": [], "types": DEFAULT_TYPES,
-             "uk": ["Anywhere in the UK"], "abroad": [], "muted": [], "defence": False}
+             "uk": ["Anywhere in the UK"], "abroad": [], "muted": [], "defence": False, "watch": []}
     prefs.update({k: v for k, v in (stored or {}).items() if v is not None})
     return prefs
 
@@ -159,6 +159,31 @@ def industry_match(sectors: list[str], company: str, text: str) -> str | None:
         pattern = INDUSTRY_WORDS.get(sector)
         if pattern and re.search(pattern, text, re.I):
             return sector
+    return None
+
+
+_COMPANY_SUFFIXES = re.compile(r"\b(ltd|limited|plc|llp|inc|group|uk|gmbh|co|the|and|ireland|services|holdings)\b")
+# Short names people type for big employers
+COMPANY_ALIASES = {"jlr": "jaguar land rover", "gsk": "glaxosmithkline", "s&n": "smith nephew", "snc": "smith nephew",
+                   "rr": "rolls royce", "ge": "ge aerospace", "bp": "bp", "p&g": "procter gamble"}
+
+
+def company_key(name: str) -> str:
+    """"Smith & Nephew UK Limited" -> "smith nephew" (the same as SQL public.company_key)."""
+    lowered = (name or "").lower()
+    lowered = COMPANY_ALIASES.get(lowered.strip(), lowered)
+    return " ".join(re.sub(r"[^a-z0-9]+", " ", _COMPANY_SUFFIXES.sub(" ", lowered)).split())
+
+
+def watched_as(company: str, watch: list[str]) -> str | None:
+    """The watchlist entry this employer matches ("Siemens" covers "Siemens Energy"), or None."""
+    key = company_key(company)
+    if not key:
+        return None
+    for entry in watch:
+        wanted = company_key(entry)
+        if wanted and (key == wanted or key.startswith(wanted + " ")):
+            return entry
     return None
 
 

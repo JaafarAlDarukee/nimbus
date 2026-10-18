@@ -253,6 +253,21 @@ def main() -> None:
     from .notify.telegram import is_engineering_role
     check("engineering, computing and science stay", all(is_engineering_role({"disciplines": d, "title": "x"}) for d in (["mechanical"], ["software"], ["science"], ["electrical", "software"])))
     check("business, health and creative go", not any(is_engineering_role({"disciplines": d, "title": "x"}) for d in (["business"], ["business", "software"], ["healthcare"], ["creative"])))
+    check("watchlist matches the employer's other names", m.watched_as("Smith & Nephew UK Limited", ["Smith+Nephew"]) == "Smith+Nephew"
+          and m.watched_as("Siemens Energy", ["Siemens"]) == "Siemens" and m.watched_as("Jaguar Land Rover Limited", ["JLR"]) == "JLR"
+          and m.watched_as("Arup", ["Siemens"]) is None)
+    from .notify.personal import digest_text, wanted_event, watch_status
+    zurich = {"kind": "event", "remote": False, "country": "CH", "disciplines": [], "title": "HackZurich", "company_name": "HackZurich"}
+    check("in-person hackathon abroad reaches the bot", wanted_event(zurich, mech))
+    check("online or business-only events don't", not wanted_event({**zurich, "remote": True}, mech) and not wanted_event({**zurich, "disciplines": ["business"]}, mech))
+    now = datetime(2026, 10, 19, 8, tzinfo=timezone.utc)
+    rows = [{"kind": "placement", "country": "GB", "status": "closed", "opened_at": "2025-11-01T09:00:00+00:00", "first_seen_at": "2025-11-01T09:00:00+00:00"},
+            {"kind": "placement", "country": "GB", "status": "closed", "opened_at": "2026-02-01T09:00:00+00:00", "first_seen_at": "2026-02-01T09:00:00+00:00"}]
+    line = watch_status("JCB", rows, now)
+    check("opening soon from last season", "nothing open" in line and "last opened 1 Feb" in line and "usually opens around 1 Nov" in line, line)
+    check("watched company with roles open", watch_status("Arup", [{**rows[0], "status": "open"}], now).startswith("✅ Arup: 1 placement"))
+    text = digest_text(3, [], ["✅ Arup: 2 placements or internships open"], [])
+    check("morning digest", text.startswith("☀️") and "3 new placements" in text and "Your companies" in text)
     check("the bot is for placements and internships", personal_alerts.BOT_KINDS == {"placement", "internship", "spring_week", "insight"})
 
     print(f"{ok} passed, {fail} failed")

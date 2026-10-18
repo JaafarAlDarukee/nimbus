@@ -38,6 +38,9 @@ jobs:
           print("setMyCommands:", call("setMyCommands", {"commands": [
               {"command": "start", "description": "Connect, or check you're connected"},
               {"command": "help", "description": "How Nimbus alerts work"},
+              {"command": "watch", "description": "Watch companies: /watch Rolls-Royce, JLR"},
+              {"command": "watchlist", "description": "Your companies and what's open"},
+              {"command": "unwatch", "description": "Stop watching a company"},
               {"command": "stop", "description": "Pause your alerts"},
           ]})["ok"])
           info = call("getWebhookInfo")["result"]

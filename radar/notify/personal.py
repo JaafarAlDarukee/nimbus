@@ -15,10 +15,11 @@ from zoneinfo import ZoneInfo
 
 import httpx
 
-from ..match import filters_for, fit, is_match, is_muted, with_defaults
+from ..match import company_key, filters_for, fit, is_match, is_muted, watched_as, with_defaults
 from ..store import _fetch_all, client
 from ..sources.inbox import SITES
-from .telegram import ALERT_COUNTRIES, KIND_LABELS, is_engineering, is_engineering_role
+from ..sources.event_tags import REGIONS
+from .telegram import ALERT_COUNTRIES, ENGINEERING, KIND_LABELS, is_engineering, is_engineering_role
 
 # "Your free trial ends soon" this many hours before it does (once)
 TRIAL_REMIND_HOURS = 12
@@ -28,6 +29,10 @@ MAX_PER_PERSON = 30
 # weeks and insight days only. Graduate schemes, apprenticeships and events stay on the website and in
 # the main channel.
 BOT_KINDS = {"placement", "internship", "spring_week", "insight"}
+# Every student type, for companies on the watchlist (the moment anything opens there)
+WATCH_KINDS = BOT_KINDS | {"grad_scheme", "graduate_job", "apprenticeship", "research", "scholarship"}
+# The morning digest, in UK time
+DIGEST_HOUR, DIGEST_MINUTE = 7, 30
 # The same role from several places (employer, Gradcracker, Bright Network, Adzuna) is sent once
 REPEAT_DAYS = 30
 # Nimbus is private (owner, 18 Oct: "make it for me only, no payment, no nothing"): only admins get
@@ -154,12 +159,24 @@ def wanted(row: dict, prefs: dict, filters: tuple) -> bool:
             and not is_muted(row, prefs) and (not row.get("defence") or bool(prefs.get("defence"))))
 
 
+def wanted_event(row: dict, prefs: dict) -> bool:
+    """Hackathons, competitions and fairs you can go to: in person, in the UK, Ireland, Europe, North
+    America or the Middle East (owner, 19 Oct: "I want to get into hackathons and stuff abroad"),
+    engineering, computing or science, or open to any subject."""
+    if row.get("kind") != "event" or row.get("remote") or row.get("defence") or is_muted(row, prefs):
+        return False
+    if row.get("country") not in ALERT_COUNTRIES | REGIONS:
+        return False
+    tags = set(row.get("disciplines") or [])
+    return not tags or bool(tags & ENGINEERING)
+
+
 def open_on_nimbus(row: dict) -> str:
     """The role on the website (sign-in and payment first), which links on to the employer."""
     return f"{SITE_URL}/?open={row['id']}"
 
 
-def format_match(row: dict, ticks: list[str]) -> str:
+def format_match(row: dict, ticks: list[str], watched: str | None = None) -> str:
     e = html.escape
     kind = row.get("kind") or ""
     label = event_type(row.get("title") or "") if kind == "event" else KIND_LABELS.get(kind, "Opportunity")
@@ -176,8 +193,10 @@ def format_match(row: dict, ticks: list[str]) -> str:
         elif row.get("rolling"):
             details.append("rolling, apply early")
     where = row.get("location_text") or ("United Kingdom" if row.get("country") == "GB" else row.get("country") or "")
+    if row.get("country") and row["country"] not in ALERT_COUNTRIES:
+        where = f"{where}, {row['country']} (abroad)" if where and where != row["country"] else f"{row['country']} (abroad)"
     lines = [
-        f"{TYPE_ICONS.get(kind, '⬜')} <b>{e(label.upper())}</b>",
+        ("🔔 <b>Watched</b> · " if watched else "") + f"{TYPE_ICONS.get(kind, '⬜')} <b>{e(label.upper())}</b>",
         f"<b>{e(row['title'])}</b>",
         e(" · ".join(p for p in (row.get("company_name"), where) if p)),
         e(" · ".join(details)),
@@ -310,13 +329,22 @@ def send_matches(rows: list[dict]) -> None:
             prefs = with_defaults(profile.get("preferences"))
             filters = filters_for(prefs)
             fits = []
+            watch = prefs.get("watch") or []
             for row in rows:
-                if (row.get("kind") not in BOT_KINDS or not is_engineering_role(row) or row["id"] in hidden.get(person["user_id"], set())
-                        or not wanted(row, prefs, filters)):
+                if row["id"] in hidden.get(person["user_id"], set()):
                     continue
-                rank, ticks, _ = fit(row, prefs, filters)
-                fits.append((rank, ticks, row))
-            fits.sort(key=lambda f: -f[0])  # your own degree's roles first when there are more than fit
+                watched = watched_as(row.get("company_name") or "", watch)
+                if watched and row.get("kind") in WATCH_KINDS and row.get("country") in ALERT_COUNTRIES and not row.get("defence") \
+                        and is_engineering_role(row) and not is_muted(row, prefs):
+                    rank = 10  # your watched companies first
+                elif row.get("kind") == "event" and wanted_event(row, prefs):
+                    rank = 5
+                elif row.get("kind") in BOT_KINDS and is_engineering_role(row) and wanted(row, prefs, filters):
+                    rank = fit(row, prefs, filters)[0]
+                else:
+                    continue
+                fits.append((rank, fit(row, prefs, filters)[1], row, watched))
+            fits.sort(key=lambda f: -f[0])  # watched companies, then events, then your own degree's roles
             # Once per role, however many places list it (this run and the last 30 days)
             mine = seen.setdefault(person["user_id"], [])
             unique = []
@@ -332,8 +360,8 @@ def send_matches(rows: list[dict]) -> None:
             if not fits or limit <= 0:
                 continue
             sent_here = 0
-            for _, ticks, row in fits[:limit]:
-                if _send_once(db, telegram, person["user_id"], row["id"], "telegram", chat, format_match(row, ticks), _buttons(row)):
+            for _, ticks, row, watched in fits[:limit]:
+                if _send_once(db, telegram, person["user_id"], row["id"], "telegram", chat, format_match(row, ticks, watched), _buttons(row)):
                     sent_here += 1
             if len(fits) > limit and left is not None:
                 telegram.send(chat, f"🔒 {len(fits) - limit} more new matches for you. The free trial includes {TRIAL_ALERTS} alerts: unlock every alert for {PRICE}, once: {SITE_URL}/pay")
@@ -467,3 +495,94 @@ def send_trial_reminders() -> None:
             if telegram.send(chat, note):
                 db.patch("/profiles", params={"id": f"eq.{profile['id']}"}, json={"trial_reminder_at": now.isoformat()}).raise_for_status()
     print(f"Trial reminders: {telegram.sent} sent")
+
+
+# ---------------------------------------------------------------- watchlist status, opening soon, morning digest
+
+def _watch_rows(db: httpx.Client, entry: str) -> list[dict]:
+    """Every role Nimbus has seen at a watched employer (open or closed), by its name."""
+    first = company_key(entry).split(" ")[0] if company_key(entry) else ""
+    if not first:
+        return []
+    rows = _fetch_all(db, "/opportunities", {"select": "company_name,kind,status,country,opened_at,first_seen_at,defence",
+                                             "company_name": f"ilike.*{first}*"})
+    return [r for r in rows if watched_as(r.get("company_name") or "", [entry])]
+
+
+def watch_status(entry: str, rows: list[dict], now: datetime) -> str:
+    """One line: what's open now, or when it last opened, and when it usually opens (once Nimbus has a
+    year of history: the same employer's first placement or internship last season)."""
+    student = [r for r in rows if r.get("kind") in BOT_KINDS and r.get("country") in ALERT_COUNTRIES and not r.get("defence")]
+    open_now = [r for r in student if r.get("status") == "open"]
+    if open_now:
+        return f"✅ {html.escape(entry)}: {len(open_now)} placement{'s' if len(open_now) != 1 else ''} or internship{'s' if len(open_now) != 1 else ''} open"
+    opened = sorted(datetime.fromisoformat(r.get("opened_at") or r["first_seen_at"]) for r in student)
+    line = f"💤 {html.escape(entry)}: nothing open"
+    if opened:
+        line += f" (last opened {_dm(opened[-1])})"
+    last_season = [d for d in opened if timedelta(days=300) <= now - d <= timedelta(days=430)]
+    if last_season:
+        expected = last_season[0] + timedelta(days=365)
+        if timedelta(0) <= expected - now <= timedelta(days=21):
+            line += f" · ⏳ usually opens around {_dm(expected)}"
+    return line
+
+
+def digest_text(new_count: int, closing: list[dict], watch_lines: list[str], events: list[dict]) -> str:
+    """The morning message: what came in, what closes soon, your companies, and (Mondays) events."""
+    e = html.escape
+    lines = ["☀️ <b>Good morning. Your placement radar</b>",
+             f"• {new_count} new placement{'s' if new_count != 1 else ''} and internships sent to you since yesterday"]
+    if closing:
+        lines += ["", "⏰ <b>Closing in the next 7 days, not applied yet</b>"]
+        lines += [f"• <a href=\"{e(r['apply_url'], quote=True)}\">{e(r['title'][:80])}</a> · {e(r.get('company_name') or '')} · closes {_dm(datetime.fromisoformat(r['closes_at']), weekday=True)}"
+                  for r in closing]
+    if watch_lines:
+        lines += ["", "🔔 <b>Your companies</b>"] + watch_lines
+    if events:
+        lines += ["", "🌍 <b>Hackathons and events coming up</b>"]
+        lines += [f"• <a href=\"{e(r['apply_url'], quote=True)}\">{e(r['title'][:80])}</a> · {e(r.get('location_text') or r.get('country') or '')}"
+                  + (f" · ends {_dm(datetime.fromisoformat(r['closes_at']))}" if r.get("closes_at") else "") for r in events]
+    lines += ["", "Add companies with /watch Rolls-Royce, JCB · see them with /watchlist"]
+    return "\n".join(lines)
+
+
+def send_morning_digest() -> None:
+    """Once a day after DIGEST_HOUR:DIGEST_MINUTE (UK): the morning summary for each person with Telegram."""
+    token = os.environ.get("TELEGRAM_BOT_TOKEN")
+    now = datetime.now(timezone.utc)
+    local = now.astimezone(UK)
+    if not token or (local.hour, local.minute) < (DIGEST_HOUR, DIGEST_MINUTE):
+        return
+    today = local.date().isoformat()
+    with client() as db:
+        people = _gate(db, None, _linked(db))[0]
+        if not people:
+            return
+        ids = ",".join(p["user_id"] for p in people)
+        profiles = {p["id"]: p for p in _fetch_all(db, "/profiles", {"select": "id,preferences,digest_sent_on", "id": f"in.({ids})"})}
+        week = (now + timedelta(days=7)).isoformat()
+        closing_soon = _fetch_all(db, "/opportunities", {"select": WELCOME_COLUMNS, "status": "eq.open", "country": "in.(GB,IE)",
+                                                         "closes_at": f"gt.{now.isoformat()}", "and": f"(closes_at.lt.{week})", "order": "closes_at"})
+        upcoming = [] if local.weekday() != 0 else _fetch_all(db, "/opportunities", {
+            "select": WELCOME_COLUMNS, "status": "eq.open", "kind": "eq.event", "remote": "not.is.true",
+            "or": f"(closes_at.is.null,closes_at.gt.{now.isoformat()})", "order": "closes_at.nullslast"})
+        telegram = _Telegram(token)
+        for person in people:
+            profile = profiles.get(person["user_id"]) or {}
+            if profile.get("digest_sent_on") == today:
+                continue
+            prefs = with_defaults(profile.get("preferences"))
+            filters = filters_for(prefs)
+            uid = person["user_id"]
+            new_count = len(_fetch_all(db, "/alerts_sent", {"select": "opportunity_id", "user_id": f"eq.{uid}", "channel": "eq.telegram",
+                                                           "sent_at": f"gt.{(now - DAY).isoformat()}"}))
+            tracker = _seen_roles(db, uid).get(uid, [])
+            tracked_ids = {a["opportunity_id"] for a in _fetch_all(db, "/applications", {"select": "opportunity_id", "user_id": f"eq.{uid}"})}
+            closing = [r for r in closing_soon if r.get("kind") in BOT_KINDS and is_engineering_role(r) and wanted(r, prefs, filters)
+                       and r["id"] not in tracked_ids and not is_repeat(same_role_key(r), tracker)][:8]
+            watch_lines = [watch_status(entry, _watch_rows(db, entry), now) for entry in (prefs.get("watch") or [])[:25]]
+            events = [r for r in upcoming if wanted_event(r, prefs)][:8]
+            if telegram.send(person["config"]["chat_id"], digest_text(new_count, closing, watch_lines, events)):
+                db.patch("/profiles", params={"id": f"eq.{uid}"}, json={"digest_sent_on": today}).raise_for_status()
+    print(f"Morning digest: {telegram.sent} sent")

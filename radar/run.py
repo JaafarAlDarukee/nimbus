@@ -73,8 +73,19 @@ async def _enrich(board: Board, job: RawJob, http: Fetcher) -> RawJob:
         return job
 
 
-async def scan(tier: str, only: str | None) -> tuple[list[Opportunity], dict]:
+def watched_companies() -> list[str]:
+    """Every company on someone's watchlist (Telegram /watch)."""
+    from .store import _fetch_all, client
+    with client() as db:
+        return sorted({w for p in _fetch_all(db, "/profiles", {"select": "preferences", "preferences->watch": "not.is.null"})
+                       for w in ((p.get("preferences") or {}).get("watch") or [])})
+
+
+async def scan(tier: str, only: str | None, watch: list[str] | None = None) -> tuple[list[Opportunity], dict]:
     boards = load_boards(only)
+    if watch is not None:
+        from .match import watched_as
+        boards = [b for b in boards if b.kind not in ("inbox", "adzuna", "devpost", "mlh", "events", "nhsjobs") and watched_as(b.company, watch)]
     http = Fetcher()
     try:
         results = await asyncio.gather(*(_read(b, http, tier) for b in boards))
@@ -143,11 +154,18 @@ def main() -> None:
     parser.add_argument("--tier", choices=["priority", "full"], default="full")
     parser.add_argument("--only", help="only boards whose company name contains this text")
     parser.add_argument("--dry-run", action="store_true", help="print results instead of saving them")
+    parser.add_argument("--watch", action="store_true", help="only the companies people watch (run every 5 minutes)")
     args = parser.parse_args()
+    watch = None
+    if args.watch:
+        watch = watched_companies()
+        if not watch:
+            print("Nobody is watching any companies yet")
+            return
 
     started = time.monotonic()
     started_at = datetime.now(timezone.utc)
-    opportunities, stats = asyncio.run(scan(args.tier, args.only))
+    opportunities, stats = asyncio.run(scan(args.tier, args.only, watch))
     stats["started_at"] = started_at
     print_report(opportunities, stats, time.monotonic() - started)
 
@@ -157,9 +175,14 @@ def main() -> None:
         from .notify.telegram import send_new
         from .store import save
 
-        new, first_run = save(opportunities, stats, args.tier)
+        new, first_run = save(opportunities, stats, args.tier, "watch" if args.watch else None)
 
-        from .notify.personal import send_matches, send_reminders, send_trial_reminders, send_welcome
+        from .notify.personal import send_matches, send_morning_digest, send_reminders, send_trial_reminders, send_welcome
+
+        if args.watch:  # the quick check: alerts only
+            send_matches(new)
+            send_new(new, first_run, total_tracked=len(opportunities))
+            return
 
         # People's own filtered alerts first; then the owner's channel, which posts everything
         if not first_run:
@@ -168,6 +191,7 @@ def main() -> None:
         send_new(new, first_run, total_tracked=len(opportunities))
         send_reminders()
         send_trial_reminders()
+        send_morning_digest()
 
         from .notify.admin import notify_access_requests
 

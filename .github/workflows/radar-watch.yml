@@ -1,0 +1,50 @@
+name: Radar (watched companies, every 5 min)
+
+# The companies people watch (Telegram /watch), checked every 5 minutes so their roles alert first.
+# Its own queue, so it never waits behind the longer runs. Started by Supabase pg_cron (radar_trigger migrations).
+on:
+  workflow_dispatch:
+    inputs:
+      only:
+        description: "Only boards whose company name contains this text (blank = all)"
+        required: false
+        default: ""
+      dry_run:
+        description: "Print results only; don't save or alert"
+        type: boolean
+        default: false
+
+concurrency:
+  group: radar-watch
+  cancel-in-progress: false
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: radar/requirements.txt
+      - run: pip install -r radar/requirements.txt
+      - name: Scan priority boards
+        run: |
+          args=(--tier priority --watch)
+          if [ -n "$ONLY" ]; then args+=(--only "$ONLY"); fi
+          if [ "$DRY_RUN" = "true" ]; then args+=(--dry-run); fi
+          python -m radar.run "${args[@]}"
+        env:
+          ONLY: ${{ inputs.only }}
+          DRY_RUN: ${{ inputs.dry_run }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          TELEGRAM_ADMIN_CHAT_ID: ${{ secrets.TELEGRAM_ADMIN_CHAT_ID }}
+          ADZUNA_APP_ID: ${{ secrets.ADZUNA_APP_ID }}
+          ADZUNA_APP_KEY: ${{ secrets.ADZUNA_APP_KEY }}
+          GMAIL_ADDRESS: ${{ secrets.GMAIL_ADDRESS }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}

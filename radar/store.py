@@ -145,7 +145,7 @@ def _row(o: Opportunity, company_ids: dict[str, str], source_ids: dict[str, str]
     }
 
 
-def save(opportunities: list[Opportunity], stats: dict, tier: str) -> tuple[list[dict], bool]:
+def save(opportunities: list[Opportunity], stats: dict, tier: str, label: str | None = None) -> tuple[list[dict], bool]:
     """Insert new opportunities, refresh ones seen before, record board health, log the run.
 
     Returns (rows worth alerting, first_run). Nothing alerts on the very first run, and jobs
@@ -219,7 +219,7 @@ def save(opportunities: list[Opportunity], stats: dict, tier: str) -> tuple[list
         run = db.post(
             "/checker_runs",
             json={
-                "runner": f"github:{tier}" if os.environ.get("GITHUB_ACTIONS") else f"local:{tier}",
+                "runner": f"github:{label or tier}" if os.environ.get("GITHUB_ACTIONS") else f"local:{label or tier}",
                 "started_at": stats["started_at"].isoformat(),
                 "finished_at": now.isoformat(),
                 "sources_checked": stats["boards"],
