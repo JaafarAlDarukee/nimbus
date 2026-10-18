@@ -72,3 +72,4 @@ No Airbus, BAE Systems, Boeing, or any nuclear / weapons / defence company or ro
 - **Nimbus is for the owner only: no payments, trial or sign-ups** (owner: "I know it's not possible to make money from it, let's make it for me only"). Supersedes the paid/public plan of 17 Oct; reversible by switches (`PRIVATE`, `enable_signup`).
 - **2026-10-18 · Personal bot: placements and internships only** (owner: "I need to get a placement no matter what"); everything else stays on the website and in the main channel.
 - **2026-10-18 · Website and personal bot: engineering, computing and science only** (no business, health, creative); the main channel still gets everything in the UK and Ireland.
+- **2026-10-19 · All five job-search improvements built** (owner: "all the five points are great"), Telegram-first. Watchlist companies checked every 5 minutes.
