@@ -43,3 +43,12 @@ In order of importance (told to the owner):
 
 ## Email deliverability (18 Oct)
 Sign-in emails go to spam: they're sent through a Gmail account via SMTP, with links to supabase.co / vercel.app. Real fix (owner): buy a domain (~£10/year, e.g. at Cloudflare), send through an email service (Resend: free up to 3,000 a month) with SPF, DKIM and DMARC records, sender "Nimbus <hello@yourdomain>"; also gives a brand email and a proper website address (helps Stripe and anonymity). Meanwhile: sender name "Nimbus" in Supabase → Auth → SMTP (dashboard), and ask people to mark the first email "Not spam".
+
+## Suggested 18 Oct (owner: "how can we improve, be first to apply, hackathons abroad")
+Nimbus (owner to pick):
+1. **My companies watchlist**: 20-40 target employers, 🔔 alert the moment any role opens there (any type), those boards checked every 5 min; coverage check per company. Gaps seen 18 Oct: no open placements visible from Reckitt, Smith & Nephew, Siemens Gamesa (Hull), JLR, JCB, Dyson (none open, or their sites aren't read: JLR has its own portal). Blocked sites: sign the Nimbus Gmail up to each company's own job alerts.
+2. **Opening soon**: remember when each employer opened roles before; Telegram heads-up a week ahead.
+3. **Morning Telegram digest**: new since yesterday, closing this week and not applied, follow-ups due.
+4. **Events abroad stream**: in-person engineering hackathons, competitions and summer programmes in Europe / North America / Middle East to the personal bot (or an Events channel); sources to check (terms first): Devpost and MLH (have), Junction, HackZurich, START Hack, EU space hackathons (Cassini, ActInSpace), IAESTE.
+5. **Stage reminders**: online-test practice when a role moves to "Online test", interview prep when "Interview".
+Owner (not code): CV numbers in every bullet + LinkedIn profile; 5-10 good applications a week through Nov-Dec, within 48 h of opening; Hull-local employers; IAESTE / university global-opportunities funding for summer abroad; spring weeks / insight days; Formula Student bullet with a number; Hull careers service mock interviews; numerical/SJT practice.
