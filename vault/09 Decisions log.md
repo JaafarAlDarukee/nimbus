@@ -70,3 +70,4 @@ No Airbus, BAE Systems, Boeing, or any nuclear / weapons / defence company or ro
 
 ## 2026-10-18 (night) · Private
 - **Nimbus is for the owner only: no payments, trial or sign-ups** (owner: "I know it's not possible to make money from it, let's make it for me only"). Supersedes the paid/public plan of 17 Oct; reversible by switches (`PRIVATE`, `enable_signup`).
+- **2026-10-18 · Personal bot: placements and internships only** (owner: "I need to get a placement no matter what"); everything else stays on the website and in the main channel.

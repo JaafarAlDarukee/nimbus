@@ -24,6 +24,10 @@ from .telegram import ALERT_COUNTRIES, KIND_LABELS, is_engineering
 TRIAL_REMIND_HOURS = 12
 # One message per role, as soon as it's found (owner, 17 Oct); more than this in one check get a link instead
 MAX_PER_PERSON = 30
+# The personal bot is for landing a placement (owner, 18 Oct): placements, summer internships, spring
+# weeks and insight days only. Graduate schemes, apprenticeships and events stay on the website and in
+# the main channel.
+BOT_KINDS = {"placement", "internship", "spring_week", "insight"}
 # The same role from several places (employer, Gradcracker, Bright Network, Adzuna) is sent once
 REPEAT_DAYS = 30
 # Nimbus is private (owner, 18 Oct: "make it for me only, no payment, no nothing"): only admins get
@@ -307,7 +311,7 @@ def send_matches(rows: list[dict]) -> None:
             filters = filters_for(prefs)
             fits = []
             for row in rows:
-                if row["id"] in hidden.get(person["user_id"], set()) or not wanted(row, prefs, filters):
+                if row.get("kind") not in BOT_KINDS or row["id"] in hidden.get(person["user_id"], set()) or not wanted(row, prefs, filters):
                     continue
                 rank, ticks, _ = fit(row, prefs, filters)
                 fits.append((rank, ticks, row))
@@ -365,7 +369,8 @@ def send_welcome() -> None:
             profile = profiles.get(person["user_id"]) or {}
             prefs = with_defaults(profile.get("preferences"))
             filters = filters_for(prefs)
-            ranked = sorted(((fit(r, prefs, filters), r) for r in recent if is_match(r, prefs, filters)), key=lambda f: -f[0][0])
+            ranked = sorted(((fit(r, prefs, filters), r) for r in recent if r.get("kind") in BOT_KINDS and is_match(r, prefs, filters)),
+                            key=lambda f: -f[0][0])
             fits, keys = [], []
             for f in ranked:
                 if not is_repeat(same_role_key(f[1]), keys):

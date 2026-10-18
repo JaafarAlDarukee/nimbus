@@ -250,6 +250,7 @@ def main() -> None:
 
     from .notify import personal as personal_alerts
     check("private: no trial or payment messages", personal_alerts.PRIVATE is True)
+    check("the bot is for placements and internships", personal_alerts.BOT_KINDS == {"placement", "internship", "spring_week", "insight"})
 
     print(f"{ok} passed, {fail} failed")
     sys.exit(1 if fail else 0)
