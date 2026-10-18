@@ -1,4 +1,5 @@
 import { Brand, Sparkle, StarField, TelegramFab } from "@/components/brand";
+import { PRIVATE } from "@/lib/access";
 import { safeNext } from "@/lib/next-path";
 import { LoginForm } from "./login-form";
 
@@ -27,9 +28,11 @@ export default async function LandingPage(props: PageProps<"/login">) {
       <header className="relative flex h-[72px] w-full max-w-[1200px] items-center justify-between px-8">
         <Brand />
         <span className="flex items-center gap-2">
-          <a href="/pricing" className="flex h-9 items-center rounded-full px-3.5 text-[13px] !text-tx2 hover:!text-tx">
-            Pricing
-          </a>
+          {!PRIVATE && (
+            <a href="/pricing" className="flex h-9 items-center rounded-full px-3.5 text-[13px] !text-tx2 hover:!text-tx">
+              Pricing
+            </a>
+          )}
           <a
             href="#signin"
             className="flex h-9 items-center rounded-full border border-line2 px-3.5 text-[13px] !text-tx hover:border-l-sky"
@@ -61,7 +64,7 @@ export default async function LandingPage(props: PageProps<"/login">) {
 
         <div id="signin" className="animate-fade-up flex w-full max-w-[460px] flex-col gap-3 pt-2" style={{ animationDelay: "0.28s" }}>
           <LoginForm linkError={searchParams.error === "link"} next={safeNext(typeof searchParams.next === "string" ? searchParams.next : null)} />
-          <span className="text-[13px] text-tx3">Enter your email to sign up or sign in. 2 days free, then £5 once for lifetime access.</span>
+          <span className="text-[13px] text-tx3">{PRIVATE ? "Nimbus is private: only its owner can sign in." : "Enter your email to sign up or sign in. 2 days free, then £5 once for lifetime access."}</span>
         </div>
 
         <div className="animate-fade-up mt-[72px] grid w-full grid-cols-3 border-t border-line" style={{ animationDelay: "0.4s" }}>
@@ -79,9 +82,9 @@ export default async function LandingPage(props: PageProps<"/login">) {
       <TelegramFab />
       <footer className="relative flex flex-wrap justify-center gap-x-4 gap-y-1 p-6 text-[13px] text-tx3">
         <span>Nimbus never applies or messages employers for you.</span>
-        <a href="/pricing" className="!text-tx3 hover:!text-tx">Pricing</a>
+        {!PRIVATE && <a href="/pricing" className="!text-tx3 hover:!text-tx">Pricing</a>}
         <a href="/privacy" className="!text-tx3 hover:!text-tx">Privacy</a>
-        <a href="/terms" className="!text-tx3 hover:!text-tx">Terms</a>
+        {!PRIVATE && <a href="/terms" className="!text-tx3 hover:!text-tx">Terms</a>}
       </footer>
     </div>
   );

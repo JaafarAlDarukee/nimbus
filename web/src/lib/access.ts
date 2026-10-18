@@ -3,6 +3,10 @@
  * Mirrored in radar/notify/personal.py (`access_state`) for Telegram: change both together.
  */
 
+/** Nimbus is private (owner, 18 Oct: "make it for me only, no payment, no nothing"): only admins get in;
+ *  no sign-ups, trial or payments. Set to false (here and radar/notify/personal.py) to open it again. */
+export const PRIVATE = true;
+
 export const PRICE = "£5";
 export const TRIAL_JOBS = 5;
 export const TRIAL_CVS = 2;

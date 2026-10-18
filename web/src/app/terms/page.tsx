@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
 import { Contact, LegalPage, contactEmail } from "@/components/legal-page";
-import { PRICE, TRIAL_CVS, TRIAL_JOBS } from "@/lib/access";
+import { notFound } from "next/navigation";
+import { PRICE, PRIVATE, TRIAL_CVS, TRIAL_JOBS } from "@/lib/access";
 
 export const metadata: Metadata = { title: "Terms · Nimbus" };
 
 export default async function TermsPage() {
+  if (PRIVATE) notFound();
   const email = await contactEmail();
   return (
     <LegalPage title="Terms" updated="17 October 2026">

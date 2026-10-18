@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import { Brand, StarField } from "@/components/brand";
-import { PAID_FEATURES, PRICE, TRIAL_FEATURES } from "@/lib/access";
+import { PAID_FEATURES, PRICE, PRIVATE, TRIAL_FEATURES } from "@/lib/access";
 
 export const metadata: Metadata = { title: "Pricing · Nimbus", description: "2 days free, then £5 once for lifetime access." };
 
@@ -25,6 +26,7 @@ function Check({ dim }: { dim?: boolean }) {
 
 /** Public: what Nimbus costs and what you get (owner, 18 Oct: "£5 and get X, Y, Z, like this example"). */
 export default function PricingPage() {
+  if (PRIVATE) notFound();
   return (
     <main className="relative flex min-h-screen flex-col items-center overflow-hidden bg-bg px-5 pb-20 pt-8 text-tx">
       <StarField count={60} seed={13} />

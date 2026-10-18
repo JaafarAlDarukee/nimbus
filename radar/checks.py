@@ -248,6 +248,9 @@ def main() -> None:
     from .notify.personal import _buttons
     check("alert opens Nimbus first", _buttons(jlr)["inline_keyboard"][0][0]["url"].endswith("/?open=abc"))
 
+    from .notify import personal as personal_alerts
+    check("private: no trial or payment messages", personal_alerts.PRIVATE is True)
+
     print(f"{ok} passed, {fail} failed")
     sys.exit(1 if fail else 0)
 

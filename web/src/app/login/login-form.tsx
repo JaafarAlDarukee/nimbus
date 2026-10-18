@@ -32,7 +32,7 @@ export function LoginForm({ linkError, next }: { linkError: boolean; next: strin
       setStatus("sent");
     } else if (/signups not allowed|not been approved/i.test(error.message)) {
       setStatus("error");
-      setMessage("New sign-ups are paused for a moment. Try again soon.");
+      setMessage("Nimbus is private: only its owner can sign in.");
     } else if (/rate|seconds|too many/i.test(error.message)) {
       setStatus("error");
       setMessage("Too many login emails just now. Wait a minute and try again.");

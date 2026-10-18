@@ -26,7 +26,10 @@ TRIAL_REMIND_HOURS = 12
 MAX_PER_PERSON = 30
 # The same role from several places (employer, Gradcracker, Bright Network, Adzuna) is sent once
 REPEAT_DAYS = 30
-# Paid access (mirrors web/src/lib/access.ts): 2 days free with TRIAL_ALERTS alerts, then £5 once
+# Nimbus is private (owner, 18 Oct: "make it for me only, no payment, no nothing"): only admins get
+# personal alerts, and nobody gets trial or payment messages. Same switch as web/src/lib/access.ts PRIVATE.
+PRIVATE = True
+# Paid access, switched off while PRIVATE (mirrors web/src/lib/access.ts): 2 days free with TRIAL_ALERTS alerts, then £5 once
 TRIAL_ALERTS = 5
 PRICE = "£5"
 SITE_URL = os.environ.get("NIMBUS_SITE_URL", "https://nimbus-pi-three.vercel.app").rstrip("/")
@@ -262,6 +265,8 @@ def _gate(db: httpx.Client, telegram: "_Telegram | None", people: list[dict]) ->
     budget: dict[str, int | None] = {}
     for person in people:
         profile = profiles.get(person["user_id"]) or {}
+        if PRIVATE and not profile.get("is_admin"):
+            continue  # private: no alerts and no trial or payment messages for anyone else
         state = access_state(profile, now)
         if state == "locked":
             if telegram is not None and not profile.get("trial_notice_at"):
@@ -433,7 +438,7 @@ def send_reminders() -> None:
 def send_trial_reminders() -> None:
     """Once, about TRIAL_REMIND_HOURS before a free trial ends: what stops, and the £5 link."""
     token = os.environ.get("TELEGRAM_BOT_TOKEN")
-    if not token:
+    if not token or PRIVATE:
         return
     now = datetime.now(timezone.utc)
     stamp = lambda t: t.strftime("%Y-%m-%dT%H:%M:%SZ")  # noqa: E731

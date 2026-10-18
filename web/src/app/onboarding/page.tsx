@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { PRIVATE } from "@/lib/access";
 import { withDefaults } from "@/lib/preferences";
 import { createClient } from "@/lib/supabase/server";
 import { OnboardingFlow } from "./onboarding-flow";
@@ -11,9 +12,10 @@ export default async function OnboardingPage() {
   if (!user) redirect("/login");
 
   const [{ data: profile }, { data: telegram }] = await Promise.all([
-    supabase.from("profiles").select("first_name,last_name,preferences").eq("id", user.id).maybeSingle(),
+    supabase.from("profiles").select("first_name,last_name,preferences,is_admin").eq("id", user.id).maybeSingle(),
     supabase.from("notification_channels").select("id").eq("channel", "telegram").eq("enabled", true).limit(1),
   ]);
+  if (PRIVATE && !profile?.is_admin) redirect("/private");
 
   return (
     <OnboardingFlow

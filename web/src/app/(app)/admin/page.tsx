@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { InviteCard } from "@/components/invite-card";
 import { createClient } from "@/lib/supabase/server";
 import { timeAgo } from "@/lib/time";
-import { PRICE, accessState, timeLeft } from "@/lib/access";
+import { PRICE, PRIVATE, accessState, timeLeft } from "@/lib/access";
 import { decide, saveSettings, setChannelField, setPaid } from "./actions";
 
 type Member = {
@@ -97,10 +97,14 @@ export default async function AdminPage(props: PageProps<"/admin">) {
   return (
     <main className="mx-auto w-full max-w-[760px] px-6 py-12">
       <h1 className="m-0 font-serif text-[46px] font-normal leading-none tracking-[-0.03em]">Admin</h1>
-      <p className="mt-3 text-[15px] text-tx2">Members, money and links. Anyone can sign up: 2 days free, then {PRICE} once. Only you can see this page.</p>
+      <p className="mt-3 text-[15px] text-tx2">
+        {PRIVATE ? "Nimbus is private: only you can sign in. No sign-ups, trial or payments." : `Members, money and links. Anyone can sign up: 2 days free, then ${PRICE} once.`} Only you can see this page.
+      </p>
 
       {notice && <p className="mt-6 rounded-xl border border-line2 bg-s1 px-4 py-3 text-sm text-tx2">{notice}</p>}
 
+      {!PRIVATE && (
+        <>
       <InviteCard site={site} />
 
       <h2 className="mb-3 mt-10 text-xs font-semibold uppercase tracking-[0.08em] text-tx3">Money</h2>
@@ -131,6 +135,8 @@ export default async function AdminPage(props: PageProps<"/admin">) {
         </label>
         <button className="h-10 self-start rounded-[10px] bg-sky px-4 text-sm font-medium text-on-sky hover:brightness-105">Save</button>
       </form>
+        </>
+      )}
 
       <h2 className="mb-3 mt-10 text-xs font-semibold uppercase tracking-[0.08em] text-tx3">Your Telegram field channels</h2>
       <div className="flex flex-col gap-3 rounded-2xl border border-line bg-s1 p-5">

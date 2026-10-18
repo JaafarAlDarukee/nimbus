@@ -1,10 +1,11 @@
 import { redirect } from "next/navigation";
 import { PayView } from "@/components/pay-view";
-import { accessState, payLink, timeLeft } from "@/lib/access";
+import { PRIVATE, accessState, payLink, timeLeft } from "@/lib/access";
 import { createClient } from "@/lib/supabase/server";
 
 /** Pay once (Stripe), or see that you're in. Stripe sends people back here with ?paid=1. */
 export default async function PayPage(props: PageProps<"/pay">) {
+  if (PRIVATE) redirect("/");
   const params = await props.searchParams;
   const supabase = await createClient();
   const {

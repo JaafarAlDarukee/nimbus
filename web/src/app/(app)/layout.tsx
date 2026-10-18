@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { AppShell } from "@/components/app-shell";
-import { PRICE, TRIAL_CVS, TRIAL_JOBS, accessState, hoursLeft, timeLeft } from "@/lib/access";
+import { PRICE, PRIVATE, TRIAL_CVS, TRIAL_JOBS, accessState, hoursLeft, timeLeft } from "@/lib/access";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
@@ -16,6 +16,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     supabase.rpc("radar_last_checked"),
     supabase.from("notification_channels").select("id").eq("channel", "telegram").eq("enabled", true).limit(1),
   ]);
+  // Private: only the owner (admins) gets in
+  if (PRIVATE && !profile?.is_admin) redirect("/private");
   if (!profile?.onboarded_at) redirect("/onboarding");
 
   // 2 days free, then pay once (lib/access.ts)
