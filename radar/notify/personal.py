@@ -223,6 +223,10 @@ class _Telegram:
         self.sent = 0
 
     def send(self, chat_id, text: str, markup: dict | None = None) -> bool:
+        return self.send_id(chat_id, text, markup) is not None
+
+    def send_id(self, chat_id, text: str, markup: dict | None = None) -> int | None:
+        """Send a message; its id, or None if it didn't go."""
         payload = {"chat_id": chat_id, "text": text, "parse_mode": "HTML", "disable_web_page_preview": True}
         if markup:
             payload["reply_markup"] = markup
@@ -233,8 +237,13 @@ class _Telegram:
                 continue
             self.sent += response.is_success
             time.sleep(0.05)  # Telegram allows about 30 messages a second across chats
-            return response.is_success
-        return False
+            return response.json().get("result", {}).get("message_id") if response.is_success else None
+        return None
+
+    def pin(self, chat_id, message_id: int) -> None:
+        """Pin a message to the top of the chat, quietly (a failed pin is fine: the message was sent)."""
+        self.http.post(f"https://api.telegram.org/bot{self.token}/pinChatMessage",
+                       json={"chat_id": chat_id, "message_id": message_id, "disable_notification": True})
 
 
 def _claim(db: httpx.Client, user_id: str, opportunity_id: str, channel: str) -> bool:
@@ -583,6 +592,10 @@ def send_morning_digest() -> None:
                        and r["id"] not in tracked_ids and not is_repeat(same_role_key(r), tracker)][:8]
             watch_lines = [watch_status(entry, _watch_rows(db, entry), now) for entry in (prefs.get("watch") or [])[:25]]
             events = [r for r in upcoming if wanted_event(r, prefs)][:8]
-            if telegram.send(person["config"]["chat_id"], digest_text(new_count, closing, watch_lines, events)):
+            chat = person["config"]["chat_id"]
+            message_id = telegram.send_id(chat, digest_text(new_count, closing, watch_lines, events))
+            if message_id is not None:
+                # Pinned to the top of the chat, so it isn't lost among the day's alerts
+                telegram.pin(chat, message_id)
                 db.patch("/profiles", params={"id": f"eq.{uid}"}, json={"digest_sent_on": today}).raise_for_status()
     print(f"Morning digest: {telegram.sent} sent")

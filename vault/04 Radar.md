@@ -130,3 +130,5 @@ Back to [[00 Start Here]] · code in `radar/`
 - `personal._seen_roles` now includes the person's tracker (applications, any stage) as well as alerts sent in 30 days; `is_repeat` also treats near-identical titles at the same employer as the same role (`title_words` / `similar_titles`, same rule as SQL).
 
 - 18 Oct night: `telegram.is_engineering_role` (is_engineering and not business/creative) gates personal alerts and welcome matches; the main channel is unchanged (everything UK/IE).
+
+- 23 Oct: owner hadn't noticed the morning digest (sent 22 Oct 07:32, buried among alerts): the bot now pins it to the top of the chat (`_Telegram.send_id`, `pin`).
