@@ -157,6 +157,7 @@ export default async function AdminPage(props: PageProps<"/admin">) {
               <option value="computing">Computing</option>
               <option value="science">Science</option>
               <option value="creative">Creative</option>
+              <option value="summary">Morning summary</option>
             </select>
             <button className="h-10 rounded-[10px] bg-sky px-4 text-sm font-medium text-on-sky hover:brightness-105">Save</button>
           </form>

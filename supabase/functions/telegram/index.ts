@@ -255,7 +255,33 @@ async function onMessage(msg: any) {
 }
 
 // deno-lint-ignore no-explicit-any
+const CHANNEL_USES: Record<string, string> = {
+  summary: "the morning summary", engineering: "engineering roles", medical: "medical and health roles", business: "business roles",
+  computing: "computing roles", science: "science roles", creative: "creative roles", none: "nothing for now",
+};
+
+/** "c:<use>:<channel id>": the owner chose what one of their channels gets */
+async function onChannelChoice(cb: any) {
+  const answer = (text: string) => tg("answerCallbackQuery", { callback_query_id: cb.id, text });
+  const [, use, channel] = String(cb.data).split(":");
+  const chatId: number | undefined = cb.message?.chat?.id;
+  if (!chatId || !(use in CHANNEL_USES) || !/^-?\d+$/.test(channel ?? "")) return answer("That button has expired.");
+  const userId = await userForChat(chatId);
+  const { data: profile } = userId ? await db.from("profiles").select("is_admin").eq("id", userId).maybeSingle() : { data: null };
+  if (!profile?.is_admin) return answer("Only Nimbus's owner can set this.");
+  const { data: row } = await db.from("telegram_channels").update({ field: use === "none" ? null : use }).eq("chat_id", channel).select("title").maybeSingle();
+  if (!row) return answer("That channel isn't connected any more.");
+  await answer("Saved.");
+  await tg("editMessageText", {
+    chat_id: chatId,
+    message_id: cb.message.message_id,
+    parse_mode: "HTML",
+    text: `✅ <b>${escape(row.title ?? "Your channel")}</b> gets ${CHANNEL_USES[use]}.${use === "summary" ? " The next one arrives just after 7:30 am." : ""}`,
+  });
+}
+
 async function onButton(cb: any) {
+  if (String(cb.data ?? "").startsWith("c:")) return onChannelChoice(cb);
   const chatId: number | undefined = cb.message?.chat?.id;
   const [action, opportunityId] = String(cb.data ?? "").split(":");
   const answer = (text: string) => tg("answerCallbackQuery", { callback_query_id: cb.id, text });
@@ -332,7 +358,22 @@ async function onChannelMember(update: any) {
   const status = update.new_chat_member?.status;
   if (status === "administrator") {
     await db.from("telegram_channels").upsert({ chat_id: chatId, title }, { onConflict: "chat_id" });
-    await say(update.from.id, `✅ Nimbus can post in <b>${escape(title)}</b>. Pick its field on Admin: ${SITE}/admin`);
+    // Ask what it's for, with buttons (no need for the website)
+    const choice = (label: string, use: string) => ({ text: label, callback_data: `c:${use}:${chatId}` });
+    await tg("sendMessage", {
+      chat_id: update.from.id,
+      parse_mode: "HTML",
+      text: `✅ Nimbus can post in <b>${escape(title)}</b>. What should it get?`,
+      reply_markup: {
+        inline_keyboard: [
+          [choice("☀️ Morning summary", "summary")],
+          [choice("Engineering", "engineering"), choice("Medical & health", "medical")],
+          [choice("Business", "business"), choice("Computing", "computing")],
+          [choice("Science", "science"), choice("Creative", "creative")],
+          [choice("Nothing for now", "none")],
+        ],
+      },
+    });
   } else if (status === "left" || status === "kicked" || status === "member") {
     await db.from("telegram_channels").delete().eq("chat_id", chatId);
     await say(update.from.id, `Nimbus will no longer post in <b>${escape(title)}</b>.`);

@@ -132,3 +132,6 @@ Back to [[00 Start Here]] · code in `radar/`
 - 18 Oct night: `telegram.is_engineering_role` (is_engineering and not business/creative) gates personal alerts and welcome matches; the main channel is unchanged (everything UK/IE).
 
 - 23 Oct: owner hadn't noticed the morning digest (sent 22 Oct 07:32, buried among alerts): the bot now pins it to the top of the chat (`_Telegram.send_id`, `pin`).
+
+## 23 Oct: morning summary channel
+- Owner wanted the morning summary on its own (it was buried among alerts). When the bot is made admin of a new channel it now asks with buttons what the channel gets (`onChannelChoice`, callback `c:<use>:<chat id>`, owner only): ☀️ Morning summary, a field, or nothing. `telegram_channels.field` allows `summary` (migration `20261023000000_summary_channel.sql`); `send_morning_digest` sends the owner's summary there (else pinned in the bot chat); field channels skip it.

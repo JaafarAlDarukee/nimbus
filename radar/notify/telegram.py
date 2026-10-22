@@ -150,7 +150,8 @@ def _field_channels() -> dict[str, str]:
     try:
         from ..store import _fetch_all, client
         with client() as db:
-            return {c["chat_id"]: c["field"] for c in _fetch_all(db, "/telegram_channels", {"select": "chat_id,field", "field": "not.is.null"})}
+            channels = _fetch_all(db, "/telegram_channels", {"select": "chat_id,field", "field": "not.is.null"})
+            return {c["chat_id"]: c["field"] for c in channels if c["field"] in FIELD_TAGS}  # not the morning-summary one
     except Exception as error:  # the main channel still posts
         print(f"Telegram: couldn't load the field channels ({type(error).__name__})")
         return {}

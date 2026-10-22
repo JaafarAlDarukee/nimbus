@@ -576,6 +576,9 @@ def send_morning_digest() -> None:
         upcoming = [] if local.weekday() != 0 else _fetch_all(db, "/opportunities", {
             "select": WELCOME_COLUMNS, "status": "eq.open", "kind": "eq.event", "remote": "not.is.true",
             "or": f"(closes_at.is.null,closes_at.gt.{now.isoformat()})", "order": "closes_at.nullslast"})
+        # The owner's private morning-summary channel, if they made one (Telegram buttons when the bot joins)
+        summary_channels = [c["chat_id"] for c in _fetch_all(db, "/telegram_channels", {"select": "chat_id", "field": "eq.summary"})]
+        admins = {p["id"] for p in _fetch_all(db, "/profiles", {"select": "id", "is_admin": "is.true"})}
         telegram = _Telegram(token)
         for person in people:
             profile = profiles.get(person["user_id"]) or {}
@@ -592,10 +595,16 @@ def send_morning_digest() -> None:
                        and r["id"] not in tracked_ids and not is_repeat(same_role_key(r), tracker)][:8]
             watch_lines = [watch_status(entry, _watch_rows(db, entry), now) for entry in (prefs.get("watch") or [])[:25]]
             events = [r for r in upcoming if wanted_event(r, prefs)][:8]
-            chat = person["config"]["chat_id"]
-            message_id = telegram.send_id(chat, digest_text(new_count, closing, watch_lines, events))
-            if message_id is not None:
-                # Pinned to the top of the chat, so it isn't lost among the day's alerts
-                telegram.pin(chat, message_id)
+            text = digest_text(new_count, closing, watch_lines, events)
+            if uid in admins and summary_channels:
+                # Its own channel: never buried among the job alerts
+                sent = any([telegram.send(channel, text) for channel in summary_channels])
+            else:
+                chat = person["config"]["chat_id"]
+                message_id = telegram.send_id(chat, text)
+                sent = message_id is not None
+                if sent:
+                    telegram.pin(chat, message_id)  # pinned to the top, so it isn't lost among the day's alerts
+            if sent:
                 db.patch("/profiles", params={"id": f"eq.{uid}"}, json={"digest_sent_on": today}).raise_for_status()
     print(f"Morning digest: {telegram.sent} sent")
