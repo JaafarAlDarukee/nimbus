@@ -52,3 +52,12 @@ Nimbus (owner to pick):
 4. **Events abroad stream**: in-person engineering hackathons, competitions and summer programmes in Europe / North America / Middle East to the personal bot (or an Events channel); sources to check (terms first): Devpost and MLH (have), Junction, HackZurich, START Hack, EU space hackathons (Cassini, ActInSpace), IAESTE.
 5. **Stage reminders**: online-test practice when a role moves to "Online test", interview prep when "Interview".
 Owner (not code): CV numbers in every bullet + LinkedIn profile; 5-10 good applications a week through Nov-Dec, within 48 h of opening; Hull-local employers; IAESTE / university global-opportunities funding for summer abroad; spring weeks / insight days; Formula Student bullet with a number; Hull careers service mock interviews; numerical/SJT practice.
+
+## Next sources (24 Oct)
+- **Read only new links' pages** in job lists (skip roles already saved), so Reckitt/Kier/RWE can be checked every 15 minutes instead of 6 hours.
+- **INEOS** (`careers.ineos.com/jobs/<id>/details`, no title in the link, no dates): needs its own reader.
+- **Taleo** reader (Arup: `arupjobs.taleo.net`).
+- JavaScript careers sites with no known hiring system: JCB, McLaren, Toyota UK, National Grid, Mott MacDonald, Ideal Heating, Network Rail, Balfour Beatty, Alstom, Yorkshire Water, Croda, Williams, Aston Martin, Honda. Look in the browser's network tab for the JSON they load (as with Oracle), one by one.
+- Ford's current careers site (the Oracle one lists 0 jobs).
+- Unreachable or robots.txt says no: BMW, Ørsted, Tata Steel, Spencer Group, AtkinsRéalis, WSP, Leyland (only via job-site emails).
+- More hiring systems seen on UK sites: Recruitee, Teamtailor, Pinpoint, Eploy, Tribepad.

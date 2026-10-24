@@ -39,3 +39,6 @@ $env:Path = [Environment]::GetEnvironmentVariable('Path','Machine') + ';' + [Env
 
 ## Secrets (owner runs these)
 `gh secret set NAME` then paste (input hidden). See [[08 Accounts and secrets]].
+
+## Try a board before it goes live (24 Oct)
+GitHub → Actions → **Radar test (no saving)** → Run workflow → employers separated by commas (part of the name is enough). Tick **details** to see, step by step, why a board finds nothing. Or: `gh workflow run radar-test.yml -f companies="Kier,Reckitt" -f details=true`. Nothing is saved or sent.

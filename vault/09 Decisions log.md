@@ -73,3 +73,8 @@ No Airbus, BAE Systems, Boeing, or any nuclear / weapons / defence company or ro
 - **2026-10-18 · Personal bot: placements and internships only** (owner: "I need to get a placement no matter what"); everything else stays on the website and in the main channel.
 - **2026-10-18 · Website and personal bot: engineering, computing and science only** (no business, health, creative); the main channel still gets everything in the UK and Ireland.
 - **2026-10-19 · All five job-search improvements built** (owner: "all the five points are great"), Telegram-first. Watchlist companies checked every 5 minutes.
+
+## 2026-10-24 · Engineering only, company websites first
+- **Main channel and personal bot: engineering only** (owner: "focus on only engineering"): no software developer or lab science roles; embedded/hardware software stays (tagged electrical). The website still shows computing and science.
+- **No AI fit judgement** (owner can't pay for an API and doesn't want "if I fit or not"). The effort goes into more sources straight from employers' own sites, not only Adzuna.
+- **Job sites (LinkedIn, Indeed, Glassdoor) are never scraped**; roles found there are followed through the employer's own careers page (`/watchpage`) or job-alert emails.
