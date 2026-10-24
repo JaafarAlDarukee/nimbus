@@ -190,7 +190,7 @@ def main() -> None:
         check(f"tag {title} @ {company}", tag in disciplines_for(title, "", company), str(disciplines_for(title, "", company)))
     check("planning at an engineering employer isn't engineering", disciplines_for("Town Planning Placement", "", "Siemens") == [])
     check("UX at an engineering employer isn't engineering", disciplines_for("UX Design Summer Intern 2027", "", "Graphcore") == [])
-    check("IT at an F1 team isn't engineering", disciplines_for("IT Placement Opportunities 2026", "", "Aston Martin F1 Team") == [])
+    check("IT at an F1 team is computing", disciplines_for("IT Placement Opportunities 2026", "", "Aston Martin F1 Team") == ["software"])
     check("search engines aren't engines", "mechanical" not in disciplines_for("Search Engine Optimisation Intern", ""))
     check("finance at an engineering employer stays business", disciplines_for("Finance Placement", "", "Rolls-Royce") == ["business"])
     check("unknown employer, no subject", disciplines_for("Summer Internship Program 2027", "", "Intercontinental Exchange") == [])

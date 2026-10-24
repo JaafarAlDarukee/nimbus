@@ -107,7 +107,8 @@ DISCIPLINES: dict[str, re.Pattern] = {
         r"\bfull[- ]?stack\b", r"\bfront[- ]?end\b", r"\bback[- ]?end\b", r"\bcloud\b", r"\bsite reliability\b", r"\bsre\b",
         r"\bweb\b", r"\bmobile\b", r"\bios\b", r"\bandroid\b", r"\bplatform engineer", r"\btechnology (graduate|analyst|programme|intern)",
         r"\binformation security\b", r"\btest automation\b", r"\bgames? (developer|programmer)\b",
-        r"\bit (support|service\w*|technician|engineer\w*|infrastructure|helpdesk)\b", r"\b(compiler|helpdesk|service desk)\b",
+        r"\bit (support|service\w*|technician|engineer\w*|infrastructure|helpdesk|placement\w*|intern\w*|graduate|apprentic\w*|analyst)\b",
+        r"\binformation technology\b", r"\b(compiler|helpdesk|service desk)\b",
     ),
     # Science and health, for students outside engineering (Biomedical Science, Medicine, Marine Biology...)
     "biomedical": _rx(
