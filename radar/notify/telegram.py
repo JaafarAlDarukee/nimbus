@@ -58,6 +58,18 @@ def is_engineering(row: dict) -> bool:
 NOT_ENGINEERING = {"business", "creative"}
 
 
+# Engineering subjects, without computing ("software") or science on their own
+ENGINEERING_FIELDS = ENGINEERING - {"software", "science"}
+
+
+def is_engineering_only(row: dict) -> bool:
+    """Engineering roles only, for the main channel and the personal bot (owner, 24 Oct): an
+    engineering subject (embedded or hardware software counts: it's tagged electrical too), never
+    software- or science-only, business or creative. The website still shows computing and science."""
+    tags = set(row.get("disciplines") or [])
+    return bool(tags & ENGINEERING_FIELDS) and not (tags & NOT_ENGINEERING)
+
+
 def is_engineering_role(row: dict) -> bool:
     """Engineering, computing or science, and not business or creative: what the website and the
     personal bot show (owner, 18 Oct). The same rule as web/src/lib/preferences.ts engineeringOnly."""
@@ -185,7 +197,8 @@ def channel_outbox(rows: list[dict], main: str, field_channels: dict[str, str]) 
     Roles elsewhere aren't posted (they stay on the website for people who chose those places)."""
     # Defence roles stay out of the channels (they're only for people who opt in on the website)
     home = [r for r in rows if r.get("country") in ALERT_COUNTRIES and not r.get("defence")]
-    outbox = {main: _messages(home, "📋 <b>{n} more new roles in the UK and Ireland</b>")}
+    # The main channel: engineering roles only (owner, 24 Oct); field channels keep their own subjects
+    outbox = {main: _messages([r for r in home if is_engineering_only(r)], "📋 <b>{n} more new engineering roles in the UK and Ireland</b>")}
     for channel, field in field_channels.items():
         if channel != main:
             outbox[channel] = _messages([r for r in home if field in fields_for(r)], f"📋 <b>{{n}} more new {FIELD_NAMES[field]} roles</b>")

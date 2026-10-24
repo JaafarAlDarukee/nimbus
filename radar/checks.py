@@ -238,7 +238,7 @@ def main() -> None:
     us = {**uk, "id": "us", "country": "US"}
     nurse = {**uk, "id": "nhs", "title": "Trainee Nurse", "disciplines": ["healthcare"], "country": "IE"}
     box = tg.channel_outbox([uk, us, nurse, {**uk, "id": "bae", "defence": True}], "main", {"eng": "engineering", "med": "medical"})
-    check("channels: UK and Ireland only, nothing abroad", len(box["main"]) == 2 and len(box["eng"]) == 1 and len(box["med"]) == 1
+    check("channels: UK and Ireland only, nothing abroad", len(box["main"]) == 1 and len(box["eng"]) == 1 and len(box["med"]) == 1
           and not any("abroad" in text or "US" in text for messages in box.values() for text, _ in messages), str({k: len(v) for k, v in box.items()}))
     check("every channel's messages delivered, taking turns", count == 5 and delivered.count("main") == 3 and delivered[:2] in (["main", "eng"], ["eng", "main"]), str(delivered))
     check("muted employers stay muted", not wanted({**channel_rows[3], "company_name": "Muted Co"}, {**mech, "muted": ["Muted Co"]}, fm))
@@ -252,6 +252,9 @@ def main() -> None:
     check("private: no trial or payment messages", personal_alerts.PRIVATE is True)
     from .notify.telegram import is_engineering_role
     check("engineering, computing and science stay", all(is_engineering_role({"disciplines": d, "title": "x"}) for d in (["mechanical"], ["software"], ["science"], ["electrical", "software"])))
+    from .notify.telegram import is_engineering_only
+    check("bot and channel: engineering only", all(is_engineering_only({"disciplines": d}) for d in (["mechanical"], ["electrical", "software"], ["engineering"]))
+          and not any(is_engineering_only({"disciplines": d}) for d in (["software"], ["science"], ["business", "mechanical"], ["healthcare"], [])))
     check("business, health and creative go", not any(is_engineering_role({"disciplines": d, "title": "x"}) for d in (["business"], ["business", "software"], ["healthcare"], ["creative"])))
     check("watchlist matches the employer's other names", m.watched_as("Smith & Nephew UK Limited", ["Smith+Nephew"]) == "Smith+Nephew"
           and m.watched_as("Siemens Energy", ["Siemens"]) == "Siemens" and m.watched_as("Jaguar Land Rover Limited", ["JLR"]) == "JLR"

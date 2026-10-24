@@ -19,7 +19,7 @@ from ..match import company_key, filters_for, fit, is_match, is_muted, watched_a
 from ..store import _fetch_all, client
 from ..sources.inbox import SITES
 from ..sources.event_tags import REGIONS
-from .telegram import ALERT_COUNTRIES, ENGINEERING, KIND_LABELS, is_engineering, is_engineering_role
+from .telegram import ALERT_COUNTRIES, ENGINEERING_FIELDS, KIND_LABELS, is_engineering, is_engineering_only
 
 # "Your free trial ends soon" this many hours before it does (once)
 TRIAL_REMIND_HOURS = 12
@@ -162,13 +162,13 @@ def wanted(row: dict, prefs: dict, filters: tuple) -> bool:
 def wanted_event(row: dict, prefs: dict) -> bool:
     """Hackathons, competitions and fairs you can go to: in person, in the UK, Ireland, Europe, North
     America or the Middle East (owner, 19 Oct: "I want to get into hackathons and stuff abroad"),
-    engineering, computing or science, or open to any subject."""
+    engineering (owner, 24 Oct: engineering only) or open to any subject."""
     if row.get("kind") != "event" or row.get("remote") or row.get("defence") or is_muted(row, prefs):
         return False
     if row.get("country") not in ALERT_COUNTRIES | REGIONS:
         return False
     tags = set(row.get("disciplines") or [])
-    return not tags or bool(tags & ENGINEERING)
+    return not tags or bool(tags & ENGINEERING_FIELDS)  # open to any subject, or an engineering one
 
 
 def open_on_nimbus(row: dict) -> str:
@@ -344,11 +344,11 @@ def send_matches(rows: list[dict]) -> None:
                     continue
                 watched = watched_as(row.get("company_name") or "", watch)
                 if watched and row.get("kind") in WATCH_KINDS and row.get("country") in ALERT_COUNTRIES and not row.get("defence") \
-                        and is_engineering_role(row) and not is_muted(row, prefs):
+                        and is_engineering_only(row) and not is_muted(row, prefs):
                     rank = 10  # your watched companies first
                 elif row.get("kind") == "event" and wanted_event(row, prefs):
                     rank = 5
-                elif row.get("kind") in BOT_KINDS and is_engineering_role(row) and wanted(row, prefs, filters):
+                elif row.get("kind") in BOT_KINDS and is_engineering_only(row) and wanted(row, prefs, filters):
                     rank = fit(row, prefs, filters)[0]
                 else:
                     continue
@@ -407,7 +407,7 @@ def send_welcome() -> None:
             profile = profiles.get(person["user_id"]) or {}
             prefs = with_defaults(profile.get("preferences"))
             filters = filters_for(prefs)
-            ranked = sorted(((fit(r, prefs, filters), r) for r in recent if r.get("kind") in BOT_KINDS and is_engineering_role(r) and is_match(r, prefs, filters)),
+            ranked = sorted(((fit(r, prefs, filters), r) for r in recent if r.get("kind") in BOT_KINDS and is_engineering_only(r) and is_match(r, prefs, filters)),
                             key=lambda f: -f[0][0])
             fits, keys = [], []
             for f in ranked:
@@ -591,7 +591,7 @@ def send_morning_digest() -> None:
                                                            "sent_at": f"gt.{(now - DAY).isoformat()}"}))
             tracker = _seen_roles(db, uid).get(uid, [])
             tracked_ids = {a["opportunity_id"] for a in _fetch_all(db, "/applications", {"select": "opportunity_id", "user_id": f"eq.{uid}"})}
-            closing = [r for r in closing_soon if r.get("kind") in BOT_KINDS and is_engineering_role(r) and wanted(r, prefs, filters)
+            closing = [r for r in closing_soon if r.get("kind") in BOT_KINDS and is_engineering_only(r) and wanted(r, prefs, filters)
                        and r["id"] not in tracked_ids and not is_repeat(same_role_key(r), tracker)][:8]
             watch_lines = [watch_status(entry, _watch_rows(db, entry), now) for entry in (prefs.get("watch") or [])[:25]]
             events = [r for r in upcoming if wanted_event(r, prefs)][:8]
