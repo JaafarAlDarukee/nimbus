@@ -132,6 +132,10 @@ async def enrich(job: RawJob, http: Fetcher) -> RawJob:
     title = _TITLE_TAG.search(page)
     if title:
         job.title = best_title(html_to_text(title.group(1)), job.title, job.company)
+        # "Industrial Placement - Quantity Surveyor 2027 - Leeds, West Yorkshire, United Kingdom": the place goes to the location
+        head, dash, last = job.title.rpartition(" - ")
+        if dash and head and "," in last and (country := guess_country(last)):
+            job.title, job.location, job.country = head, last, country
     if not job.location and (place := place_from_slug(job.raw.get("slug", ""), job.title)):
         job.location = place
         job.country = job.country or ("GB" if _POSTCODE.search(place) else guess_country(place))

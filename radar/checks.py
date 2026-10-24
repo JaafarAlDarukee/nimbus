@@ -303,6 +303,18 @@ def main() -> None:
           sitemap.place_from_slug("Kingston upon Hull Supply Future Leadership Graduate Scheme East HU1 1AA",
                                   "Supply Future Leadership Graduate Scheme") == "Kingston upon Hull, East HU1 1AA"
           and sitemap.place_from_slug("Laing Placement", "Something else") == "")
+    class _Page:
+        status_code = 200
+        text = "<title>Industrial Placement - Quantity Surveyor 2027 - Leeds, West Yorkshire, United Kingdom | Kier Careers</title>"
+
+    class _Http:
+        async def get(self, url):
+            return _Page()
+
+    kier = _asyncio.run(sitemap.enrich(RawJob(company="Kier", title="Industrial Placement Quantity Surveyor 2027 Leeds", url="u",
+                                              source_kind="sitemap", location="United Kingdom", country="GB"), _Http()))
+    check("job page: the place leaves the title", (kier.title, kier.location) == ("Industrial Placement - Quantity Surveyor 2027",
+                                                                                 "Leeds, West Yorkshire, United Kingdom"), kier.title)
     check("not for students: armed forces scheme", classify(RawJob(company="Severn Trent", title="Armed Forces Placement Scheme", url="u",
                                                                     source_kind="sitemap")) is None)
     check("careers page: menu links skipped", page.student_links('<a href="/careers/placements">Industry Placements</a>'
