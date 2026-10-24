@@ -51,6 +51,8 @@ STAFF_ROLE = _rx(
     r"\bsenior\b", r"\bprincipal\b", r"\bhead of\b", r"\bdirector\b", r"\brecruit(er|ment|ing)\b",
     r"\bmanager\b", r"\bcoordinator\b", r"\bdelivery lead\b", r"\bpartner\b", r"\bprofessor\b", r"\blecturer\b",
     # "Staff Engineer" is senior; an NHS "Staff Nurse" is a newly qualified nurse
+    # Schemes for service leavers and career returners, not students
+    r"\barmed forces\b", r"\bservice leavers?\b", r"\b(career )?returners?\b",
     r"\bstaff (engineer|scientist|developer|software|data|accountant|product)", r"\blead (engineer|scientist|developer)\b", r"\btalent sourcer\b", r"\bpostdoc", r"\bpost-doctoral\b",
 )
 

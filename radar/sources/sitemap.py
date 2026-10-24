@@ -17,6 +17,7 @@ from ..text import html_to_text, parse_iso
 MAX_CHILD_SITEMAPS = 20
 _UUID = re.compile(r"[-_][0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$", re.I)
 _TRAILING_ID = re.compile(r"[-_]\d{4,}$")
+_POSTCODE = re.compile(r"\b[A-Z]{1,2}\d[A-Z\d]? ?\d[A-Z]{2}\b")  # a full UK postcode, e.g. HU1 1AA
 _COUNTRY_TAIL = re.compile(r"(?:^|[-_])(united[-_]kingdom|uk|gb|england|scotland|wales|northern[-_]ireland|ireland)$", re.I)
 _TITLE_TAG = re.compile(r"<title[^>]*>(.*?)</title>", re.I | re.S)
 _META_DESC = re.compile(r'<meta[^>]+name="description"[^>]+content="([^"]*)"', re.I)
@@ -78,6 +79,7 @@ async def fetch(board: Board, http: Fetcher, tier: str) -> list[RawJob]:
         if marker not in url:
             continue
         title, location = _title_from_url(url, marker)
+        slug = [p for p in unquote(urlsplit(url).path).split(marker, 1)[-1].split("/") if p and not p.isdigit()]
         jobs.append(
             RawJob(
                 company=board.company,
@@ -87,6 +89,7 @@ async def fetch(board: Board, http: Fetcher, tier: str) -> list[RawJob]:
                 location=location,
                 country=guess_country(location) or ("GB" if uk_only else None),
                 posted_at=parse_iso(lastmod),
+                raw={"slug": re.sub(r"[-_]+", " ", _TRAILING_ID.sub("", _UUID.sub("", slug[-1]))).strip() if slug else ""},
             )
         )
     return jobs
@@ -96,16 +99,29 @@ def _words(text: str) -> set[str]:
     return set(re.findall(r"[a-z0-9]+", text.lower()))
 
 
-def best_title(page_title: str, slug_title: str) -> str:
-    """The part of a job page's <title> that names the role: "Kier Careers | Site Engineer Placement"
-    or "Site Engineer Placement - Kier" -> "Site Engineer Placement". Keeps the URL's title when no
-    part of the page title shares its words (a page titled just "Careers")."""
-    parts = [p.strip() for p in re.split(r"\s*\|\s*|\s+[-–—]\s+", page_title) if p.strip()]
+def best_title(page_title: str, slug_title: str, company: str = "") -> str:
+    """The part of a job page's <title> that names the role: "Kier Careers | Industrial Placement -
+    Quantity Surveyor 2027 - Kier" -> "Industrial Placement - Quantity Surveyor 2027". Keeps the
+    URL's title when no part of the page title shares its words (a page titled just "Careers")."""
     slug = _words(slug_title)
-    best = max(parts, key=lambda p: len(slug & _words(p)), default="")
-    if not best or not slug & _words(best):
-        return slug_title
+    brand = _words(company) | {"careers", "jobs", "job", "details"}
+    best, score = "", 0
+    for segment in re.split(r"\s*\|\s*", page_title):
+        pieces = [p.strip() for p in re.split(r"\s+[-–—]\s+", segment) if p.strip()]
+        kept = " - ".join(p for p in pieces if slug & (_words(p) - brand))
+        if len(slug & _words(kept)) > score:
+            best, score = kept, len(slug & _words(kept))
     return re.sub(r"\s+job details$", "", best, flags=re.I).strip() or slug_title
+
+
+def place_from_slug(slug: str, title: str) -> str:
+    """Career sites often put the place around the title in the link: "Kingston-upon-Hull-Supply-
+    Graduate-Scheme-East-HU1-1AA" with title "Supply Graduate Scheme" -> "Kingston upon Hull, East HU1 1AA"."""
+    words = slug.split()
+    inside = [i for i, w in enumerate(words) if w.lower() in _words(title)]
+    if not inside:
+        return ""
+    return ", ".join(p for p in (" ".join(words[: inside[0]]), " ".join(words[inside[-1] + 1:])) if p)
 
 
 async def enrich(job: RawJob, http: Fetcher) -> RawJob:
@@ -115,7 +131,10 @@ async def enrich(job: RawJob, http: Fetcher) -> RawJob:
     page = response.text
     title = _TITLE_TAG.search(page)
     if title:
-        job.title = best_title(html_to_text(title.group(1)), job.title)
+        job.title = best_title(html_to_text(title.group(1)), job.title, job.company)
+    if not job.location and (place := place_from_slug(job.raw.get("slug", ""), job.title)):
+        job.location = place
+        job.country = job.country or ("GB" if _POSTCODE.search(place) else guess_country(place))
     description = _META_DESC.search(page)
     body = html_to_text(page)
     job.description = (html_to_text(description.group(1)) + " " if description else "") + body[:4000]

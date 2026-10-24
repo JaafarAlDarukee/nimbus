@@ -36,6 +36,11 @@ async def check(names: list[str]) -> None:
                 response = await http.get(board.ref.split("|")[0])
                 start = " ".join(response.text[:400].split())
                 print(f"   sitemap: HTTP {response.status_code} {response.headers.get('content-type', '?')} | {start}")
+            if not jobs and board.kind == "oracle":
+                host, _, site = board.ref.partition("|")
+                response = await http.get(f"{host}/hcmRestApi/resources/latest/recruitingCEJobRequisitions?onlyData=true"
+                                          f"&finder=findReqs;siteNumber={site or 'CX_1'},limit=5")
+                print(f"   oracle: HTTP {response.status_code} | {' '.join(response.text[:400].split())}")
             candidates = [j for j in jobs if is_candidate(j)]
             print(f"   student-like {len(candidates)}: " + " · ".join(j.title[:60] for j in candidates[:4]))
             kept, dropped = [], []

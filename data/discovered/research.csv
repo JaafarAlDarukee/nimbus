@@ -53,8 +53,8 @@ Nvidia,workday,https://nvidia.wd5.myworkdayjobs.com/NVIDIAExternalCareerSite,sta
 PayPal,workday,https://paypal.wd1.myworkdayjobs.com/jobs,standard,research 2026-10-05: computing coverage (Workday board found via its jobs API)
 Workday,workday,https://workday.wd5.myworkdayjobs.com/Workday,standard,research 2026-10-05: computing coverage (Workday board found via its jobs API)
 Equinor,workday,https://equinor.wd3.myworkdayjobs.com/EQNR,standard,research 2026-10-24 (careers probe): Workday
-Reckitt,sitemap,https://careers.reckitt.com/sitemap.xml|/job/,priority,research 2026-10-24: SuccessFactors career site job list (incl. Hull)
-Bentley Motors,sitemap,https://careers.bentleymotors.com/sitemap.xml|/job/,priority,research 2026-10-24: SuccessFactors career site job list (placements)
+Reckitt,sitemap,https://careers.reckitt.com/sitemap.xml|/job/,standard,research 2026-10-24: SuccessFactors career site job list (incl. Hull)
+Bentley Motors,sitemap,https://careers.bentleymotors.com/sitemap.xml|/job/,standard,research 2026-10-24: SuccessFactors career site job list (placements)
 Kier,sitemap,https://jobs.kier.co.uk/sitemap.xml|/jobs/,standard,research 2026-10-24: job list (UK only)
 Laing O'Rourke,sitemap,https://careers.laingorourke.com/sitemap.xml|/jobs/,standard,research 2026-10-24: job list (links name the country)
 RWE,sitemap,https://jobs.rwe.com/sitemap.xml|/job/,standard,research 2026-10-24: SuccessFactors career site job list

@@ -295,8 +295,16 @@ def main() -> None:
     check("job-list link: title and country from the slug", t == ("2027 Building Services Industry Placement", "United Kingdom"), str(t))
     check("job page title: the part naming the role",
           sitemap.best_title("Kier Careers | Site Engineer Placement", "Site Engineer Placement 2027") == "Site Engineer Placement"
+          and sitemap.best_title("Industrial Placement - Quantity Surveyor 2027 - Kier", "Industrial Placement Quantity Surveyor 2027 Leeds",
+                                 "Kier") == "Industrial Placement - Quantity Surveyor 2027"
           and sitemap.best_title("Careers", "Site Engineer Placement") == "Site Engineer Placement"
           and sitemap.best_title("Placement Student Engineering Job Details | Reckitt", "Placement Student Engineering") == "Placement Student Engineering")
+    check("job-list link: the place around the title",
+          sitemap.place_from_slug("Kingston upon Hull Supply Future Leadership Graduate Scheme East HU1 1AA",
+                                  "Supply Future Leadership Graduate Scheme") == "Kingston upon Hull, East HU1 1AA"
+          and sitemap.place_from_slug("Laing Placement", "Something else") == "")
+    check("not for students: armed forces scheme", classify(RawJob(company="Severn Trent", title="Armed Forces Placement Scheme", url="u",
+                                                                    source_kind="sitemap")) is None)
     check("careers page: menu links skipped", page.student_links('<a href="/careers/placements">Industry Placements</a>'
                                                                  '<a href="/careers/grads">Graduate Opportunities</a>', "https://x.example/") == [])
     check("oracle reader registered", "oracle" in __import__("radar.sources", fromlist=["READERS"]).READERS and oracle.PAGES["priority"] == 2)
