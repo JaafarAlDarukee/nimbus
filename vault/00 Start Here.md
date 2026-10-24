@@ -18,6 +18,12 @@ Live site: **https://nimbus-pi-three.vercel.app** (open sign-ups: 2 days free, t
 - **Checks:** `python -m radar.checks` (196 pass on 24 Oct) and `cd web && npx tsx scripts/checks.ts` (163 pass).
 - **Website and channels cover the UK and Ireland only** (owner, 17 Oct, last). Newest summary for the owner: Session log "18 Oct: recap". Run both after any change to matching, tagging, readers or CV logic.
 
+## Done 24 Oct (evening): "the bot has way fewer jobs today"
+- Cause: the engineering-only switch (24 Oct, 02:53) also dropped engineering roles tagged only as software ("Technology Intern - Machining" at GKN) or with no subject ("Engine Build Placement" at Mercedes-AMG HPP): 29 last week. Also the software/science cut itself (owner's choice) and a Saturday. Bot: 14 alerts on 24 Oct vs ~32 a day.
+- Fixed: more subject words and an engineering-employer rule (`classify.ENGINEERING_EMPLOYER`, not consultancies; finance/IT/UX/planning roles excluded), Reclassify run (546 relabelled), **catch-up** sent the 16 missed roles (`radar/notify/catch_up.py`, `catch-up.yml`, placements/internships only, never repeats).
+- **Watchlist set for the owner** (they picked "everything": cars and F1, aerospace, energy, big manufacturers): 33 companies in `profiles.preferences.watch` (JLR, McLaren, Mercedes-AMG, Aston Martin, Bentley Motors, Nissan, Toyota, BMW, MINI, Williams Racing, Red Bull, Ford, Honda, Rolls-Royce, GKN, GE Aerospace, Safran, Collins Aerospace, Marshall, Siemens, Orsted/Ørsted, National Grid, EDF, SSE, RWE, Equinor, Dyson, JCB, Caterpillar, Renishaw, Smith+Nephew, Unilever). Watched companies send any student type, apprenticeships included (19 Oct decision): if Siemens/Safran apprenticeships become noise, offer to drop apprenticeships from `WATCH_KINDS`.
+- Owner isn't very interested in Cummins, Laing O'Rourke, Kier, Bentley, Reckitt, RWE, Severn Trent, Equinor (the new 24 Oct boards). Owner felt lost: give one step at a time.
+
 ## Done 24 Oct: engineering only + more jobs straight from company websites
 Owner: main channel and personal bot **engineering only** (no software developer or lab science roles; embedded/hardware stays); **no AI fit judgement** ("I want to find jobs from the company websites, not only rely on Adzuna"); a better watchlist for placements found on LinkedIn or hidden on company sites.
 - **Engineering only** (`telegram.is_engineering_only`, `ENGINEERING_FIELDS`): main channel, personal bot, events. Watched companies also keep roles whose subject isn't known (`engineering_or_unknown`).
@@ -26,7 +32,7 @@ Owner: main channel and personal bot **engineering only** (no software developer
 - **`/watchpage <link> [Company]`** in the bot: watches a careers page every 5 minutes (stored in `sources`, kind `page`; the company joins the watchlist); replies at once with how many student links it can see, and refuses LinkedIn/Indeed/job-site links (they forbid automatic checking).
 - **Radar test** workflow (`radar-test.yml`, run by hand): reads named employers' boards without saving; "details" shows why a board finds nothing.
 - Checks: radar 196, web 163. All runs green after the change; the first run added the new boards quietly (no flood of old jobs).
-- **Owner to do:** (1) free Reed key at reed.co.uk/developers → `gh secret set REED_API_KEY`; (2) paste a /watch list; (3) /watchpage for any hidden careers page found via LinkedIn; (4) friends' accounts, channel members (below).
+- **Owner to do:** (1) free Reed key at reed.co.uk/developers → `gh secret set REED_API_KEY`; (2) ~~paste a /watch list~~ done by Claude (evening); (3) /watchpage for any hidden careers page found via LinkedIn; (4) friends' accounts, channel members (below).
 
 ## Done 19 Oct: the five job-search improvements (all in Telegram)
 1. **Watchlist**: bot commands `/watch A, B`, `/unwatch A`, `/watchlist` (supabase/functions/telegram `onWatch`, `coverage`): stored in `profiles.preferences.watch`; each company shows ✅ careers site read / 📧 job-site emails only / ❓ not covered (noted in `company_suggestions`). Watched companies' roles (any student type, engineering only) alert first with 🔔 (`personal.watched_as`, `WATCH_KINDS`). **Checked every 5 minutes**: `radar-watch.yml` (`run.py --watch`, own concurrency group), pg_cron `nimbus-radar-watch` `*/5`. Owner hasn't added companies yet (suggested list given).
