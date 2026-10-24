@@ -1,0 +1,39 @@
+name: Radar test (no saving)
+
+# Run by hand: reads some employers' boards and prints what it finds, without saving or alerting.
+# For trying a new board before it goes live. Logs show public job ads only.
+on:
+  workflow_dispatch:
+    inputs:
+      companies:
+        description: "Employers to read, separated by commas (part of the name is enough)"
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: radar/requirements.txt
+      - run: pip install -r radar/requirements.txt
+      - name: Read the boards
+        env:
+          COMPANIES: ${{ inputs.companies }}
+          NIMBUS_LIST_PUBLIC_JOBS: "1"
+        run: |
+          IFS=',' read -ra names <<< "$COMPANIES"
+          for name in "${names[@]}"; do
+            name="$(echo "$name" | xargs)"
+            [ -n "$name" ] || continue
+            echo "::group::$name"
+            python -m radar.run --tier full --only "$name" --dry-run || true
+            echo "::endgroup::"
+          done

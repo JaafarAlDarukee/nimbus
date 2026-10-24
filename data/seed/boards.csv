@@ -11,3 +11,4 @@ Devpost,devpost,hackathons,standard,Hackathons (online and in the UK/Europe) fro
 Major League Hacking,mlh,hackathons,standard,Student hackathons (UK/Europe and online) from MLH's season page
 Nimbus events list,events,events,standard,"Expos, conferences, careers fairs and science festivals researched by hand (data/seed/events.csv)"
 NHS Jobs,nhsjobs,nhs,standard,"Trainee, graduate, apprentice and research roles from NHS Jobs search (entry-level words only)"
+Reed (UK),reed,uk,standard,Reed.co.uk Jobseeker API (needs REED_API_KEY)

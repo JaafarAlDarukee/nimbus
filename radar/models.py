@@ -4,6 +4,12 @@ from dataclasses import dataclass, field
 from datetime import datetime
 
 
+
+class Skipped(Exception):
+    """A reader leaves a board out of this run (a whole site's job list on a 15-minute run, or a
+    source with no key yet). It isn't recorded as checked, so its first real check stays quiet."""
+
+
 @dataclass
 class Board:
     """One place a company lists jobs (a hiring-system board, feed or sitemap)."""

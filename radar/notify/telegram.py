@@ -62,6 +62,12 @@ NOT_ENGINEERING = {"business", "creative"}
 ENGINEERING_FIELDS = ENGINEERING - {"software", "science"}
 
 
+def engineering_or_unknown(row: dict) -> bool:
+    """For a watched company: engineering, or a role whose subject isn't known (a careers-page link
+    like "Summer Internship 2027" has only its title), never software-, science- or business-only."""
+    return not (row.get("disciplines") or []) or is_engineering_only(row)
+
+
 def is_engineering_only(row: dict) -> bool:
     """Engineering roles only, for the main channel and the personal bot (owner, 24 Oct): an
     engineering subject (embedded or hardware software counts: it's tagged electrical too), never

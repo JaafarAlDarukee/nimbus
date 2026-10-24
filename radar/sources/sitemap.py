@@ -10,7 +10,7 @@ from urllib.parse import unquote, urlsplit
 
 from ..geo import guess_country
 from ..http import Fetcher
-from ..models import Board, RawJob
+from ..models import Board, RawJob, Skipped
 from ..text import html_to_text, parse_iso
 
 NS = "{http://www.sitemaps.org/schemas/sitemap/0.9}"
@@ -52,6 +52,8 @@ async def _urls(http: Fetcher, url: str, depth: int = 0) -> list[tuple[str, str 
 
 
 async def fetch(board: Board, http: Fetcher, tier: str) -> list[RawJob]:
+    if tier == "priority" and board.tier != "priority":
+        raise Skipped("a whole site's job list: every 6 hours, unless the board is marked priority")
     sitemap_url, _, marker = board.ref.partition("|")
     marker = marker or "/job"
     jobs = []

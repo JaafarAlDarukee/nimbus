@@ -19,7 +19,7 @@ from ..match import company_key, filters_for, fit, is_match, is_muted, watched_a
 from ..store import _fetch_all, client
 from ..sources.inbox import SITES
 from ..sources.event_tags import REGIONS
-from .telegram import ALERT_COUNTRIES, ENGINEERING_FIELDS, KIND_LABELS, is_engineering, is_engineering_only
+from .telegram import ALERT_COUNTRIES, ENGINEERING_FIELDS, KIND_LABELS, engineering_or_unknown, is_engineering, is_engineering_only
 
 # "Your free trial ends soon" this many hours before it does (once)
 TRIAL_REMIND_HOURS = 12
@@ -75,6 +75,8 @@ def _via(row: dict) -> str | None:
     """"Gradcracker" for a role found in a job-site email, "Adzuna" for the job board."""
     if row.get("source_kind") == "adzuna":
         return "Adzuna"
+    if row.get("source_kind") == "reed":
+        return "Reed"
     if row.get("source_kind") == "inbox":
         return next((s.name for s in SITES if s.job_link.search(row.get("apply_url") or "")), "a job site")
     return None
@@ -203,7 +205,7 @@ def format_match(row: dict, ticks: list[str], watched: str | None = None) -> str
     ]
     if ticks:
         lines.append(e("  ".join(f"✓ {t}" for t in ticks)))
-    if row.get("source_kind") in ("adzuna", "inbox"):
+    if row.get("source_kind") in ("adzuna", "inbox", "reed"):
         lines.append("<i>Found on a job site, so it may have been up for a few days</i>")
     return "\n".join(lines)
 
@@ -344,7 +346,7 @@ def send_matches(rows: list[dict]) -> None:
                     continue
                 watched = watched_as(row.get("company_name") or "", watch)
                 if watched and row.get("kind") in WATCH_KINDS and row.get("country") in ALERT_COUNTRIES and not row.get("defence") \
-                        and is_engineering_only(row) and not is_muted(row, prefs):
+                        and engineering_or_unknown(row) and not is_muted(row, prefs):
                     rank = 10  # your watched companies first
                 elif row.get("kind") == "event" and wanted_event(row, prefs):
                     rank = 5

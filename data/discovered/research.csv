@@ -52,3 +52,20 @@ NatWest Group,workday,https://rbs.wd3.myworkdayjobs.com/RBS,standard,research 20
 Nvidia,workday,https://nvidia.wd5.myworkdayjobs.com/NVIDIAExternalCareerSite,standard,research 2026-10-05: computing coverage (Workday board found via its jobs API)
 PayPal,workday,https://paypal.wd1.myworkdayjobs.com/jobs,standard,research 2026-10-05: computing coverage (Workday board found via its jobs API)
 Workday,workday,https://workday.wd5.myworkdayjobs.com/Workday,standard,research 2026-10-05: computing coverage (Workday board found via its jobs API)
+Equinor,workday,https://equinor.wd3.myworkdayjobs.com/EQNR,standard,research 2026-10-24 (careers probe): Workday
+Reckitt,sitemap,https://careers.reckitt.com/sitemap.xml|/job/,priority,research 2026-10-24: SuccessFactors career site job list (incl. Hull)
+Bentley Motors,sitemap,https://careers.bentleymotors.com/sitemap.xml|/job/,priority,research 2026-10-24: SuccessFactors career site job list (placements)
+Kier,sitemap,https://jobs.kier.co.uk/sitemap.xml|/jobs/,standard,research 2026-10-24: job list
+Laing O'Rourke,sitemap,https://careers.laingorourke.com/sitemap.xml|/jobs/,standard,research 2026-10-24: job list
+RWE,sitemap,https://jobs.rwe.com/sitemap.xml|/job/,standard,research 2026-10-24: SuccessFactors career site job list
+Severn Trent,sitemap,https://www.careers.severntrent.com/sitemap.xml|/job/,standard,research 2026-10-24: SuccessFactors career site job list
+Cummins,oracle,https://fa-espx-saasfaprod1.fa.ocs.oraclecloud.com|CX_1,priority,research 2026-10-24: Oracle Recruiting Cloud (cummins.jobs)
+Ford,oracle,https://efds.fa.em5.oraclecloud.com|CX_1,standard,research 2026-10-24: Oracle Recruiting Cloud
+JCB,page,https://careers.jcb.com,standard,research 2026-10-24: careers site with no readable hiring system; watch for student links
+Aston Martin,page,https://careers.astonmartin.com/en/listing/,standard,research 2026-10-24: job listing page
+Williams Racing,page,https://careers.williamsf1.com,standard,research 2026-10-24: careers site
+Network Rail,page,https://www.networkrail.co.uk/careers,standard,research 2026-10-24: careers page
+Ideal Heating,page,https://idealheating.com/careers,standard,research 2026-10-24: Hull employer careers page
+Mott MacDonald,page,https://www.mottmac.com/en/careers/,standard,research 2026-10-24: careers page
+Balfour Beatty,page,https://www.balfourbeatty.com/careers/careers-at-balfour-beatty,standard,research 2026-10-24: careers page
+Yorkshire Water,page,https://www.yorkshirewater.com/careers,standard,research 2026-10-24: careers page

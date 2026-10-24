@@ -41,6 +41,7 @@ jobs:
               {"command": "watch", "description": "Watch companies: /watch Rolls-Royce, JLR"},
               {"command": "watchlist", "description": "Your companies and what's open"},
               {"command": "unwatch", "description": "Stop watching a company"},
+              {"command": "watchpage", "description": "Watch a careers page: /watchpage link"},
               {"command": "stop", "description": "Pause your alerts"},
           ]})["ok"])
           info = call("getWebhookInfo")["result"]

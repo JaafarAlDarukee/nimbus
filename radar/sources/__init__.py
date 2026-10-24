@@ -1,7 +1,7 @@
 """Readers, one per kind of job source. Each exposes `async fetch(board, http, tier) -> list[RawJob]`
 and may expose `async enrich(job, http) -> RawJob` to fill in the description for shortlisted jobs."""
 
-from . import (adzuna, ashby, devpost, events, greenhouse, inbox, lever, mlh, nhsjobs, rss, sitemap,
+from . import (adzuna, ashby, devpost, events, greenhouse, inbox, lever, mlh, nhsjobs, oracle, page, reed, rss, sitemap,
                smartrecruiters, successfactors, workable, workday)
 
 READERS = {
@@ -14,6 +14,9 @@ READERS = {
     "lever": lever,
     "mlh": mlh,
     "nhsjobs": nhsjobs,
+    "oracle": oracle,
+    "page": page,
+    "reed": reed,
     "rss": rss,
     "sitemap": sitemap,
     "smartrecruiters": smartrecruiters,

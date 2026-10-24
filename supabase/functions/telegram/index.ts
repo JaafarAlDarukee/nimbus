@@ -27,6 +27,7 @@ const TUTORIAL = [
   "• After <b>Applied</b>: tap <b>Online test</b>, <b>Interview</b>, <b>Offer</b> or <b>Rejected</b> as it goes, and I send tips",
   "",
   "🔔 <b>/watch</b> Rolls-Royce, JLR, Dyson: the companies you want most, checked every 5 minutes, their roles first. <b>/watchlist</b> shows them.",
+  "👀 <b>/watchpage</b> link: a careers page with placements hidden on it; I tell you when a new one appears.",
   "",
   "⏰ Deadlines: I remind you the day before anything you asked to be reminded about, and when a role you saved is closing soon.",
   "",
@@ -152,6 +153,47 @@ async function onWatch(chatId: number, text: string) {
   await say(chatId, `🔔 <b>Watching ${next.length} compan${next.length === 1 ? "y" : "ies"}</b> (added ${added.length})\n${lines.join("\n")}\n\nThe moment any role opens at these, you get it first, with a 🔔.`);
 }
 
+/** /watchpage <link> [company]: a careers page with placements "hidden" on it. The radar checks it
+ *  every few minutes and alerts each new placement or internship link (the first check is quiet). */
+async function onWatchPage(chatId: number, text: string) {
+  const userId = await userForChat(chatId);
+  if (!userId) {
+    await say(chatId, "Connect your Nimbus account first: on the website, Profile → Telegram → Connect.");
+    return;
+  }
+  const { data: profile } = await db.from("profiles").select("is_admin,preferences").eq("id", userId).maybeSingle();
+  if (!profile?.is_admin) {
+    await say(chatId, "Only Nimbus's owner can add pages.");
+    return;
+  }
+  const [, link, ...rest] = text.trim().split(/\s+/);
+  let url: URL;
+  try {
+    url = new URL(link ?? "");
+    if (url.protocol !== "https:" && url.protocol !== "http:") throw new Error("not a web page");
+  } catch {
+    await say(chatId, "Send the careers page link after /watchpage, for example:\n/watchpage https://careers.example.com/early-careers JCB");
+    return;
+  }
+  const host = url.hostname.replace(/^www\./, "");
+  const company = rest.join(" ").trim().slice(0, 60) || host.split(".").find((p) => !["careers", "jobs", "www"].includes(p)) || host;
+  const { error } = await db.from("sources").upsert(
+    { kind: "page", url: url.toString(), company_name: company, enabled: true, check_every_minutes: 5 },
+    { onConflict: "kind,url" },
+  );
+  if (error) {
+    await say(chatId, "Couldn't save that page. Try again in a minute.");
+    return;
+  }
+  // Its company goes on the watchlist too, so its roles come first with a 🔔
+  const prefs = (profile.preferences ?? {}) as Record<string, unknown>;
+  const watch = Array.isArray(prefs.watch) ? (prefs.watch as string[]) : [];
+  if (!watch.some((w) => companyKey(w) === companyKey(company))) {
+    await db.from("profiles").update({ preferences: { ...prefs, watch: [...watch, company] } }).eq("id", userId);
+  }
+  await say(chatId, `👀 <b>Watching ${escape(company)}'s page</b>\n${escape(url.toString())}\n\nNimbus checks it every few minutes and sends each new placement or internship link on it, with a 🔔. The first check is quiet (what's there now isn't new).`);
+}
+
 // ---------------------------------------------------------------- stages after Applied, with tips
 const STAGES: Record<string, { stage: string; label: string }> = {
   t: { stage: "online_test", label: "📝 Test ✓" },
@@ -229,6 +271,10 @@ async function onMessage(msg: any) {
     return;
   }
 
+  if (/^\/watchpage(@\w+)?(\s|$)/.test(text)) {
+    await onWatchPage(chatId, text);
+    return;
+  }
   if (/^\/(watchlist|watch|unwatch)(@\w+)?(\s|$)/.test(text)) {
     await onWatch(chatId, text);
     return;

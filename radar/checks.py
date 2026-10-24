@@ -271,6 +271,26 @@ def main() -> None:
     check("watched company with roles open", watch_status("Arup", [{**rows[0], "status": "open"}], now).startswith("✅ Arup: 1 placement"))
     text = digest_text(3, [], ["✅ Arup: 2 placements or internships open"], [])
     check("morning digest", text.startswith("☀️") and "3 new placements" in text and "Your companies" in text)
+    from .sources import oracle, page, reed
+    links = page.student_links('<a href="/jobs/1">Industrial Placement 2027 - Mechanical Engineering</a><a href="/a">Apply now</a>'
+                               '<a href="/b">Early careers</a><a href="https://x.com/c">Summer Internship: Manufacturing</a><a href="/d">Our history</a>',
+                               "https://careers.example.com/students")
+    check("careers page: student links only", [t for _, t in links] == ["Industrial Placement 2027 - Mechanical Engineering", "Summer Internship: Manufacturing"]
+          and links[0][0] == "https://careers.example.com/jobs/1", str(links))
+    r = reed.job_from({"jobId": 1, "employerName": "Acme Ltd", "jobTitle": "Industrial Placement Engineer", "locationName": "Hull",
+                       "date": "23/10/2026", "expirationDate": "20/11/2026", "jobUrl": "https://www.reed.co.uk/jobs/x/1"})
+    check("reed job", r.company == "Acme Ltd" and r.posted_at.day == 23 and r.closes_at.month == 11 and r.source_kind == "reed")
+    from .notify.telegram import engineering_or_unknown
+    check("watched: unknown subject kept, software-only dropped",
+          engineering_or_unknown({"disciplines": []}) and engineering_or_unknown({"disciplines": ["mechanical"]})
+          and not engineering_or_unknown({"disciplines": ["software"]}))
+    import asyncio as _asyncio
+    from .models import Board as _Board
+    from .run import _read
+    skipped = _asyncio.run(_read(_Board(company="Kier", kind="sitemap", ref="https://x.example/sitemap.xml|/jobs/", tier="standard", notes=""),
+                                 None, "priority"))
+    check("a job list is left out of 15-minute runs, not counted as checked", skipped[1] is None and skipped[2] is None, str(skipped))
+    check("oracle reader registered", "oracle" in __import__("radar.sources", fromlist=["READERS"]).READERS and oracle.PAGES["priority"] == 2)
     check("the bot is for placements and internships", personal_alerts.BOT_KINDS == {"placement", "internship", "spring_week", "insight"})
 
     print(f"{ok} passed, {fail} failed")

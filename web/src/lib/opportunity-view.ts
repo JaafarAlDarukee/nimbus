@@ -65,7 +65,7 @@ const DISCIPLINE_WORD: Record<string, string> = {
 
 /** Hosts that belong to hiring systems or job boards rather than the employer: no useful logo there. */
 const NOT_EMPLOYER =
-  /(greenhouse\.io|lever\.co|ashbyhq\.com|workable\.com|smartrecruiters\.com|myworkdayjobs\.com|myworkdaysite\.com|adzuna\.|successfactors\.|sapsf\.|taleo\.net|icims\.com|gradcracker\.com|linkedin\.com|indeed\.|joinhandshake\.|ratemyplacement\.|higherin\.com|devpost\.com|brightnetwork\.|targetjobs\.|prospects\.ac\.uk|teamtailor\.com|pinpointhq\.com|oraclecloud\.com)/i;
+  /(greenhouse\.io|lever\.co|ashbyhq\.com|workable\.com|smartrecruiters\.com|myworkdayjobs\.com|myworkdaysite\.com|adzuna\.|successfactors\.|sapsf\.|taleo\.net|icims\.com|gradcracker\.com|linkedin\.com|indeed\.|joinhandshake\.|ratemyplacement\.|higherin\.com|devpost\.com|brightnetwork\.|targetjobs\.|prospects\.ac\.uk|teamtailor\.com|pinpointhq\.com|oraclecloud\.com|reed\.co\.uk)/i;
 
 function host(url: string): string {
   try {
@@ -205,7 +205,7 @@ export function toView(row: OpportunityRow, prefs: Preferences, filters: MatchFi
   const advertEmail = row.description?.match(/[\w.+-]+@[\w-]+(\.[\w-]+)+/)?.[0];
   // Job-site emails and job boards can't say when a role opened (they resend old ones), so they're
   // never "just opened"; a role first listed over a day before Nimbus found it says so
-  const jobSite = row.source_kind === "inbox" || row.source_kind === "adzuna";
+  const jobSite = row.source_kind === "inbox" || row.source_kind === "adzuna" || row.source_kind === "reed";
   const opened = row.opened_at ?? row.first_seen_at;
   const openedAge = now - new Date(opened).getTime();
   const listedEarlier = new Date(row.first_seen_at).getTime() - new Date(opened).getTime() > 24 * HOUR;
@@ -224,7 +224,7 @@ export function toView(row: OpportunityRow, prefs: Preferences, filters: MatchFi
     found: row.opened_at === null && jobSite ? "from a closing-soon email"
       : listedEarlier ? `listed since ${shortDate(opened)}` : jobSite ? `found ${timeAgo(row.first_seen_at, now)}` : `posted ${timeAgo(opened, now)}`,
     isNew: !jobSite && openedAge < 6 * HOUR,
-    via: row.source_kind === "adzuna" ? "Adzuna" : row.source_kind === "inbox" ? (JOB_SITES.find(([re]) => re.test(row.apply_url))?.[1] ?? "a job site") : null,
+    via: row.source_kind === "adzuna" ? "Adzuna" : row.source_kind === "reed" ? "Reed" : row.source_kind === "inbox" ? (JOB_SITES.find(([re]) => re.test(row.apply_url))?.[1] ?? "a job site") : null,
     ticks,
     why,
     deadline: row.closes_at

@@ -19,7 +19,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 from .http import Fetcher
-from .models import Board, Opportunity, RawJob
+from .models import Board, Opportunity, RawJob, Skipped
 from .pipeline.classify import classify, is_candidate
 from .pipeline.names import clean_company_name
 from .sources import READERS
@@ -52,9 +52,11 @@ def board_key(board: Board) -> str:
     return f"{board.kind}|{board.ref}"
 
 
-async def _read(board: Board, http: Fetcher, tier: str) -> tuple[Board, list[RawJob], str | None]:
+async def _read(board: Board, http: Fetcher, tier: str) -> tuple[Board, list[RawJob] | None, str | None]:
     try:
         return board, await READERS[board.kind].fetch(board, http, tier), None
+    except Skipped:
+        return board, None, None
     except Exception as error:  # one broken board must never stop the others
         return board, [], f"{type(error).__name__}: {error}"
 
@@ -81,14 +83,31 @@ def watched_companies() -> list[str]:
                        for w in ((p.get("preferences") or {}).get("watch") or [])})
 
 
+def db_page_boards(only: str | None) -> list[Board]:
+    """Careers pages the owner added from Telegram (/watchpage), stored in the sources table."""
+    if not (os.environ.get("SUPABASE_URL") and os.environ.get("SUPABASE_SECRET_KEY")):
+        return []
+    try:
+        from .store import _fetch_all, client
+        with client() as db:
+            rows = _fetch_all(db, "/sources", {"select": "company_name,url", "kind": "eq.page", "enabled": "not.is.false"})
+    except Exception as error:  # the rest of the radar still runs
+        print(f"Couldn't load the watched careers pages ({type(error).__name__})")
+        return []
+    boards = [Board(company=r.get("company_name") or "", kind="page", ref=r["url"], tier="priority", notes="telegram /watchpage") for r in rows]
+    return [b for b in boards if not only or only.lower() in b.company.lower()]
+
+
 async def scan(tier: str, only: str | None, watch: list[str] | None = None) -> tuple[list[Opportunity], dict]:
     boards = load_boards(only)
+    known = {(b.kind, b.ref.lower().rstrip("/")) for b in boards}
+    boards += [b for b in db_page_boards(only) if (b.kind, b.ref.lower().rstrip("/")) not in known]
     if watch is not None:
         from .match import watched_as
-        boards = [b for b in boards if b.kind not in ("inbox", "adzuna", "devpost", "mlh", "events", "nhsjobs") and watched_as(b.company, watch)]
+        boards = [b for b in boards if b.kind not in ("inbox", "adzuna", "devpost", "mlh", "events", "nhsjobs", "reed") and watched_as(b.company, watch)]
     http = Fetcher()
     try:
-        results = await asyncio.gather(*(_read(b, http, tier) for b in boards))
+        results = [r for r in await asyncio.gather(*(_read(b, http, tier) for b in boards)) if r[1] is not None]
         # Jobs listed in several countries show up once per country; keep one copy
         unique: dict[str, tuple[Board, RawJob]] = {}
         for board, jobs, _ in results:
@@ -112,7 +131,7 @@ async def scan(tier: str, only: str | None, watch: list[str] | None = None) -> t
             found[opportunity.fingerprint] = opportunity
 
     stats = {
-        "boards": len(boards),
+        "boards": len(results),
         "board_results": [(b, err) for b, _, err in results],
         "failed": [(b.company, b.ref, err) for b, _, err in results if err],
         "jobs_seen": sum(len(jobs) for _, jobs, _ in results),
@@ -126,8 +145,14 @@ def print_report(opportunities: list[Opportunity], stats: dict, seconds: float) 
              "research", "apprenticeship", "scholarship"]
     opportunities.sort(key=lambda o: (o.country != "GB", order.index(o.kind) if o.kind in order else 99, o.company))
     # GitHub Actions logs are public (the repo is public): only print the summary there, never
-    # individual jobs, which may come from someone's own alert emails
-    listed = [] if os.environ.get("GITHUB_ACTIONS") else opportunities
+    # individual jobs, which may come from someone's own alert emails. The hand-run test
+    # (radar-test.yml) lists employers' public job ads, never inbox ones.
+    if not os.environ.get("GITHUB_ACTIONS"):
+        listed = opportunities
+    elif os.environ.get("NIMBUS_LIST_PUBLIC_JOBS"):
+        listed = [o for o in opportunities if o.source_kind != "inbox"]
+    else:
+        listed = []
     for o in listed:
         posted = o.posted_at.strftime("%d %b") if o.posted_at else "?"
         print(f"[{o.kind}] {o.company} | {o.title} | {o.location or '-'} ({o.country or '?'}) | posted {posted}")
