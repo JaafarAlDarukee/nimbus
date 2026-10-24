@@ -176,6 +176,10 @@ async function onWatchPage(chatId: number, text: string) {
     return;
   }
   const host = url.hostname.replace(/^www\./, "");
+  if (JOB_SITES.test(host)) {
+    await say(chatId, "LinkedIn and other job sites don't allow automatic checking. Open the company's own careers page (the link on its website that lists placements) and send me that instead.");
+    return;
+  }
   const company = rest.join(" ").trim().slice(0, 60) || host.split(".").find((p) => !["careers", "jobs", "www"].includes(p)) || host;
   const { error } = await db.from("sources").upsert(
     { kind: "page", url: url.toString(), company_name: company, enabled: true, check_every_minutes: 5 },
@@ -191,7 +195,38 @@ async function onWatchPage(chatId: number, text: string) {
   if (!watch.some((w) => companyKey(w) === companyKey(company))) {
     await db.from("profiles").update({ preferences: { ...prefs, watch: [...watch, company] } }).eq("id", userId);
   }
-  await say(chatId, `👀 <b>Watching ${escape(company)}'s page</b>\n${escape(url.toString())}\n\nNimbus checks it every few minutes and sends each new placement or internship link on it, with a 🔔. The first check is quiet (what's there now isn't new).`);
+  const seen = await studentLinks(url.toString());
+  const now = seen === null
+    ? "I couldn't open it just now; I'll keep trying."
+    : seen > 0
+    ? `I can see ${seen} student role link${seen === 1 ? "" : "s"} on it now. Those aren't new, so no alerts for them.`
+    : "I can't see any placement or internship links on it right now. That's fine if it has none yet. If you can see some in your browser, this page shows them in a way I can't read: open the list of jobs and send me that page's link instead.";
+  await say(chatId, `👀 <b>Watching ${escape(company)}'s page</b>\n${escape(url.toString())}\n\nNimbus checks it every few minutes and sends each new placement or internship link on it, with a 🔔.\n\n${now}`);
+}
+
+const JOB_SITES = /(^|\.)(linkedin\.com|indeed\.(com|co\.uk)|glassdoor\.(com|co\.uk)|reed\.co\.uk|totaljobs\.com|adzuna\.co\.uk)$/i;
+// The radar's own test (radar/sources/page.py): a link whose text names a student role and its subject or year
+const STUDENT_LINK = /\b(placements?|industrial|year in industry|internships?|interns?|undergraduate|graduate|apprentice\w*|summer (scheme|programme|internship)|spring (week|insight)|insight (day|week|programme)|student)\b/i;
+const ROLE_HINT = /\b(20\d\d|engineer\w*|technician|scientist|analyst|designer|developer|manufactur\w*|mechanical|electrical|electronic\w*|civil|chemical|aerospace|automotive|structural|quality|production|process|project|operations|maintenance|design|research|test\w*|systems?|controls?|robotics|materials|energy|nuclear|commercial|supply chain|procurement|software|data)\b/i;
+
+/** How many student-role links the page shows now (one look, as the radar would), or null if it won't open. */
+async function studentLinks(url: string): Promise<number | null> {
+  try {
+    const response = await fetch(url, {
+      headers: { "User-Agent": "Mozilla/5.0 (compatible; NimbusRadar/0.1; student job alerts)" },
+      signal: AbortSignal.timeout(8000),
+    });
+    if (!response.ok) return null;
+    const html = (await response.text()).slice(0, 800_000);
+    const links = new Set<string>();
+    for (const [, href, inner] of html.matchAll(/<a\b[^>]*href="([^"#][^"]*)"[^>]*>([\s\S]*?)<\/a>/gi)) {
+      const text = inner.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+      if (text.length >= 8 && STUDENT_LINK.test(text) && (ROLE_HINT.test(text) || /\d{4,}/.test(href))) links.add(href);
+    }
+    return links.size;
+  } catch {
+    return null;
+  }
 }
 
 // ---------------------------------------------------------------- stages after Applied, with tips
