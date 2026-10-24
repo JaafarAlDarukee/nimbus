@@ -80,7 +80,7 @@ def main() -> None:
                 # The title alone doesn't say, and rows saved before 1 Oct 2026 have no hint kept:
                 # trust the type given when it was saved
                 kind = row["kind"]
-            disciplines = disciplines_for(title, description)
+            disciplines = disciplines_for(title, description, new_names.get(row["id"], row["company_name"] or ""))
             if kind != row["kind"] or sorted(disciplines) != sorted(row["disciplines"] or []):
                 relabel[(kind, tuple(disciplines))].append(row["id"])
 

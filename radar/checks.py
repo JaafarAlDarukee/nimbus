@@ -179,6 +179,22 @@ def main() -> None:
     check("defence hidden unless turned on", not m.is_match(flagged, mech_d, m.filters_for(mech_d)) and m.is_match(flagged, {**mech_d, "defence": True}, m.filters_for(mech_d)))
     check("defence sponsor in a title excluded", excluded("Nanyang Technological University", "NTU x ST Engineering Hackathon"))
     bright = next(s for s in INBOX_SITES if s.name == "Bright Network")
+    for title, company, tag in [
+        ("Technology Intern - Machining", "GKN Aerospace", "manufacturing"), ("Technology Intern - Powder Bed", "GKN Aerospace", "manufacturing"),
+        ("Technology Intern - Automation", "GKN Aerospace", "robotics"), ("Technology Intern - Digital and Simulation", "GKN Aerospace", "mechanical"),
+        ("Technology Intern - Sustainability", "GKN Aerospace", "engineering"), ("Engine Build Placement", "Mercedes Amg Hpp", "mechanical"),
+        ("Build Systems Placement", "Mercedes Amg Hpp", "engineering"), ("Process Safety Placement 2027", "Johnson Matthey", "chemical"),
+        ("Industry Placement - Structures", "Unknown employer", "civil"), ("Silicon Summer Intern 2027", "Graphcore", "electrical"),
+        ("Design Verification Internship 2026", "Analog Devices", "electrical"), ("Summer Intern - Soil Specialist", "Arcadis", "civil"),
+    ]:
+        check(f"tag {title} @ {company}", tag in disciplines_for(title, "", company), str(disciplines_for(title, "", company)))
+    check("planning at an engineering employer isn't engineering", disciplines_for("Town Planning Placement", "", "Siemens") == [])
+    check("UX at an engineering employer isn't engineering", disciplines_for("UX Design Summer Intern 2027", "", "Graphcore") == [])
+    check("IT at an F1 team isn't engineering", disciplines_for("IT Placement Opportunities 2026", "", "Aston Martin F1 Team") == [])
+    check("search engines aren't engines", "mechanical" not in disciplines_for("Search Engine Optimisation Intern", ""))
+    check("finance at an engineering employer stays business", disciplines_for("Finance Placement", "", "Rolls-Royce") == ["business"])
+    check("unknown employer, no subject", disciplines_for("Summer Internship Program 2027", "", "Intercontinental Exchange") == [])
+    check("software at GKN stays software", disciplines_for("Software Engineering Intern", "", "GKN Aerospace") == ["software"])
     check("IT support is not engineering", disciplines_for("IT Support Engineer Internship 2026", "") == ["software"])
     check("insurance technician is business", "engineering" not in disciplines_for("Graduate Placement Support Technician - Insurance Broking", ""))
     higherin = next(s for s in INBOX_SITES if s.name == "Higherin")

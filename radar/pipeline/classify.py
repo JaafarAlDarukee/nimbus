@@ -66,25 +66,28 @@ EVENT_HINTS = {"hackathon", "event"}
 DISCIPLINES: dict[str, re.Pattern] = {
     "mechanical": _rx(
         r"\bmechanical\b", r"\bmech\b", r"\bdesign engineer", r"\bstress\b", r"\bthermo", r"\bfluids?\b", r"\bhvac\b",
-        r"\bcfd\b",
+        r"\bcfd\b", r"(?<!search )(?<!game )(?<!games )(?<!rules )(?<!query )\bengines?\b(?! optimi)", r"\bsimulation\b",
     ),
     "manufacturing": _rx(
         # "production" in the factory sense, not TV or film ("Post Production", "Production Assistant")
         r"\bmanufactur", r"(?<!post )(?<!post-)\bproduction\b(?! (assistant|runner|coordinator|company|data))", r"\bindustrial engineer", r"\bprocess engineer", r"\blean\b",
         r"\bquality engineer", r"\boperations engineer", r"\bcalibration\b", r"\bmetrolog", r"\bmaintenance engineer",
-        r"\bcontinuous improvement\b", r"\boperational excellence\b",
+        r"\bcontinuous improvement\b", r"\boperational excellence\b", r"\bmachining\b", r"\bcnc\b", r"\badditive\b",
+        r"\bpowder bed\b", r"\blmd\b", r"\bfabricat", r"\btooling\b",
     ),
     "robotics": _rx(
         # Automation of machines, not of data or tests ("Data Management & Automation Intern")
         r"\brobot", r"\b(industrial|robotics?|factory|manufacturing|controls?|plc|process|electrical|building|warehouse) automation\b",
         r"(?<!test )(?<!& )(?<!and )\bautomation (engineer\w*|technician|intern\w*|placement|apprentic\w*|graduate)", r"^automation\b",
+        r"[-–:|]\s*automation\b",
         r"\bmechatronic", r"\bcontrol (systems?|engineer)", r"\bcontrols engineer",
         r"\bautonom", r"\bgnc\b",
     ),
     "electrical": _rx(
         r"\belectrical\b", r"\belectronic", r"\bpower systems\b", r"\bembedded\b", r"\bfirmware\b", r"\bhardware\b",
         r"\bhigh voltage\b", r"\bprotection (and|&) control\b", r"\bfpga\b", r"\bsemiconductor", r"\bpcb\b", r"\brf engineer",
-        r"\bsignal processing\b",
+        r"\bsignal processing\b", r"\belectrification\b", r"\bsilicon\b", r"\basic\b", r"\bdesign verification\b", r"\bvlsi\b", r"\brtl\b",
+        r"\bmixed[- ]signal\b", r"\banalog(ue)? (design|ic|circuit|engineer\w*)",
     ),
     "aerospace": _rx(r"\baerospace\b", r"\baeronautic", r"\baircraft\b", r"\bpropulsion\b", r"\bgas turbine", r"\bavionic"),
     "automotive": _rx(r"\bautomotive\b", r"\bvehicle\b", r"\bpowertrain\b", r"\bchassis\b", r"\bmotorsport\b"),
@@ -94,8 +97,9 @@ DISCIPLINES: dict[str, re.Pattern] = {
         r"\bmaterial (science|scientist|engineer\w*|testing|characteri[sz]ation|development)\b", r"\bmetallurg", r"\bcomposites?\b", r"\bndt\b", r"\bnon-destructive\b", r"\bpolymer",
         r"\bcorrosion\b", r"\bwelding\b",
     ),
-    "civil": _rx(r"\bcivil\b", r"\bstructural\b", r"\bgeotechnic", r"\bdams?\b", r"\binfrastructure engineer", r"\bwater engineer"),
-    "chemical": _rx(r"\bchemical\b", r"\bchemistry\b"),
+    "civil": _rx(r"\bcivil\b", r"\bstructural\b", r"\bstructures\b", r"\bgeotechnic", r"\bsoils?\b", r"\bdams?\b",
+                 r"\binfrastructure engineer", r"\bwater engineer"),
+    "chemical": _rx(r"\bchemical\b", r"\bchemistry\b", r"\bprocess safety\b"),
     "nuclear": _rx(r"\bnuclear\b", r"\bfusion\b"),
     "software": _rx(
         r"\bsoftware\b", r"\bdata\b", r"\bcomputer science\b", r"\bcomputing\b", r"\bdeveloper\b", r"\bprogrammer\b", r"\bcyber\b",
@@ -271,15 +275,40 @@ GENERIC_ENGINEERING = _rx(
 )
 GENERIC_SCIENCE = _rx(r"\bscien", r"\blab(oratory)?\b", r"\bresearch\b")
 ENGINEER_TITLE = _rx(r"\bengineer")
+# Engineering employers: a student role there whose title names no subject ("Build Systems
+# Placement" at Mercedes-AMG HPP) is engineering, and so is a "Technology Intern - Machining"
+ENGINEERING_EMPLOYER = _rx(
+    r"\brolls[- ]royce\b", r"\bjaguar land rover\b", r"^jlr\b", r"\bgkn\b", r"\bmercedes[- ]amg\b", r"\bamg (hpp|high performance)",
+    r"\bmclaren\b", r"\bwilliams (racing|advanced|grand prix)", r"\bred bull (racing|powertrains|technology|advanced)", r"\baston martin\b",
+    r"\balpine (f1|racing)\b", r"\bbentley motors\b", r"\bnissan\b", r"\btoyota\b", r"\bhonda\b", r"\bbmw\b", r"\bjcb\b",
+    r"\bcaterpillar\b", r"\bperkins\b", r"\bcummins\b", r"\bdyson\b", r"\brenishaw\b", r"\bsiemens\b", r"\balstom\b",
+    r"\bhitachi rail\b", r"\bairbus\b", r"\bsafran\b", r"\bcollins aerospace\b", r"\bge aerospace\b", r"\bge vernova\b",
+    r"\bspirax", r"\bedwards vacuum\b", r"\bmoog\b", r"\bparker hannifin\b", r"\bjohnson matthey\b", r"\bineos\b",
+    r"\btata steel\b", r"\bbritish steel\b", r"\bsmith ?(\+|&|and) ?nephew\b",
+    r"\bricardo\b", r"\bhoriba mira\b", r"\bvestas\b", r"\bsiemens gamesa\b", r"\bwabtec\b", r"\bagco\b", r"\bcnh industrial\b",
+    r"\bleyland trucks\b", r"\bspencer group\b", r"\banalog devices\b", r"\barm\b(?! (holdings )?(finance|legal))", r"\bgraphcore\b",
+)
+_TECHNOLOGY_ONLY = _rx(r"\btechnology (graduate|analyst|programme|intern)")
+# Roles at those employers that aren't engineering
+_OTHER_WORK = _rx(
+    r"\b(finance|financial|hr|human|marketing|sales|legal|procurement|purchasing|commercial|people|planning|planner|survey\w*|ux|"
+    r"user experience|it|information technology|waste|project controls?|risk|geospatial|communications?|events?|admin\w*|office|"
+    r"customer|business|supply chain|logistics|accounting|audit|tax|graphic|brand|media|retail|hospitality)\b"
+)
+_COMPUTING_WORDS = _rx(r"\b(software|data|developer|programmer|cyber|cloud|web|it|ai|ml|digital|security|devops)\b")
 
 
-def disciplines_for(title: str, description: str) -> list[str]:
+def disciplines_for(title: str, description: str, company: str = "") -> list[str]:
     """From the title when it names a field; otherwise from the description's own wording (said at
     least twice), and only when the title sounds technical; otherwise a general engineering or
-    science tag when the title is clearly one of those."""
+    science tag when the title is clearly one of those, or the employer is an engineering one."""
     found = [name for name, pattern in DISCIPLINES.items() if pattern.search(title)]
     if found == ["creative"] and ENGINEER_TITLE.search(title):
         found.append("engineering")  # "Graduate Broadcast Engineer": a TV word, still an engineering job
+    engineering_employer = bool(company and ENGINEERING_EMPLOYER.search(company))
+    if (engineering_employer and "software" in found and "engineering" not in found and _TECHNOLOGY_ONLY.search(title)
+            and not _COMPUTING_WORDS.search(title)):
+        found.append("engineering")  # "Technology Intern - Powder Bed" at GKN Aerospace
     if found:
         return found
     if TECHNICAL_TITLE.search(title):
@@ -290,6 +319,8 @@ def disciplines_for(title: str, description: str) -> list[str]:
         return ["engineering"]
     if GENERIC_SCIENCE.search(title):
         return ["science"]
+    if engineering_employer and not _OTHER_WORK.search(title):
+        return ["engineering"]
     return []
 
 
@@ -307,7 +338,7 @@ def classify(job: RawJob) -> Opportunity | None:
     defence = excluded(job.company, job.title, job.description)
 
     # Event readers set the subject themselves: [] for hackathons (open to everyone), a list for a lab expo
-    disciplines = job.raw["disciplines"] if "disciplines" in job.raw else disciplines_for(job.title, job.description)
+    disciplines = job.raw["disciplines"] if "disciplines" in job.raw else disciplines_for(job.title, job.description, job.company)
     skills = [name for name, pattern in SKILLS.items() if pattern.search(f"{job.title} {job.description}")]
     country = job.country or guess_country(job.location) or guess_country(job.description[:500])
     city = first_city(job.location)
