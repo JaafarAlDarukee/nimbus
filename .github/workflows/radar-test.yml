@@ -8,6 +8,10 @@ on:
       companies:
         description: "Employers to read, separated by commas (part of the name is enough)"
         required: true
+      details:
+        description: "Show why a board finds nothing (each step, with examples)"
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -24,7 +28,13 @@ jobs:
           cache: pip
           cache-dependency-path: radar/requirements.txt
       - run: pip install -r radar/requirements.txt
+      - name: Why boards find nothing
+        if: ${{ inputs.details }}
+        env:
+          COMPANIES: ${{ inputs.companies }}
+        run: python -m radar.discover.board_check "$COMPANIES"
       - name: Read the boards
+        if: ${{ !inputs.details }}
         env:
           COMPANIES: ${{ inputs.companies }}
           NIMBUS_LIST_PUBLIC_JOBS: "1"

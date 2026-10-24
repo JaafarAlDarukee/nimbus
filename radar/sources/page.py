@@ -28,6 +28,14 @@ GENERIC_TEXT = re.compile(
     r"click here|here|details|search( jobs)?|(all )?vacancies|jobs|careers|early careers|students?( and graduates)?|graduates?)$",
     re.I,
 )
+# A real role names its subject or year ("Industrial Placement 2027 - Mechanical"); a menu link
+# ("Placements", "Graduate opportunities") doesn't, unless its link points at a numbered job
+ROLE_HINT = re.compile(
+    r"\b(20\d\d|engineer\w*|technician|scientist|analyst|designer|developer|manufactur\w*|mechanical|electrical|electronic\w*|"
+    r"civil|chemical|aerospace|automotive|structural|quality|production|process|project|operations|maintenance|design|"
+    r"research|test\w*|systems?|controls?|robotics|materials|energy|nuclear|commercial|supply chain|procurement|software|data)\b",
+    re.I,
+)
 _robots: dict[str, RobotFileParser | None] = {}
 
 
@@ -65,6 +73,8 @@ def student_links(html: str, base: str) -> list[tuple[str, str]]:
         if len(text) < 8 or GENERIC_TEXT.match(text) or not STUDENT_LINK.search(text):
             continue
         url = urljoin(base, href).split("#")[0]
+        if not ROLE_HINT.search(text) and not re.search(r"\d{4,}", urlsplit(url).path):
+            continue
         seen.setdefault(url, text)
     return list(seen.items())
 

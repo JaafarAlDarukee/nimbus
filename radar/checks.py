@@ -290,6 +290,15 @@ def main() -> None:
     skipped = _asyncio.run(_read(_Board(company="Kier", kind="sitemap", ref="https://x.example/sitemap.xml|/jobs/", tier="standard", notes=""),
                                  None, "priority"))
     check("a job list is left out of 15-minute runs, not counted as checked", skipped[1] is None and skipped[2] is None, str(skipped))
+    from .sources import sitemap
+    t = sitemap._title_from_url("https://careers.laingorourke.com/jobs/2027-building-services-industry-placement-united-kingdom-21ef9145-0ab9-463c-a897-c0fa7503eafb", "/jobs/")
+    check("job-list link: title and country from the slug", t == ("2027 Building Services Industry Placement", "United Kingdom"), str(t))
+    check("job page title: the part naming the role",
+          sitemap.best_title("Kier Careers | Site Engineer Placement", "Site Engineer Placement 2027") == "Site Engineer Placement"
+          and sitemap.best_title("Careers", "Site Engineer Placement") == "Site Engineer Placement"
+          and sitemap.best_title("Placement Student Engineering Job Details | Reckitt", "Placement Student Engineering") == "Placement Student Engineering")
+    check("careers page: menu links skipped", page.student_links('<a href="/careers/placements">Industry Placements</a>'
+                                                                 '<a href="/careers/grads">Graduate Opportunities</a>', "https://x.example/") == [])
     check("oracle reader registered", "oracle" in __import__("radar.sources", fromlist=["READERS"]).READERS and oracle.PAGES["priority"] == 2)
     check("the bot is for placements and internships", personal_alerts.BOT_KINDS == {"placement", "internship", "spring_week", "insight"})
 
